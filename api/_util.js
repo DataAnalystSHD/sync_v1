@@ -248,48 +248,48 @@ export async function larkListAllRecords({ baseId, tableId }){
   return out;
 }
 
-// -------- NEW: batch delete (500 ids/request) --------
+// -------- batch delete: ดึง ID ทั้งหมดก่อน แล้วยิง parallel DELETE --------
 export async function larkBatchDeleteAll({ baseId, tableId }){
   const token = await getTenantAccessToken();
-  const items = await larkListAllRecords({ baseId, tableId });
-  const ids = items.map(x => x.record_id).filter(Boolean);
-  if(ids.length === 0) return { deleted: 0 };
 
-  const chunks = chunk(ids, 500);
-  let deleted = 0;
-
-  // batch_delete endpoint (เร็วมาก)
-  // POST /records/batch_delete { record_ids: [] }
-  for(const part of chunks){
-    const url = `${LARK_OPEN_API_BASE}/open-apis/bitable/v1/apps/${baseId}/tables/${tableId}/records/batch_delete`;
-    await withBackoff(async () => {
-      try{
-        const r = await axios.post(url, { record_ids: part }, {
-          headers: { authorization: `Bearer ${token}` },
-          timeout: 30000,
-        });
-        if(r.data?.code) throw new Error(`Lark batch_delete code=${r.data.code} msg=${r.data.msg}`);
-      }catch(e){
-        // fallback: ถ้า workspace นี้ไม่เปิด batch_delete ให้ fallback เป็นลบทีละตัว
-        const status = e?.response?.status || 0;
-        if(status === 404 || status === 400){
-          for(const rid of part){
-            await withBackoff(() => axios.delete(
-              `${LARK_OPEN_API_BASE}/open-apis/bitable/v1/apps/${baseId}/tables/${tableId}/records/${rid}`,
-              { headers: { authorization: `Bearer ${token}` }, timeout: 30000 }
-            ), "larkDeleteOneFallback");
-          }
-        }else{
-          throw e;
-        }
+  // 1) ดึงแค่ record_id (ไม่ต้อง fields) → เร็วกว่า larkListAllRecords
+  let pageToken = "";
+  const ids = [];
+  for(let i = 0; i < 200; i++){
+    const r = await withBackoff(() => axios.get(
+      `${LARK_OPEN_API_BASE}/open-apis/bitable/v1/apps/${baseId}/tables/${tableId}/records`,
+      {
+        headers: { authorization: `Bearer ${token}` },
+        params: { page_size: 500, page_token: pageToken || undefined },
+        timeout: 30000,
       }
-    }, "larkBatchDelete");
-    deleted += part.length;
-    // กัน spike
-    await sleep(80);
+    ), "larkListIds");
+    const items = r.data?.data?.items || [];
+    for(const it of items) if(it.record_id) ids.push(it.record_id);
+    pageToken = r.data?.data?.page_token || "";
+    if(!pageToken) break;
   }
 
-  return { deleted };
+  if(ids.length === 0) return { deleted: 0 };
+
+  // 2) แบ่ง chunk 500 แล้วยิงพร้อมกันทุก chunk (parallel)
+  //    FIX: Feishu API ใช้ "records" ไม่ใช่ "record_ids" ← นี่คือสาเหตุที่ลบทีละ row
+  const chunks = chunk(ids, 500);
+  const url = `${LARK_OPEN_API_BASE}/open-apis/bitable/v1/apps/${baseId}/tables/${tableId}/records/batch_delete`;
+
+  await Promise.all(chunks.map(part =>
+    withBackoff(async () => {
+      const r = await axios.post(url, { records: part }, {
+        headers: { authorization: `Bearer ${token}` },
+        timeout: 45000,
+      });
+      if(r.data?.code && r.data.code !== 0){
+        throw new Error(`Lark batch_delete code=${r.data.code} msg=${r.data.msg}`);
+      }
+    }, "larkBatchDelete")
+  ));
+
+  return { deleted: ids.length };
 }
 
 // -------- NEW: batch create ordered (500 records/request) --------
