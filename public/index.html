@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SHD — Sheet ↔ Lark Sync</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:         #eef2f9;
+      --surface:    #ffffff;
+      --surface2:   #f5f7fc;
+      --border:     #dde3ef;
+      --border2:    #c9d2e8;
+      --text:       #0d1526;
+      --text2:      #3d4f70;
+      --muted:      #7a8eae;
+      --blue:       #2458e8;
+      --blue-lt:    #eef3ff;
+      --blue-bd:    #b8ccfa;
+      --teal:       #0891b2;
+      --teal-lt:    #ecfeff;
+      --teal-bd:    #a5f3fc;
+      --green:      #047857;
+      --green-lt:   #ecfdf5;
+      --green-bd:   #6ee7b7;
+      --red:        #be123c;
+      --red-lt:     #fff1f2;
+      --red-bd:     #fda4af;
+      --amber:      #b45309;
+      --amber-lt:   #fffbeb;
+      --amber-bd:   #fcd34d;
+      --r:          14px;
+      --sh:         0 1px 3px rgba(13,21,38,.07), 0 4px 16px rgba(13,21,38,.06);
+      --sh2:        0 8px 32px rgba(13,21,38,.10), 0 2px 8px rgba(13,21,38,.06);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', 'Noto Sans Thai', ui-sans-serif, sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse 900px 500px at 0% 0%, rgba(36,88,232,.10) 0%, transparent 60%),
+        radial-gradient(ellipse 700px 400px at 100% 5%, rgba(8,145,178,.08) 0%, transparent 55%),
+        radial-gradient(ellipse 600px 350px at 55% 100%, rgba(36,88,232,.07) 0%, transparent 55%),
+        var(--bg);
+    }
+
+    /* ───── Topbar ───── */
+    .bar {
+      background: rgba(255,255,255,.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(13,21,38,.06);
+      position: sticky; top: 0; z-index: 200;
+    }
+    .bar-inner {
+      max-width: 1140px; margin: 0 auto;
+      padding: 0 20px;
+      height: 58px;
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    }
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .logo-box {
+      width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+      background: linear-gradient(135deg,#2458e8,#0891b2);
+      box-shadow: 0 3px 10px rgba(36,88,232,.30);
+      display: grid; place-items: center; color: #fff; font-size: 16px;
+    }
+    .brand-title { font-size: 13.5px; font-weight: 700; letter-spacing: -.01em; }
+    .brand-sub   { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+    /* ───── Auth chip ───── */
+    .auth-chip {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 6px 13px; border-radius: 999px;
+      border: 1.5px solid var(--border);
+      background: var(--surface2);
+      font-size: 12px; font-weight: 500; color: var(--text2);
+      white-space: nowrap; transition: all .15s;
+    }
+    .auth-chip.on {
+      background: var(--green-lt); border-color: var(--green-bd); color: var(--green);
+    }
+
+    /* ───── Wrap ───── */
+    .wrap { max-width: 1140px; margin: 0 auto; padding: 24px 20px 64px; }
+
+    /* ───── Stat row ───── */
+    .stats {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+      margin-bottom: 18px;
+    }
+    @media(max-width:720px){ .stats{ grid-template-columns: repeat(2,1fr); } }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 14px 16px;
+      box-shadow: var(--sh);
+    }
+    .stat-val { font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+    .stat-lbl { font-size: 11.5px; color: var(--muted); font-weight: 500; margin-top: 3px; }
+    .stat-accent { color: var(--blue); }
+    .stat-good   { color: var(--green); }
+    .stat-teal   { color: var(--teal); }
+
+    /* ───── Grid ───── */
+    .grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 14px; }
+    @media(max-width:940px){ .grid{ grid-template-columns: 1fr; } }
+
+    /* ───── Card ───── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--sh);
+      overflow: hidden;
+      animation: up .3s ease both;
+    }
+    .card:nth-child(2){ animation-delay:.06s; }
+    @keyframes up { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+    .card-hd {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .card-hd-l { display: flex; align-items: center; gap: 8px; }
+    .card-hd h2 { font-size: 13px; font-weight: 700; letter-spacing: -.01em; }
+    .step {
+      width: 20px; height: 20px; border-radius: 999px; flex-shrink: 0;
+      background: var(--blue-lt); border: 1.5px solid var(--blue-bd);
+      color: var(--blue); font-size: 10.5px; font-weight: 700;
+      display: grid; place-items: center;
+    }
+    .card-bd { padding: 16px; }
+
+    /* ───── Form ───── */
+    label {
+      display: block; font-size: 10.5px; font-weight: 700; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--muted); margin: 13px 0 5px;
+    }
+    input, textarea {
+      width: 100%; border-radius: 10px; border: 1.5px solid var(--border);
+      background: var(--bg); color: var(--text); padding: 9px 11px;
+      font-size: 13px; font-family: inherit; outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input:focus, textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(36,88,232,.10);
+      background: #fff;
+    }
+    input:disabled { opacity: .45; cursor: not-allowed; background: var(--surface2); }
+
+    /* ───── Direction chips ───── */
+    .dir-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .dir-chip {
+      flex: 1; min-width: 188px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 13px; border-radius: 11px;
+      border: 1.5px solid var(--border); background: var(--surface2);
+      cursor: pointer; user-select: none; transition: all .15s;
+    }
+    .dir-chip:hover { border-color: var(--blue-bd); background: var(--blue-lt); }
+    .dir-chip b { font-size: 13px; font-weight: 600; display: block; }
+    .dir-chip small { font-size: 11px; color: var(--muted); }
+    .dir-chip[data-active="true"] {
+      border-color: var(--blue); background: var(--blue-lt);
+      box-shadow: 0 0 0 3px rgba(36,88,232,.08);
+    }
+    .dir-chip[data-active="true"] b { color: var(--blue); }
+    .dir-chip[data-active="false"] { opacity: .58; }
+    .dir-icon {
+      width: 26px; height: 26px; border-radius: 7px;
+      background: var(--blue-lt); border: 1px solid var(--blue-bd);
+      display: grid; place-items: center; font-size: 13px; flex-shrink: 0;
+    }
+
+    /* ───── Buttons ───── */
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; }
+    button {
+      border: 1.5px solid var(--border2);
+      border-radius: 9px; padding: 8px 13px;
+      font-weight: 600; font-size: 12.5px; font-family: inherit;
+      background: var(--surface); color: var(--text2);
+      cursor: pointer; transition: all .15s;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    button:hover { background: var(--surface2); transform: translateY(-1px); box-shadow: var(--sh); }
+    button.pri { background:var(--blue); border-color:var(--blue); color:#fff; box-shadow:0 2px 8px rgba(36,88,232,.26); }
+    button.pri:hover { background:#1a46d4; box-shadow:0 4px 14px rgba(36,88,232,.34); }
+    button.ok  { background:var(--green); border-color:var(--green); color:#fff; box-shadow:0 2px 8px rgba(4,120,87,.2); }
+    button.ok:hover { background:#036644; box-shadow:0 4px 14px rgba(4,120,87,.30); }
+    button.del { background:var(--red-lt); border-color:var(--red-bd); color:var(--red); }
+    button.del:hover { background:var(--red); border-color:var(--red); color:#fff; }
+    button.teal { background:var(--teal-lt); border-color:var(--teal-bd); color:var(--teal); }
+    button.teal:hover { background:var(--teal); border-color:var(--teal); color:#fff; }
+    button:disabled { opacity:.38; cursor:not-allowed; transform:none!important; box-shadow:none!important; }
+
+    /* ───── Tip box ───── */
+    .tip {
+      font-size: 12px; color: var(--muted); margin-top: 13px; line-height: 1.65;
+      padding: 10px 12px; border-radius: 10px;
+      background: var(--blue-lt); border: 1px solid var(--blue-bd);
+    }
+
+    /* ───── Auto-sync bar ───── */
+    .auto-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 10px;
+      padding: 11px 14px; border-radius: 11px;
+      border: 1.5px solid var(--teal-bd); background: var(--teal-lt);
+      margin-bottom: 12px;
+    }
+    .auto-bar-l { display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600; color: var(--teal); }
+    .pulse {
+      width: 8px; height: 8px; border-radius: 999px; background: var(--teal);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.75)} }
+    .auto-cd { font-size: 12px; color: var(--teal); font-family: 'DM Mono', monospace; }
+
+    /* ───── Pair cards ───── */
+    .pairs { display: flex; flex-direction: column; gap: 10px; }
+    .pair-card {
+      padding: 13px 14px; border-radius: 11px;
+      border: 1.5px solid var(--border); background: var(--surface2);
+      transition: box-shadow .15s;
+    }
+    .pair-card:hover { box-shadow: var(--sh); }
+    .pair-card.syncing { border-color: var(--blue-bd); background: var(--blue-lt); }
+    .pair-card.success { border-color: var(--green-bd); background: var(--green-lt); }
+    .pair-card.error   { border-color: var(--red-bd);   background: var(--red-lt);  }
+
+    .pair-dir {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 700; color: var(--blue);
+      background: var(--blue-lt); border: 1px solid var(--blue-bd);
+      padding: 2px 9px; border-radius: 999px; margin-bottom: 7px;
+    }
+    .pair-meta { font-size: 11.5px; color: var(--muted); line-height: 1.6; word-break: break-all; margin-top: 2px; }
+    .pair-meta b { color: var(--text2); font-weight: 600; }
+
+    .pair-status {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11.5px; margin-top: 7px; font-weight: 600;
+    }
+    .pair-status.idle    { color: var(--muted); }
+    .pair-status.syncing { color: var(--blue); }
+    .pair-status.success { color: var(--green); }
+    .pair-status.error   { color: var(--red); }
+
+    .spin { display: inline-block; animation: spin .7s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    .pair-actions { margin-top: 9px; display: flex; gap: 7px; flex-wrap: wrap; }
+
+    /* ───── Logs ───── */
+    .log-box {
+      font-family: 'DM Mono', ui-monospace, monospace;
+      font-size: 11.5px; line-height: 1.55;
+      background: #f6f8fd;
+      border: 1.5px solid var(--border);
+      padding: 13px 15px; border-radius: 11px;
+      max-height: 280px; overflow: auto;
+      white-space: pre-wrap; color: var(--text2);
+    }
+    .log-box::-webkit-scrollbar { width: 5px; }
+    .log-box::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 999px; }
+
+    /* ───── Misc ───── */
+    .kbd {
+      font-family: 'DM Mono', monospace;
+      background: var(--surface2); border: 1px solid var(--border2);
+      padding: 2px 6px; border-radius: 5px; font-size: 11px; color: var(--text2);
+    }
+    .kbd.blue { background:var(--blue-lt); border-color:var(--blue-bd); color:var(--blue); }
+
+    .sec-label {
+      font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--muted);
+      display: flex; align-items: center; gap: 8px; margin: 14px 0 9px;
+    }
+    .sec-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+    .spacer { margin-top: 14px; }
+
+    .empty {
+      text-align: center; padding: 28px 16px;
+      color: var(--muted); font-size: 13px;
+    }
+    .empty .ico { font-size: 26px; margin-bottom: 6px; }
+
+    /* ───── interval selector ───── */
+    select {
+      border-radius: 8px; border: 1.5px solid var(--border);
+      background: var(--surface); color: var(--text); padding: 7px 10px;
+      font-size: 12.5px; font-family: inherit; outline: none;
+      cursor: pointer;
+    }
+    select:focus { border-color: var(--blue); }
+
+    .hd-pill {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11.5px; color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════ TOPBAR ══════════ -->
+<header class="bar">
+  <div class="bar-inner">
+    <div class="brand">
+      <div class="logo-box">⇄</div>
+      <div>
+        <div class="brand-title">Sheet ↔ Lark/Feishu Sync</div>
+        <div class="brand-sub">Internal · OAuth · Background sync via Cron</div>
+      </div>
+    </div>
+    <div class="auth-chip" id="authChip">🔒 Not signed in</div>
+  </div>
+</header>
+
+<!-- ══════════ MAIN ══════════ -->
+<div class="wrap">
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-val stat-accent" id="sPairs">—</div>
+      <div class="stat-lbl">Active Pairs</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val stat-good" id="sSynced">—</div>
+      <div class="stat-lbl">Synced OK</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val stat-teal" id="sSheet">—</div>
+      <div class="stat-lbl">History Sheet</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="sMode">Full-replace</div>
+      <div class="stat-lbl">Sync Mode</div>
+    </div>
+  </div>
+
+  <!-- Main grid -->
+  <div class="grid">
+
+    <!-- ── Left: Connect & Sync ── -->
+    <section class="card">
+      <div class="card-hd">
+        <div class="card-hd-l">
+          <span class="step">1</span>
+          <h2>Connect &amp; Sync</h2>
+        </div>
+        <div class="hd-pill">
+          History: <span class="kbd blue" id="histLabel">loading…</span>
+        </div>
+      </div>
+      <div class="card-bd">
+
+        <div class="btn-row" style="margin-top:0">
+          <button class="pri" id="btnLogin">🔑 Login with Google (SHD)</button>
+          <button id="btnLogout" disabled>Logout</button>
+        </div>
+
+        <label>Google Sheet URL</label>
+        <input id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/.../edit#gid=..." disabled />
+
+        <label>Lark / Feishu Base URL</label>
+        <input id="larkUrl" placeholder="https://...larksuite.com/base/<baseId>?table=<tableId>" disabled />
+
+        <div class="sec-label">Sync Direction</div>
+        <div class="dir-row">
+          <div class="dir-chip" id="modeLark" data-active="true">
+            <div><b>Lark/Feishu → Sheet</b><small>Lark เป็นฝั่งหลัก</small></div>
+            <div class="dir-icon">↙</div>
+          </div>
+          <div class="dir-chip" id="modeSheet" data-active="false">
+            <div><b>Sheet → Lark/Feishu</b><small>Sheet เป็นฝั่งหลัก</small></div>
+            <div class="dir-icon">↗</div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="ok"  id="btnSavePair" disabled>💾 Save Pair</button>
+          <button class="pri" id="btnSyncNow"  disabled>⚡ Sync Now</button>
+          <button            id="btnReload"   disabled>↻ Reload</button>
+        </div>
+
+        <div class="tip">
+          • <b>Save Pair</b> บันทึกให้ Cron sync ต่ออัตโนมัติแม้ปิดเว็บ<br/>
+          • Cron endpoint: <span class="kbd" id="cronUrl">…</span><br/>
+          • Auto-sync ทำ <b>Full-replace</b> (ลบทั้งหมด แล้ว sync ใหม่) ทุกรอบ
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Right: Saved Pairs ── -->
+    <section class="card">
+      <div class="card-hd">
+        <div class="card-hd-l">
+          <span class="step">2</span>
+          <h2>Saved Pairs</h2>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="auth-chip" id="pairCount" style="padding:4px 10px;font-size:11.5px">0 pairs</span>
+          <button class="teal" id="btnSyncAll" disabled style="padding:6px 11px;font-size:12px">⚡ Sync All</button>
+        </div>
+      </div>
+      <div class="card-bd">
+
+        <!-- Auto-sync bar -->
+        <div class="auto-bar" id="autoBar" style="display:none">
+          <div class="auto-bar-l">
+            <div class="pulse"></div>
+            Auto-sync active
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <select id="autoInterval" style="padding:5px 8px;font-size:11.5px">
+              <option value="60">ทุก 1 นาที</option>
+              <option value="300" selected>ทุก 5 นาที</option>
+              <option value="600">ทุก 10 นาที</option>
+              <option value="1800">ทุก 30 นาที</option>
+            </select>
+            <span class="auto-cd" id="autoCd">—</span>
+            <button id="btnStopAuto" style="padding:5px 10px;font-size:11.5px">⏹ Stop</button>
+          </div>
+        </div>
+
+        <div id="autoStartRow" style="margin-bottom:10px;display:none">
+          <button class="teal" id="btnStartAuto" style="width:100%;justify-content:center">
+            🔄 เปิด Auto-sync
+          </button>
+        </div>
+
+        <!-- Pairs list -->
+        <div class="pairs" id="pairsList">
+          <div class="empty"><div class="ico">🔗</div>Login แล้ว load pairs</div>
+        </div>
+
+        <div class="tip" style="margin-top:12px">
+          Cron: <span class="kbd" id="cronUrl2">…</span> · แนะนำทุก 5–30 นาที
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Logs -->
+  <div class="spacer"></div>
+  <section class="card">
+    <div class="card-hd">
+      <div class="card-hd-l">
+        <span class="step" style="background:var(--amber-lt);border-color:var(--amber-bd);color:var(--amber)">✦</span>
+        <h2>Logs</h2>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button id="btnClearLog" style="padding:5px 10px;font-size:11.5px">🗑 Clear</button>
+        <span class="auth-chip" style="font-size:11px">ดู Vercel logs ได้ด้วย</span>
+      </div>
+    </div>
+    <div class="card-bd">
+      <div class="log-box" id="log">— ready —</div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// ═════════════════════════════════════════════
+// STATE
+// ═════════════════════════════════════════════
+const CONFIG = { historySheetId: null, allowedDomain: null };
+let refreshToken = localStorage.getItem('google_refresh_token') || '';
+let userEmail    = localStorage.getItem('google_user_email')    || '';
+let masterMode   = 'lark-to-sheet';
+let autoTimer    = null;
+let autoSecondsLeft = 0;
+let cdTimer      = null;
+let lastPairs    = [];
+let syncedCount  = 0;
+
+// ─── elements ───
+const $ = id => document.getElementById(id);
+
+// ─── log ───
+function log(...args) {
+  const s = args.map(a => typeof a === 'string' ? a : JSON.stringify(a, null, 2)).join(' ');
+  const box = $('log');
+  box.textContent = (box.textContent === '— ready —' ? '' : box.textContent + '\n') + `[${new Date().toLocaleTimeString()}] ` + s;
+  box.scrollTop = box.scrollHeight;
+  console.log(...args);
+}
+$('btnClearLog').onclick = () => { $('log').textContent = '— ready —'; };
+
+// ─── fetch helper ───
+async function fetchJson(url, opts = {}) {
+  const res = await fetch(url, {
+    ...opts,
+    headers: { 'content-type': 'application/json', ...(opts.headers || {}) }
+  });
+  const txt = await res.text();
+  let data;
+  try { data = JSON.parse(txt); } catch { data = { raw: txt }; }
+  if (!res.ok) throw new Error(data?.error || data?.message || `HTTP ${res.status}`);
+  return data;
+}
+
+// ═════════════════════════════════════════════
+// AUTH UI
+// ═════════════════════════════════════════════
+function setAuthed(ok) {
+  $('btnLogout').disabled  = !ok;
+  $('sheetUrl').disabled   = !ok;
+  $('larkUrl').disabled    = !ok;
+  $('btnSavePair').disabled = !ok;
+  $('btnSyncNow').disabled  = !ok;
+  $('btnReload').disabled   = !ok;
+  $('btnSyncAll').disabled  = !ok;
+
+  const chip = $('authChip');
+  chip.textContent = ok ? `✅ ${userEmail}` : '🔒 Not signed in';
+  chip.className = 'auth-chip' + (ok ? ' on' : '');
+
+  if (ok) {
+    $('autoStartRow').style.display = 'block';
+  } else {
+    $('autoStartRow').style.display = 'none';
+    stopAutoSync();
+  }
+}
+
+// ─── mode chips ───
+function setMode(m) {
+  masterMode = m;
+  $('modeLark').dataset.active  = m === 'lark-to-sheet' ? 'true' : 'false';
+  $('modeSheet').dataset.active = m === 'sheet-to-lark' ? 'true' : 'false';
+}
+$('modeLark').onclick  = () => setMode('lark-to-sheet');
+$('modeSheet').onclick = () => setMode('sheet-to-lark');
+
+// ═════════════════════════════════════════════
+// OAUTH POPUP
+// ═════════════════════════════════════════════
+function openPopup(url) {
+  const w = 520, h = 680;
+  const y = window.top.outerHeight/2 + window.top.screenY - h/2;
+  const x = window.top.outerWidth/2  + window.top.screenX - w/2;
+  return window.open(url, 'shd_oauth', `width=${w},height=${h},top=${y},left=${x}`);
+}
+
+$('btnLogin').onclick = () => {
+  log('Opening Google login...');
+  const p = openPopup('/api/auth/google/start');
+  if (!p) alert('Popup ถูกบล็อก กรุณาอนุญาต popup แล้วลองใหม่');
+};
+
+window.addEventListener('message', async ev => {
+  if (ev?.data?.type !== 'shd_google_oauth') return;
+  const msg = ev.data;
+  if (msg.ok) {
+    refreshToken = msg.refresh_token || '';
+    userEmail    = msg.email || '';
+    if (!refreshToken) { alert('ไม่ได้รับ refresh_token ลอง login ใหม่'); return; }
+    localStorage.setItem('google_refresh_token', refreshToken);
+    localStorage.setItem('google_user_email', userEmail);
+    log(`✅ Logged in as ${userEmail}`);
+    setAuthed(true);
+    await loadPairs();
+    startAutoSync(); // auto-start on login
+  } else {
+    log(`❌ Login failed: ${msg.error}`);
+    alert(`Login failed: ${msg.error}`);
+  }
+});
+
+$('btnLogout').onclick = () => {
+  stopAutoSync();
+  localStorage.removeItem('google_refresh_token');
+  localStorage.removeItem('google_user_email');
+  refreshToken = ''; userEmail = '';
+  lastPairs = [];
+  setAuthed(false);
+  $('pairsList').innerHTML = '<div class="empty"><div class="ico">🔗</div>Login แล้ว load pairs</div>';
+  $('pairCount').textContent = '0 pairs';
+  $('sPairs').textContent = '—';
+  $('sSynced').textContent = '—';
+  log('Logged out');
+};
+
+// ═════════════════════════════════════════════
+// PAIRS
+// ═════════════════════════════════════════════
+function getInputs() {
+  const s = $('sheetUrl').value.trim();
+  const l = $('larkUrl').value.trim();
+  if (!s || !l) throw new Error('กรุณาใส่ลิงก์ให้ครบ');
+  return { sheetUrl: s, larkUrl: l, direction: masterMode };
+}
+
+$('btnSavePair').onclick = async () => {
+  try {
+    const payload = { ...getInputs(), refreshToken, userEmail };
+    log('Saving pair...');
+    const out = await fetchJson('/api/pairs', { method: 'POST', body: JSON.stringify(payload) });
+    log('✅ Pair saved', out);
+    await loadPairs();
+  } catch(e) { log(`❌ Save error: ${e.message}`); alert(e.message); }
+};
+
+$('btnSyncNow').onclick = async () => {
+  try {
+    const payload = { ...getInputs(), refreshToken, userEmail, source: 'manual', forceNew: true };
+    log('Manual sync...');
+    const out = await fetchJson('/api/sync', { method: 'POST', body: JSON.stringify({ pairs: [payload] }) });
+    log('✅ Sync result', out);
+    await loadPairs();
+  } catch(e) { log(`❌ Sync error: ${e.message}`); alert(e.message); }
+};
+
+$('btnReload').onclick = loadPairs;
+
+// ─── Sync All ───
+$('btnSyncAll').onclick = () => syncAllPairs();
+
+async function syncAllPairs() {
+  if (!lastPairs.length) { log('No pairs to sync'); return; }
+  log(`🔄 Syncing all ${lastPairs.length} pairs (full-replace)...`);
+  syncedCount = 0;
+  for (const p of lastPairs) {
+    await syncOnePair(p);
+  }
+  $('sSynced').textContent = String(syncedCount);
+  log(`✅ All pairs synced. OK: ${syncedCount}/${lastPairs.length}`);
+}
+
+async function syncOnePair(pair) {
+  setPairStatus(pair.rowId, 'syncing', '⟳ Syncing…');
+  markCard(pair.rowId, 'syncing');
+  try {
+    const out = await fetchJson('/api/sync', {
+      method: 'POST',
+      body: JSON.stringify({
+        pairs: [{
+          ...pair,
+          refreshToken,
+          userEmail: pair.user || userEmail,
+          source: 'auto',
+          forceNew: true  // always full-replace
+        }]
+      })
+    });
+    const r = out.results?.[0];
+    const rows = r?.rowCount ?? '?';
+    setPairStatus(pair.rowId, 'success', `✅ ${rows} rows · ${new Date().toLocaleTimeString()}`);
+    markCard(pair.rowId, 'success');
+    syncedCount++;
+    log(`✅ [${pair.sheetUrl.split('/d/')[1]?.slice(0,12) || pair.sheetId}] ${rows} rows`);
+    // update lastSyncAt display
+    updatePairMeta(pair.rowId, new Date().toISOString());
+  } catch(e) {
+    setPairStatus(pair.rowId, 'error', `❌ ${e.message}`);
+    markCard(pair.rowId, 'error');
+    log(`❌ Pair error [rowId=${pair.rowId}]: ${e.message}`);
+  }
+}
+
+function setPairStatus(rowId, cls, text) {
+  const el = document.querySelector(`[data-status="${rowId}"]`);
+  if (!el) return;
+  el.className = `pair-status ${cls}`;
+  el.innerHTML = text;
+}
+
+function markCard(rowId, cls) {
+  const card = document.querySelector(`[data-card="${rowId}"]`);
+  if (!card) return;
+  card.className = `pair-card ${cls}`;
+  setTimeout(() => {
+    if (card.className.includes(cls)) card.className = 'pair-card';
+  }, 4000);
+}
+
+function updatePairMeta(rowId, ts) {
+  const el = document.querySelector(`[data-lastsync="${rowId}"]`);
+  if (el) el.textContent = new Date(ts).toLocaleString('th-TH');
+}
+
+// ─── Load Pairs ───
+async function loadPairs() {
+  log('Loading pairs...');
+  try {
+    const out = await fetchJson('/api/pairs', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken })
+    });
+    lastPairs = out.pairs || [];
+    $('pairCount').textContent = `${lastPairs.length} pairs`;
+    $('sPairs').textContent = String(lastPairs.length);
+
+    if (!lastPairs.length) {
+      $('pairsList').innerHTML = '<div class="empty"><div class="ico">📭</div>ยังไม่มี pair</div>';
+    } else {
+      $('pairsList').innerHTML = lastPairs.map(p => `
+        <div class="pair-card" data-card="${p.rowId}">
+          <div class="pair-dir">
+            ${p.direction === 'lark-to-sheet' ? '⬅ Lark → Sheet' : '➡ Sheet → Lark'}
+          </div>
+          <div class="pair-meta"><b>Sheet:</b> ${p.sheetUrl}</div>
+          <div class="pair-meta"><b>Lark:</b>  ${p.larkUrl}</div>
+          <div class="pair-meta"><b>Last:</b>   <span data-lastsync="${p.rowId}">${p.lastSyncAt ? new Date(p.lastSyncAt).toLocaleString('th-TH') : '—'}</span></div>
+          <div class="pair-status idle" data-status="${p.rowId}">● Idle</div>
+          <div class="pair-actions">
+            <button class="pri" data-sync="${p.rowId}">⚡ Sync</button>
+            <button class="del" data-deact="${p.rowId}">✕ Deactivate</button>
+          </div>
+        </div>
+      `).join('');
+
+      // bind buttons
+      document.querySelectorAll('[data-sync]').forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.sync;
+          const pair = lastPairs.find(x => String(x.rowId) === id);
+          if (pair) await syncOnePair(pair);
+        };
+      });
+      document.querySelectorAll('[data-deact]').forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.deact;
+          if (!confirm('Deactivate pair นี้?')) return;
+          await fetchJson('/api/pairs', {
+            method: 'PUT',
+            body: JSON.stringify({ refreshToken, rowId: id, active: false })
+          });
+          await loadPairs();
+        };
+      });
+    }
+    log(`✅ Loaded ${lastPairs.length} pairs`);
+  } catch(e) {
+    log(`❌ Load pairs error: ${e.message}`);
+  }
+}
+
+// ═════════════════════════════════════════════
+// AUTO-SYNC
+// ═════════════════════════════════════════════
+function startAutoSync() {
+  stopAutoSync();
+  $('autoBar').style.display    = 'flex';
+  $('autoStartRow').style.display = 'none';
+  scheduleNext();
+  log('🔄 Auto-sync started');
+}
+
+function stopAutoSync() {
+  clearTimeout(autoTimer);
+  clearInterval(cdTimer);
+  autoTimer = null;
+  $('autoBar').style.display    = 'none';
+  $('autoStartRow').style.display = refreshToken ? 'block' : 'none';
+  $('autoCd').textContent = '—';
+}
+
+function scheduleNext() {
+  const secs = parseInt($('autoInterval').value, 10);
+  autoSecondsLeft = secs;
+  $('autoCd').textContent = fmt(autoSecondsLeft);
+
+  clearInterval(cdTimer);
+  cdTimer = setInterval(() => {
+    autoSecondsLeft--;
+    $('autoCd').textContent = fmt(Math.max(0, autoSecondsLeft));
+  }, 1000);
+
+  autoTimer = setTimeout(async () => {
+    clearInterval(cdTimer);
+    if (!lastPairs.length) await loadPairs();
+    await syncAllPairs();
+    scheduleNext(); // chain
+  }, secs * 1000);
+}
+
+function fmt(s) {
+  const m = Math.floor(s / 60), r = s % 60;
+  return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
+}
+
+$('btnStartAuto').onclick = startAutoSync;
+$('btnStopAuto').onclick  = stopAutoSync;
+$('autoInterval').onchange = () => {
+  if (autoTimer) { stopAutoSync(); startAutoSync(); }
+};
+
+// ═════════════════════════════════════════════
+// BOOTSTRAP
+// ═════════════════════════════════════════════
+async function bootstrap() {
+  try {
+    const cfg = await fetchJson('/api/config');
+    CONFIG.historySheetId = cfg.historySheetId;
+    CONFIG.allowedDomain  = cfg.allowedDomain;
+    $('histLabel').textContent = cfg.historySheetId || '(missing)';
+    $('sSheet').textContent    = cfg.historySheetId ? '✓' : '—';
+    $('cronUrl').textContent   = `${location.origin}/api/sync`;
+    $('cronUrl2').textContent  = `${location.origin}/api/sync`;
+    log('Config loaded', cfg);
+  } catch(e) { log('Config error:', e.message); }
+
+  if (refreshToken && userEmail) {
+    setAuthed(true);
+    await loadPairs();
+    startAutoSync(); // auto-start on page load if already logged in
+  }
+}
+
+bootstrap();
+</script>
+</body>
+</html>
