@@ -206,6 +206,17 @@ async function syncSheetToLark({ accessToken, cfg, sheetId, baseId, tableId, pai
 
 export default async function handler(req, res){
   const cfg = getConfig();
+
+  // ✅ เพิ่มตรงนี้ --- ป้องกัน cron ถูกเรียกโดยไม่ได้รับอนุญาต
+  const cronSecret = process.env.CRON_SECRET;
+  if(req.method === "GET" && cronSecret){
+    const auth = req.headers["authorization"] || "";
+    if(auth !== `Bearer ${cronSecret}`){
+      json(res, 403, { ok:false, error:"Forbidden" });
+      return;
+    }
+  }
+
   try{
     if(req.method === "GET"){
       const ownerRefresh = process.env.SYNC_OWNER_REFRESH_TOKEN;
