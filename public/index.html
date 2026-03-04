@@ -312,6 +312,92 @@
       display: flex; align-items: center; gap: 6px;
       font-size: 11.5px; color: var(--muted);
     }
+
+    /* ───── How-to-use section ───── */
+    .howto {
+      margin-bottom: 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--sh);
+      overflow: hidden;
+      animation: up .25s ease both;
+    }
+    .howto-hd {
+      display: flex; align-items: center; gap: 9px;
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(90deg, var(--blue-lt) 0%, var(--surface2) 100%);
+      cursor: pointer; user-select: none;
+    }
+    .howto-hd-icon {
+      width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
+      background: var(--blue); display: grid; place-items: center;
+      color: #fff; font-size: 13px;
+      box-shadow: 0 2px 6px rgba(36,88,232,.28);
+    }
+    .howto-hd h2 {
+      font-size: 13px; font-weight: 700; letter-spacing: -.01em; color: var(--blue);
+    }
+    .howto-hd-sub { font-size: 11px; color: var(--muted); margin-left: 4px; }
+    .howto-toggle {
+      margin-left: auto; background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 12px; padding: 3px 7px;
+      border-radius: 6px; transition: background .15s; font-family: inherit;
+    }
+    .howto-toggle:hover { background: var(--border); color: var(--text2); transform: none; box-shadow: none; }
+    .howto-body {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+      transition: all .25s;
+    }
+    .howto-body.collapsed { display: none; }
+    @media(max-width:720px){ .howto-body{ grid-template-columns: 1fr; } }
+
+    .howto-steps { padding: 16px 18px; border-right: 1px solid var(--border); }
+    @media(max-width:720px){ .howto-steps{ border-right:none; border-bottom: 1px solid var(--border); } }
+    .howto-steps h3 {
+      font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--muted); margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .howto-steps h3::after { content:''; flex:1; height:1px; background:var(--border); }
+
+    .ht-step { display: flex; gap: 11px; align-items: flex-start; margin-bottom: 11px; }
+    .ht-step:last-child { margin-bottom: 0; }
+    .ht-num {
+      flex-shrink: 0; width: 22px; height: 22px; border-radius: 999px;
+      background: var(--blue-lt); border: 1.5px solid var(--blue-bd);
+      display: grid; place-items: center;
+      font-size: 10px; font-weight: 700; color: var(--blue);
+      margin-top: 1px;
+    }
+    .ht-txt { font-size: 12.5px; line-height: 1.6; color: var(--text2); }
+    .ht-txt strong { color: var(--text); font-weight: 600; }
+    .ht-txt code {
+      font-family: 'DM Mono', monospace;
+      background: var(--surface2); border: 1px solid var(--border2);
+      padding: 1px 5px; border-radius: 5px; font-size: 11.5px; color: var(--blue);
+    }
+
+    .howto-notes { padding: 16px 18px; }
+    .howto-notes h3 {
+      font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--muted); margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .howto-notes h3::after { content:''; flex:1; height:1px; background:var(--border); }
+
+    .ht-note { display: flex; gap: 9px; align-items: flex-start; margin-bottom: 9px; font-size: 12px; color: var(--text2); line-height: 1.6; }
+    .ht-note:last-child { margin-bottom: 0; }
+    .ht-note-icon { flex-shrink: 0; font-size: 14px; margin-top: 1px; }
+    .ht-note b { color: var(--text); font-weight: 600; }
+    .ht-note .tag {
+      display: inline-block; font-size: 10.5px; font-weight: 700;
+      padding: 1px 7px; border-radius: 999px;
+    }
+    .tag-red   { background: var(--red-lt); border: 1px solid var(--red-bd); color: var(--red); }
+    .tag-green { background: var(--green-lt); border: 1px solid var(--green-bd); color: var(--green); }
+    .tag-amber { background: var(--amber-lt); border: 1px solid var(--amber-bd); color: var(--amber); }
   </style>
 </head>
 <body>
@@ -350,6 +436,109 @@
     <div class="stat-card">
       <div class="stat-val" id="sMode">Full-replace</div>
       <div class="stat-lbl">Sync Mode</div>
+    </div>
+  </div>
+
+  <!-- How-to-use -->
+  <div class="howto" id="howtoSection">
+    <div class="howto-hd" onclick="toggleHowto()">
+      <div class="howto-hd-icon">📖</div>
+      <h2>วิธีการใช้งาน</h2>
+      <span class="howto-hd-sub">— คลิกเพื่อย่อ/ขยาย</span>
+      <button class="howto-toggle" id="howtoToggleBtn" onclick="event.stopPropagation();toggleHowto()">▲ ย่อ</button>
+    </div>
+    <div class="howto-body" id="howtoBody">
+      <!-- Steps -->
+      <div class="howto-steps">
+        <h3>ขั้นตอนการใช้งาน</h3>
+
+        <div class="ht-step">
+          <div class="ht-num">1</div>
+          <div class="ht-txt">
+            <strong>Login ด้วย Google</strong><br>
+            กดปุ่ม <code>🔑 Login with Google (SHD)</code> เพื่อยืนยันตัวตน — ใช้บัญชีที่มีสิทธิ์เข้าถึง Google Sheet ที่ต้องการ
+          </div>
+        </div>
+
+        <div class="ht-step">
+          <div class="ht-num">2</div>
+          <div class="ht-txt">
+            <strong>กรอก URL ทั้งสองฝั่ง</strong><br>
+            ใส่ <code>Google Sheet URL</code> และ <code>Lark / Feishu Base URL</code> ลงในช่องที่กำหนดใน Section 1
+          </div>
+        </div>
+
+        <div class="ht-step">
+          <div class="ht-num">3</div>
+          <div class="ht-txt">
+            <strong>เลือก Sync Direction</strong><br>
+            <code>Lark → Sheet</code> ข้อมูลไหลจาก Lark มาที่ Sheet<br>
+            <code>Sheet → Lark</code> ข้อมูลไหลจาก Sheet ไปที่ Lark
+          </div>
+        </div>
+
+        <div class="ht-step">
+          <div class="ht-num">4</div>
+          <div class="ht-txt">
+            <strong>บันทึก Pair</strong><br>
+            กด <code>💾 Save Pair</code> เพื่อบันทึก — Cron จะ sync อัตโนมัติแม้ปิดหน้าต่าง<br>
+            หรือกด <code>⚡ Sync Now</code> เพื่อ sync ทันที
+          </div>
+        </div>
+
+        <div class="ht-step">
+          <div class="ht-num">5</div>
+          <div class="ht-txt">
+            <strong>ตั้ง Auto-sync (ไม่บังคับ)</strong><br>
+            เลือกความถี่ใน Section 2 เช่น <code>ทุก 5 นาที</code> แล้วกด <code>🔄 เปิด Auto-sync</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="howto-notes">
+        <h3>สิ่งที่ควรรู้</h3>
+
+        <div class="ht-note">
+          <span class="ht-note-icon">⚠️</span>
+          <div>
+            <b>Full-replace</b> <span class="tag tag-red">ข้อควรระวัง</span><br>
+            ทุก sync จะ<b>ลบข้อมูลทั้งหมดในปลายทาง</b>แล้ว sync ใหม่ทั้งหมด — ข้อมูลที่แก้ไขเองในฝั่งปลายทางจะหายไป
+          </div>
+        </div>
+
+        <div class="ht-note">
+          <span class="ht-note-icon">⏱️</span>
+          <div>
+            <b>แนะนำ interval 5–30 นาที</b> <span class="tag tag-amber">Performance</span><br>
+            ช่วยลด Vercel function usage และหลีกเลี่ยง rate limit ของ Google/Lark API
+          </div>
+        </div>
+
+        <div class="ht-note">
+          <span class="ht-note-icon">💾</span>
+          <div>
+            <b>Save Pair vs Sync Now</b> <span class="tag tag-green">Tips</span><br>
+            Save Pair = บันทึกให้ Cron รันต่อเนื่อง | Sync Now = sync ครั้งเดียวทันที ไม่บันทึก
+          </div>
+        </div>
+
+        <div class="ht-note">
+          <span class="ht-note-icon">🔍</span>
+          <div>
+            <b>ดู Log การ sync</b><br>
+            ดูได้ที่ส่วน <b>Logs</b> ด้านล่าง หรือเข้า Vercel Dashboard → Functions logs โดยตรง
+          </div>
+        </div>
+
+        <div class="ht-note">
+          <span class="ht-note-icon">🔒</span>
+          <div>
+            <b>สิทธิ์การเข้าถึง</b><br>
+            ต้องใช้บัญชีในโดเมนที่อนุญาตเท่านั้น และต้องมีสิทธิ์ Viewer ขึ้นไปใน Sheet/Base ที่ต้องการ sync
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -823,6 +1012,14 @@ async function bootstrap() {
     await loadPairs();
     startAutoSync(); // auto-start on page load if already logged in
   }
+}
+
+// ─── How-to toggle ───
+function toggleHowto() {
+  const body = document.getElementById('howtoBody');
+  const btn  = document.getElementById('howtoToggleBtn');
+  const collapsed = body.classList.toggle('collapsed');
+  btn.textContent = collapsed ? '▼ ขยาย' : '▲ ย่อ';
 }
 
 bootstrap();

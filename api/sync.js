@@ -350,3 +350,4 @@ async function runOne({ accessToken, cfg, pair }){
     return await syncSheetToLark({ accessToken, cfg, sheetId, baseId, tableId, pair });
   }
 }
+
