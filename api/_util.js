@@ -317,3 +317,48 @@ export async function larkCreateRecordsBatched({ baseId, tableId, records }){
 
   return { created };
 }
+
+// -------- List fields in a Bitable table --------
+export async function larkListFields({ baseId, tableId }){
+  const token = await getTenantAccessToken();
+  const r = await withBackoff(() => axios.get(
+    `${LARK_OPEN_API_BASE}/open-apis/bitable/v1/apps/${baseId}/tables/${tableId}/fields`,
+    {
+      headers: { authorization: `Bearer ${token}` },
+      params: { page_size: 100 },
+      timeout: 30000,
+    }
+  ), "larkListFields");
+  return r.data?.data?.items || [];
+}
+
+// -------- Create a field (default type 1 = Text) --------
+export async function larkCreateField({ baseId, tableId, fieldName, fieldType }){
+  const token = await getTenantAccessToken();
+  const r = await withBackoff(() => axios.post(
+    `${LARK_OPEN_API_BASE}/open-apis/bitable/v1/apps/${baseId}/tables/${tableId}/fields`,
+    { field_name: fieldName, type: fieldType || 1 },
+    {
+      headers: { authorization: `Bearer ${token}` },
+      timeout: 30000,
+    }
+  ), "larkCreateField");
+  if(r.data?.code && r.data.code !== 0){
+    throw new Error(`Lark create field code=${r.data.code} msg=${r.data.msg}`);
+  }
+  return r.data?.data?.field;
+}
+
+// -------- Ensure all field names exist in Lark table, create missing ones --------
+export async function larkEnsureFields({ baseId, tableId, fieldNames }){
+  const existing = await larkListFields({ baseId, tableId });
+  const existingNames = new Set(existing.map(f => f.field_name));
+  const created = [];
+  for(const name of fieldNames){
+    if(!existingNames.has(name)){
+      await larkCreateField({ baseId, tableId, fieldName: name });
+      created.push(name);
+    }
+  }
+  return { existing: existingNames.size, created };
+}
