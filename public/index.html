@@ -1,674 +1,580 @@
 <!doctype html>
-<html lang="th">
+<html lang="th" data-theme="light">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>SHD — Sheet ↔ Lark Sync</title>
+  <title>SHD Sync — Sheet ↔ Lark</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg:         #eef2f9;
-      --surface:    #ffffff;
-      --surface2:   #f5f7fc;
-      --border:     #dde3ef;
-      --border2:    #c9d2e8;
-      --text:       #0d1526;
-      --text2:      #3d4f70;
-      --muted:      #7a8eae;
-      --blue:       #2458e8;
-      --blue-lt:    #eef3ff;
-      --blue-bd:    #b8ccfa;
-      --teal:       #0891b2;
-      --teal-lt:    #ecfeff;
-      --teal-bd:    #a5f3fc;
-      --green:      #047857;
-      --green-lt:   #ecfdf5;
-      --green-bd:   #6ee7b7;
-      --red:        #be123c;
-      --red-lt:     #fff1f2;
-      --red-bd:     #fda4af;
-      --amber:      #b45309;
-      --amber-lt:   #fffbeb;
-      --amber-bd:   #fcd34d;
-      --r:          14px;
-      --sh:         0 1px 3px rgba(13,21,38,.07), 0 4px 16px rgba(13,21,38,.06);
-      --sh2:        0 8px 32px rgba(13,21,38,.10), 0 2px 8px rgba(13,21,38,.06);
+    /* ═══════ THEME: LIGHT ═══════ */
+    [data-theme="light"] {
+      --bg:       #f0f2f5;
+      --bg2:      #ffffff;
+      --surface:  #ffffff;
+      --surface2: #f7f8fa;
+      --surface3: #eef0f4;
+      --border:   #e0e3ea;
+      --border2:  #cdd2de;
+      --text:     #1a1d2e;
+      --text2:    #4a5068;
+      --muted:    #8b92a8;
+      --accent:   #5b4cdb;
+      --accent2:  #5b4cdb;
+      --accent-bg:#5b4cdb0c;
+      --accent-bd:#5b4cdb25;
+      --green:    #0fa47f;
+      --green-bg: #0fa47f0c;
+      --green-bd: #0fa47f28;
+      --red:      #e0405e;
+      --red-bg:   #e0405e0a;
+      --red-bd:   #e0405e25;
+      --amber:    #c58c07;
+      --amber-bg: #c58c070a;
+      --amber-bd: #c58c0725;
+      --cyan:     #0891a8;
+      --cyan-bg:  #0891a80a;
+      --cyan-bd:  #0891a825;
+      --topbar-bg: rgba(255,255,255,.85);
+      --sh:       0 1px 3px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.04);
+      --sh2:      0 4px 24px rgba(0,0,0,.08);
     }
+    /* ═══════ THEME: DARK ════���══ */
+    [data-theme="dark"] {
+      --bg:       #0f1117;
+      --bg2:      #161922;
+      --surface:  #1c1f2e;
+      --surface2: #232738;
+      --surface3: #2a2f44;
+      --border:   #2e3348;
+      --border2:  #3d4263;
+      --text:     #e8eaf0;
+      --text2:    #a0a6c0;
+      --muted:    #636b8a;
+      --accent:   #7c6df0;
+      --accent2:  #a29bfe;
+      --accent-bg:#7c6df015;
+      --accent-bd:#7c6df040;
+      --green:    #00b894;
+      --green-bg: #00b89412;
+      --green-bd: #00b89440;
+      --red:      #ff6b6b;
+      --red-bg:   #ff6b6b12;
+      --red-bd:   #ff6b6b40;
+      --amber:    #fdcb6e;
+      --amber-bg: #fdcb6e12;
+      --amber-bd: #fdcb6e40;
+      --cyan:     #00cec9;
+      --cyan-bg:  #00cec912;
+      --cyan-bd:  #00cec940;
+      --topbar-bg: rgba(22,25,34,.85);
+      --sh:       0 2px 8px rgba(0,0,0,.25);
+      --sh2:      0 8px 32px rgba(0,0,0,.35);
+    }
+
+    :root { --r: 12px; --r2: 16px; --transition: .2s cubic-bezier(.4,0,.2,1); }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'DM Sans', 'Noto Sans Thai', ui-sans-serif, sans-serif;
-      color: var(--text);
-      min-height: 100vh;
-      background:
-        radial-gradient(ellipse 900px 500px at 0% 0%, rgba(36,88,232,.10) 0%, transparent 60%),
-        radial-gradient(ellipse 700px 400px at 100% 5%, rgba(8,145,178,.08) 0%, transparent 55%),
-        radial-gradient(ellipse 600px 350px at 55% 100%, rgba(36,88,232,.07) 0%, transparent 55%),
-        var(--bg);
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: var(--text); background: var(--bg);
+      min-height: 100vh; line-height: 1.5;
+      transition: background .3s, color .3s;
     }
 
     /* ───── Topbar ───── */
-    .bar {
-      background: rgba(255,255,255,.82);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+    .topbar {
+      background: var(--topbar-bg);
       border-bottom: 1px solid var(--border);
-      box-shadow: 0 1px 4px rgba(13,21,38,.06);
       position: sticky; top: 0; z-index: 200;
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
     }
-    .bar-inner {
-      max-width: 1140px; margin: 0 auto;
-      padding: 0 20px;
-      height: 58px;
-      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    .topbar-inner {
+      max-width: 1100px; margin: 0 auto; padding: 0 24px;
+      height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
     }
-    .brand { display: flex; align-items: center; gap: 11px; }
-    .logo-box {
-      width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
-      background: linear-gradient(135deg,#2458e8,#0891b2);
-      box-shadow: 0 3px 10px rgba(36,88,232,.30);
-      display: grid; place-items: center; color: #fff; font-size: 16px;
-    }
-    .brand-title { font-size: 13.5px; font-weight: 700; letter-spacing: -.01em; }
-    .brand-sub   { font-size: 11px; color: var(--muted); margin-top: 1px; }
-
-    /* ───── Auth chip ───── */
-    .auth-chip {
-      display: inline-flex; align-items: center; gap: 7px;
-      padding: 6px 13px; border-radius: 999px;
-      border: 1.5px solid var(--border);
-      background: var(--surface2);
-      font-size: 12px; font-weight: 500; color: var(--text2);
-      white-space: nowrap; transition: all .15s;
-    }
-    .auth-chip.on {
-      background: var(--green-lt); border-color: var(--green-bd); color: var(--green);
-    }
-
-    /* ───── Wrap ───── */
-    .wrap { max-width: 1140px; margin: 0 auto; padding: 24px 20px 64px; }
-
-    /* ───── Stat row ───── */
-    .stats {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
-      margin-bottom: 18px;
-    }
-    @media(max-width:720px){ .stats{ grid-template-columns: repeat(2,1fr); } }
-    .stat-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 14px 16px;
-      box-shadow: var(--sh);
-    }
-    .stat-val { font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
-    .stat-lbl { font-size: 11.5px; color: var(--muted); font-weight: 500; margin-top: 3px; }
-    .stat-accent { color: var(--blue); }
-    .stat-good   { color: var(--green); }
-    .stat-teal   { color: var(--teal); }
-
-    /* ───── Grid ───── */
-    .grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 14px; }
-    @media(max-width:940px){ .grid{ grid-template-columns: 1fr; } }
-
-    /* ───── Card ───── */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      box-shadow: var(--sh);
-      overflow: hidden;
-      animation: up .3s ease both;
-    }
-    .card:nth-child(2){ animation-delay:.06s; }
-    @keyframes up { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
-
-    .card-hd {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface2);
-      display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    }
-    .card-hd-l { display: flex; align-items: center; gap: 8px; }
-    .card-hd h2 { font-size: 13px; font-weight: 700; letter-spacing: -.01em; }
-    .step {
-      width: 20px; height: 20px; border-radius: 999px; flex-shrink: 0;
-      background: var(--blue-lt); border: 1.5px solid var(--blue-bd);
-      color: var(--blue); font-size: 10.5px; font-weight: 700;
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, #5b4cdb, #7c6df0);
       display: grid; place-items: center;
+      font-size: 15px; color: #fff;
+      box-shadow: 0 2px 12px rgba(91,76,219,.3);
     }
-    .card-bd { padding: 16px; }
+    .brand h1 { font-size: 14px; font-weight: 700; letter-spacing: -.02em; }
+    .brand span { font-size: 11px; color: var(--muted); }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+    /* ───── Theme toggle ────��� */
+    .theme-toggle {
+      width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--surface2); cursor: pointer;
+      display: grid; place-items: center; font-size: 16px;
+      transition: var(--transition);
+    }
+    .theme-toggle:hover { background: var(--surface3); transform: none; box-shadow: none; }
+
+    .user-badge {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 14px; border-radius: 999px;
+      background: var(--surface); border: 1px solid var(--border);
+      font-size: 12px; font-weight: 500; color: var(--muted);
+      transition: var(--transition);
+    }
+    .user-badge.active { background: var(--green-bg); border-color: var(--green-bd); color: var(--green); }
+    .user-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+    .user-badge.active .user-dot { background: var(--green); }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+    /* ───── Stats ───── */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    @media(max-width:700px){ .stats{ grid-template-columns: repeat(2,1fr); } }
+    .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 18px; box-shadow: var(--sh); }
+    .stat-num { font-size: 24px; font-weight: 800; letter-spacing: -.03em; }
+    .stat-num.purple { color: var(--accent2); }
+    .stat-num.green  { color: var(--green); }
+    .stat-num.cyan   { color: var(--cyan); }
+    .stat-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin-top: 4px; }
+
+    /* ───── Last Sync Summary ───── */
+    .sync-summary {
+      display: none; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 12px 16px; border-radius: var(--r);
+      background: var(--green-bg); border: 1px solid var(--green-bd);
+      margin-bottom: 16px; font-size: 12.5px; font-weight: 500; color: var(--green);
+    }
+    .sync-summary.show { display: flex; }
+    .sync-summary.has-error { background: var(--amber-bg); border-color: var(--amber-bd); color: var(--amber); }
+
+    /* ───── How-to ───── */
+    .howto { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); margin-bottom: 20px; overflow: hidden; box-shadow: var(--sh); }
+    .howto-hd {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 20px; cursor: pointer; user-select: none;
+      border-bottom: 1px solid var(--border); background: var(--surface2);
+      transition: var(--transition);
+    }
+    .howto-hd:hover { background: var(--surface3); }
+    .howto-hd h2 { font-size: 13px; font-weight: 700; flex: 1; }
+    .howto-arrow {
+      font-size: 11px; background: none; border: none; cursor: pointer; padding: 4px 8px;
+      border-radius: 6px; font-family: inherit; color: var(--muted);
+    }
+    .howto-arrow:hover { background: var(--surface3); transform: none; box-shadow: none; }
+    .howto-body { transition: all .25s; }
+    .howto-body.collapsed { display: none; }
+    .howto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+    @media(max-width:700px){ .howto-grid{ grid-template-columns: 1fr; } }
+    .howto-col { padding: 20px; }
+    .howto-col:first-child { border-right: 1px solid var(--border); }
+    @media(max-width:700px){ .howto-col:first-child{ border-right:none; border-bottom: 1px solid var(--border); } }
+    .howto-col h3 { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 16px; }
+    .hw-step { display: flex; gap: 12px; margin-bottom: 14px; }
+    .hw-step:last-child { margin-bottom: 0; }
+    .hw-num { flex-shrink: 0; width: 22px; height: 22px; border-radius: 6px; background: var(--accent-bg); border: 1px solid var(--accent-bd); display: grid; place-items: center; font-size: 10px; font-weight: 700; color: var(--accent2); }
+    .hw-txt { font-size: 12.5px; color: var(--text2); line-height: 1.7; }
+    .hw-txt strong { color: var(--text); }
+    .hw-txt code { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--surface3); padding: 1px 6px; border-radius: 4px; color: var(--accent2); }
+    .hw-note { display: flex; gap: 10px; margin-bottom: 12px; font-size: 12px; color: var(--text2); line-height: 1.7; }
+    .hw-note:last-child { margin-bottom: 0; }
+    .hw-icon { flex-shrink: 0; font-size: 14px; margin-top: 2px; }
+    .hw-note b { color: var(--text); }
+    .hw-tag { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: .04em; }
+    .hw-tag.warn { background: var(--red-bg); border: 1px solid var(--red-bd); color: var(--red); }
+    .hw-tag.info { background: var(--amber-bg); border: 1px solid var(--amber-bd); color: var(--amber); }
+    .hw-tag.tip  { background: var(--green-bg); border: 1px solid var(--green-bd); color: var(--green); }
+
+    /* ───── Main Grid ───── */
+    .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media(max-width:900px){ .main-grid{ grid-template-columns: 1fr; } }
+
+    /* ───── Card ��──── */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); overflow: hidden; box-shadow: var(--sh); animation: fadeUp .35s ease both; }
+    .card:nth-child(2){ animation-delay:.06s; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+    .card-header { padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: var(--surface2); }
+    .card-header-left { display: flex; align-items: center; gap: 10px; }
+    .card-header h2 { font-size: 13px; font-weight: 700; }
+    .card-step { width: 22px; height: 22px; border-radius: 6px; background: var(--accent-bg); border: 1px solid var(--accent-bd); display: grid; place-items: center; font-size: 10px; font-weight: 700; color: var(--accent2); }
+    .card-body { padding: 20px; }
 
     /* ───── Form ───── */
-    label {
-      display: block; font-size: 10.5px; font-weight: 700; letter-spacing: .06em;
-      text-transform: uppercase; color: var(--muted); margin: 13px 0 5px;
-    }
-    input, textarea {
-      width: 100%; border-radius: 10px; border: 1.5px solid var(--border);
-      background: var(--bg); color: var(--text); padding: 9px 11px;
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+    .field-label { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 6px; }
+    .field-input {
+      width: 100%; border-radius: 10px;
+      border: 1.5px solid var(--border); background: var(--bg);
+      color: var(--text); padding: 10px 14px;
       font-size: 13px; font-family: inherit; outline: none;
-      transition: border-color .15s, box-shadow .15s;
+      transition: var(--transition);
     }
-    input:focus, textarea:focus {
-      border-color: var(--blue);
-      box-shadow: 0 0 0 3px rgba(36,88,232,.10);
-      background: #fff;
-    }
-    input:disabled { opacity: .45; cursor: not-allowed; background: var(--surface2); }
+    .field-input::placeholder { color: var(--muted); }
+    .field-input:focus { border-color: var(--accent); background: var(--bg2); box-shadow: 0 0 0 3px var(--accent-bg); }
+    .field-input:disabled { opacity: .35; cursor: not-allowed; }
 
-    /* ───── Direction chips ───── */
-    .dir-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-    .dir-chip {
-      flex: 1; min-width: 188px;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 11px 13px; border-radius: 11px;
-      border: 1.5px solid var(--border); background: var(--surface2);
-      cursor: pointer; user-select: none; transition: all .15s;
-    }
-    .dir-chip:hover { border-color: var(--blue-bd); background: var(--blue-lt); }
-    .dir-chip b { font-size: 13px; font-weight: 600; display: block; }
-    .dir-chip small { font-size: 11px; color: var(--muted); }
-    .dir-chip[data-active="true"] {
-      border-color: var(--blue); background: var(--blue-lt);
-      box-shadow: 0 0 0 3px rgba(36,88,232,.08);
-    }
-    .dir-chip[data-active="true"] b { color: var(--blue); }
-    .dir-chip[data-active="false"] { opacity: .58; }
-    .dir-icon {
-      width: 26px; height: 26px; border-radius: 7px;
-      background: var(--blue-lt); border: 1px solid var(--blue-bd);
-      display: grid; place-items: center; font-size: 13px; flex-shrink: 0;
-    }
+    /* ───── Direction ───── */
+    .dir-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    @media(max-width:400px){ .dir-group{ grid-template-columns: 1fr; } }
+    .dir-btn { padding: 12px 14px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); cursor: pointer; user-select: none; transition: var(--transition); text-align: left; }
+    .dir-btn:hover { border-color: var(--border2); background: var(--surface3); }
+    .dir-btn[data-active="true"] { border-color: var(--accent); background: var(--accent-bg); box-shadow: 0 0 0 3px rgba(91,76,219,.08); }
+    .dir-btn b { font-size: 12.5px; font-weight: 600; display: block; color: var(--text); }
+    .dir-btn small { font-size: 11px; color: var(--muted); }
+    .dir-btn[data-active="true"] b { color: var(--accent2); }
+    .dir-btn[data-active="false"] { opacity: .55; }
 
-    /* ───── Buttons ───── */
-    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; }
+    /* ───── Buttons ───��─ */
+    .btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
     button {
-      border: 1.5px solid var(--border2);
-      border-radius: 9px; padding: 8px 13px;
-      font-weight: 600; font-size: 12.5px; font-family: inherit;
-      background: var(--surface); color: var(--text2);
-      cursor: pointer; transition: all .15s;
-      display: inline-flex; align-items: center; gap: 5px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 9px 16px; font-weight: 600; font-size: 12px;
+      font-family: inherit; background: var(--surface2); color: var(--text2);
+      cursor: pointer; transition: var(--transition);
+      display: inline-flex; align-items: center; gap: 6px;
     }
-    button:hover { background: var(--surface2); transform: translateY(-1px); box-shadow: var(--sh); }
-    button.pri { background:var(--blue); border-color:var(--blue); color:#fff; box-shadow:0 2px 8px rgba(36,88,232,.26); }
-    button.pri:hover { background:#1a46d4; box-shadow:0 4px 14px rgba(36,88,232,.34); }
-    button.ok  { background:var(--green); border-color:var(--green); color:#fff; box-shadow:0 2px 8px rgba(4,120,87,.2); }
-    button.ok:hover { background:#036644; box-shadow:0 4px 14px rgba(4,120,87,.30); }
-    button.del { background:var(--red-lt); border-color:var(--red-bd); color:var(--red); }
-    button.del:hover { background:var(--red); border-color:var(--red); color:#fff; }
-    button.teal { background:var(--teal-lt); border-color:var(--teal-bd); color:var(--teal); }
-    button.teal:hover { background:var(--teal); border-color:var(--teal); color:#fff; }
-    button:disabled { opacity:.38; cursor:not-allowed; transform:none!important; box-shadow:none!important; }
+    button:hover { background: var(--surface3); border-color: var(--border2); transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    button:disabled { opacity: .3; cursor: not-allowed; transform: none !important; }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 2px 10px rgba(91,76,219,.25); }
+    button.primary:hover { background: #4a3bc9; box-shadow: 0 4px 16px rgba(91,76,219,.3); }
+    button.success { background: var(--green); border-color: var(--green); color: #fff; box-shadow: 0 2px 10px rgba(15,164,127,.2); }
+    button.success:hover { background: #0d9070; }
+    button.danger { background: var(--red-bg); border-color: var(--red-bd); color: var(--red); }
+    button.danger:hover { background: var(--red); border-color: var(--red); color: #fff; }
+    button.cyan-btn { background: var(--cyan-bg); border-color: var(--cyan-bd); color: var(--cyan); }
+    button.cyan-btn:hover { background: var(--cyan); border-color: var(--cyan); color: #fff; }
+    button.warn-btn { background: var(--amber-bg); border-color: var(--amber-bd); color: var(--amber); }
+    button.warn-btn:hover { background: var(--amber); border-color: var(--amber); color: #fff; }
 
-    /* ───── Tip box ───── */
-    .tip {
-      font-size: 12px; color: var(--muted); margin-top: 13px; line-height: 1.65;
-      padding: 10px 12px; border-radius: 10px;
-      background: var(--blue-lt); border: 1px solid var(--blue-bd);
-    }
+    /* ───── Hint ───── */
+    .hint { font-size: 11.5px; color: var(--muted); margin-top: 16px; line-height: 1.7; padding: 12px 14px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border); }
+    .hint b { color: var(--text2); }
+    .hint .mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--surface3); padding: 2px 6px; border-radius: 4px; color: var(--accent2); }
 
-    /* ───── Auto-sync bar ───── */
-    .auto-bar {
-      display: flex; align-items: center; justify-content: space-between;
-      flex-wrap: wrap; gap: 10px;
-      padding: 11px 14px; border-radius: 11px;
-      border: 1.5px solid var(--teal-bd); background: var(--teal-lt);
-      margin-bottom: 12px;
+    /* ───── Auto-sync ───── */
+    .auto-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 12px 14px; border-radius: 10px; border: 1.5px solid var(--cyan-bd); background: var(--cyan-bg); margin-bottom: 14px; }
+    .auto-bar-left { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: var(--cyan); }
+    .auto-bar-right { display: flex; align-items: center; gap: 8px; }
+    .pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+    .countdown { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--cyan); font-weight: 500; }
+
+    select { border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); padding: 6px 10px; font-size: 11.5px; font-family: inherit; outline: none; cursor: pointer; }
+    select:focus { border-color: var(--accent); }
+
+    .badge-count { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--surface3); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ───── Search ──���── */
+    .search-bar { margin-bottom: 12px; }
+    .search-input {
+      width: 100%; border-radius: 8px; border: 1.5px solid var(--border);
+      background: var(--bg); color: var(--text); padding: 8px 12px 8px 34px;
+      font-size: 12px; font-family: inherit; outline: none;
+      transition: var(--transition);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%238b92a8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: 10px center;
     }
-    .auto-bar-l { display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600; color: var(--teal); }
-    .pulse {
-      width: 8px; height: 8px; border-radius: 999px; background: var(--teal);
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.75)} }
-    .auto-cd { font-size: 12px; color: var(--teal); font-family: 'DM Mono', monospace; }
+    .search-input:focus { border-color: var(--accent); background-color: var(--bg2); box-shadow: 0 0 0 3px var(--accent-bg); }
+
+    /* ───── Progress bar ───── */
+    .progress-wrap { display: none; margin-bottom: 14px; }
+    .progress-wrap.show { display: block; }
+    .progress-label { font-size: 11px; font-weight: 600; color: var(--accent2); margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .progress-track { width: 100%; height: 6px; border-radius: 999px; background: var(--surface3); overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--cyan)); transition: width .4s ease; width: 0%; }
 
     /* ───── Pair cards ───── */
-    .pairs { display: flex; flex-direction: column; gap: 10px; }
-    .pair-card {
-      padding: 13px 14px; border-radius: 11px;
-      border: 1.5px solid var(--border); background: var(--surface2);
-      transition: box-shadow .15s;
-    }
-    .pair-card:hover { box-shadow: var(--sh); }
-    .pair-card.syncing { border-color: var(--blue-bd); background: var(--blue-lt); }
-    .pair-card.success { border-color: var(--green-bd); background: var(--green-lt); }
-    .pair-card.error   { border-color: var(--red-bd);   background: var(--red-lt);  }
-
-    .pair-dir {
-      display: inline-flex; align-items: center; gap: 5px;
-      font-size: 11px; font-weight: 700; color: var(--blue);
-      background: var(--blue-lt); border: 1px solid var(--blue-bd);
-      padding: 2px 9px; border-radius: 999px; margin-bottom: 7px;
-    }
-    .pair-meta { font-size: 11.5px; color: var(--muted); line-height: 1.6; word-break: break-all; margin-top: 2px; }
-    .pair-meta b { color: var(--text2); font-weight: 600; }
-
-    .pair-status {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 11.5px; margin-top: 7px; font-weight: 600;
-    }
+    .pairs-list { display: flex; flex-direction: column; gap: 8px; }
+    .pair-card { padding: 14px 16px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); transition: var(--transition); }
+    .pair-card:hover { border-color: var(--border2); }
+    .pair-card.syncing { border-color: var(--accent-bd); background: var(--accent-bg); }
+    .pair-card.success { border-color: var(--green-bd); background: var(--green-bg); }
+    .pair-card.error   { border-color: var(--red-bd);   background: var(--red-bg); }
+    .pair-card.hidden  { display: none; }
+    .pair-dir-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 3px 10px; border-radius: 5px; margin-bottom: 8px; background: var(--accent-bg); border: 1px solid var(--accent-bd); color: var(--accent2); }
+    .pair-info { font-size: 11.5px; color: var(--muted); line-height: 1.7; word-break: break-all; }
+    .pair-info b { color: var(--text2); font-weight: 600; }
+    .pair-status { display: flex; align-items: center; gap: 6px; font-size: 11px; margin-top: 8px; font-weight: 600; }
     .pair-status.idle    { color: var(--muted); }
-    .pair-status.syncing { color: var(--blue); }
+    .pair-status.syncing { color: var(--accent2); }
     .pair-status.success { color: var(--green); }
     .pair-status.error   { color: var(--red); }
-
     .spin { display: inline-block; animation: spin .7s linear infinite; }
     @keyframes spin { to{transform:rotate(360deg)} }
-
-    .pair-actions { margin-top: 9px; display: flex; gap: 7px; flex-wrap: wrap; }
+    .pair-btns { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .pair-btns button { padding: 6px 12px; font-size: 11px; }
+    .empty-state { text-align: center; padding: 32px 16px; color: var(--muted); font-size: 13px; }
+    .empty-state .empty-icon { font-size: 28px; margin-bottom: 8px; opacity: .6; }
 
     /* ───── Logs ───── */
+    .log-section { margin-top: 16px; }
     .log-box {
-      font-family: 'DM Mono', ui-monospace, monospace;
-      font-size: 11.5px; line-height: 1.55;
-      background: #f6f8fd;
-      border: 1.5px solid var(--border);
-      padding: 13px 15px; border-radius: 11px;
-      max-height: 280px; overflow: auto;
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.65;
+      background: var(--surface2); border: 1px solid var(--border);
+      padding: 14px 16px; border-radius: 10px;
+      max-height: 260px; overflow-y: auto;
       white-space: pre-wrap; color: var(--text2);
     }
-    .log-box::-webkit-scrollbar { width: 5px; }
+    .log-box::-webkit-scrollbar { width: 4px; }
+    .log-box::-webkit-scrollbar-track { background: transparent; }
     .log-box::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 999px; }
 
-    /* ───── Misc ───── */
-    .kbd {
-      font-family: 'DM Mono', monospace;
-      background: var(--surface2); border: 1px solid var(--border2);
-      padding: 2px 6px; border-radius: 5px; font-size: 11px; color: var(--text2);
-    }
-    .kbd.blue { background:var(--blue-lt); border-color:var(--blue-bd); color:var(--blue); }
+    .section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; align-items: center; gap: 10px; margin: 16px 0 8px; }
+    .section-label::after { content:''; flex:1; height:1px; background:var(--border); }
 
-    .sec-label {
-      font-size: 10.5px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .07em; color: var(--muted);
-      display: flex; align-items: center; gap: 8px; margin: 14px 0 9px;
+    /* ───── Confirm Modal ───── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,.45); backdrop-filter: blur(4px);
+      place-items: center; animation: modalFadeIn .2s ease;
     }
-    .sec-label::after { content:''; flex:1; height:1px; background:var(--border); }
-
-    .spacer { margin-top: 14px; }
-
-    .empty {
-      text-align: center; padding: 28px 16px;
-      color: var(--muted); font-size: 13px;
+    .modal-overlay.show { display: grid; }
+    @keyframes modalFadeIn { from{opacity:0} to{opacity:1} }
+    .modal-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r2); padding: 28px 24px 20px;
+      max-width: 420px; width: 90%; box-shadow: var(--sh2);
+      animation: modalSlide .25s ease;
     }
-    .empty .ico { font-size: 26px; margin-bottom: 6px; }
-
-    /* ───── interval selector ───── */
-    select {
-      border-radius: 8px; border: 1.5px solid var(--border);
-      background: var(--surface); color: var(--text); padding: 7px 10px;
-      font-size: 12.5px; font-family: inherit; outline: none;
-      cursor: pointer;
-    }
-    select:focus { border-color: var(--blue); }
-
-    .hd-pill {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 11.5px; color: var(--muted);
-    }
-
-    /* ───── How-to-use section ───── */
-    .howto {
-      margin-bottom: 18px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      box-shadow: var(--sh);
-      overflow: hidden;
-      animation: up .25s ease both;
-    }
-    .howto-hd {
-      display: flex; align-items: center; gap: 9px;
-      padding: 11px 16px;
-      border-bottom: 1px solid var(--border);
-      background: linear-gradient(90deg, var(--blue-lt) 0%, var(--surface2) 100%);
-      cursor: pointer; user-select: none;
-    }
-    .howto-hd-icon {
-      width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
-      background: var(--blue); display: grid; place-items: center;
-      color: #fff; font-size: 13px;
-      box-shadow: 0 2px 6px rgba(36,88,232,.28);
-    }
-    .howto-hd h2 {
-      font-size: 13px; font-weight: 700; letter-spacing: -.01em; color: var(--blue);
-    }
-    .howto-hd-sub { font-size: 11px; color: var(--muted); margin-left: 4px; }
-    .howto-toggle {
-      margin-left: auto; background: none; border: none; cursor: pointer;
-      color: var(--muted); font-size: 12px; padding: 3px 7px;
-      border-radius: 6px; transition: background .15s; font-family: inherit;
-    }
-    .howto-toggle:hover { background: var(--border); color: var(--text2); transform: none; box-shadow: none; }
-    .howto-body {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 0;
-      transition: all .25s;
-    }
-    .howto-body.collapsed { display: none; }
-    @media(max-width:720px){ .howto-body{ grid-template-columns: 1fr; } }
-
-    .howto-steps { padding: 16px 18px; border-right: 1px solid var(--border); }
-    @media(max-width:720px){ .howto-steps{ border-right:none; border-bottom: 1px solid var(--border); } }
-    .howto-steps h3 {
-      font-size: 10.5px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .07em; color: var(--muted); margin-bottom: 12px;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .howto-steps h3::after { content:''; flex:1; height:1px; background:var(--border); }
-
-    .ht-step { display: flex; gap: 11px; align-items: flex-start; margin-bottom: 11px; }
-    .ht-step:last-child { margin-bottom: 0; }
-    .ht-num {
-      flex-shrink: 0; width: 22px; height: 22px; border-radius: 999px;
-      background: var(--blue-lt); border: 1.5px solid var(--blue-bd);
-      display: grid; place-items: center;
-      font-size: 10px; font-weight: 700; color: var(--blue);
-      margin-top: 1px;
-    }
-    .ht-txt { font-size: 12.5px; line-height: 1.6; color: var(--text2); }
-    .ht-txt strong { color: var(--text); font-weight: 600; }
-    .ht-txt code {
-      font-family: 'DM Mono', monospace;
-      background: var(--surface2); border: 1px solid var(--border2);
-      padding: 1px 5px; border-radius: 5px; font-size: 11.5px; color: var(--blue);
-    }
-
-    .howto-notes { padding: 16px 18px; }
-    .howto-notes h3 {
-      font-size: 10.5px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .07em; color: var(--muted); margin-bottom: 12px;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .howto-notes h3::after { content:''; flex:1; height:1px; background:var(--border); }
-
-    .ht-note { display: flex; gap: 9px; align-items: flex-start; margin-bottom: 9px; font-size: 12px; color: var(--text2); line-height: 1.6; }
-    .ht-note:last-child { margin-bottom: 0; }
-    .ht-note-icon { flex-shrink: 0; font-size: 14px; margin-top: 1px; }
-    .ht-note b { color: var(--text); font-weight: 600; }
-    .ht-note .tag {
-      display: inline-block; font-size: 10.5px; font-weight: 700;
-      padding: 1px 7px; border-radius: 999px;
-    }
-    .tag-red   { background: var(--red-lt); border: 1px solid var(--red-bd); color: var(--red); }
-    .tag-green { background: var(--green-lt); border: 1px solid var(--green-bd); color: var(--green); }
-    .tag-amber { background: var(--amber-lt); border: 1px solid var(--amber-bd); color: var(--amber); }
+    @keyframes modalSlide { from{opacity:0;transform:translateY(16px)scale(.97)} to{opacity:1;transform:none} }
+    .modal-icon { font-size: 36px; text-align: center; margin-bottom: 12px; }
+    .modal-title { font-size: 16px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+    .modal-desc { font-size: 13px; color: var(--text2); text-align: center; line-height: 1.6; margin-bottom: 20px; }
+    .modal-desc b { color: var(--red); }
+    .modal-btns { display: flex; gap: 8px; justify-content: center; }
+    .modal-btns button { min-width: 100px; justify-content: center; }
   </style>
 </head>
 <body>
 
-<!-- ══════════ TOPBAR ══════════ -->
-<header class="bar">
-  <div class="bar-inner">
+<!-- ═══ CONFIRM MODAL ═══ -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box">
+    <div class="modal-icon" id="modalIcon"></div>
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-desc" id="modalDesc"></div>
+    <div class="modal-btns">
+      <button id="modalCancel">Cancel</button>
+      <button class="danger" id="modalConfirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TOPBAR ═══ -->
+<header class="topbar">
+  <div class="topbar-inner">
     <div class="brand">
-      <div class="logo-box">⇄</div>
+      <div class="brand-icon">&#8652;</div>
       <div>
-        <div class="brand-title">Sheet ↔ Lark/Feishu Sync</div>
-        <div class="brand-sub">Internal · OAuth · Background sync via Cron</div>
+        <h1>SHD Sync</h1>
+        <span>Sheet &#8596; Lark/Feishu</span>
       </div>
     </div>
-    <div class="auth-chip" id="authChip">🔒 Not signed in</div>
+    <div class="topbar-right">
+      <button class="theme-toggle" id="btnTheme" title="Toggle dark/light">&#9788;</button>
+      <div class="user-badge" id="authChip">
+        <div class="user-dot"></div>
+        Not signed in
+      </div>
+    </div>
   </div>
 </header>
 
-<!-- ══════════ MAIN ══════════ -->
-<div class="wrap">
+<!-- ═══ MAIN ═══ -->
+<div class="container">
+
+  <!-- Last Sync Summary -->
+  <div class="sync-summary" id="syncSummary"></div>
 
   <!-- Stats -->
   <div class="stats">
-    <div class="stat-card">
-      <div class="stat-val stat-accent" id="sPairs">—</div>
-      <div class="stat-lbl">Active Pairs</div>
+    <div class="stat">
+      <div class="stat-num purple" id="sPairs">&mdash;</div>
+      <div class="stat-label">Active Pairs</div>
     </div>
-    <div class="stat-card">
-      <div class="stat-val stat-good" id="sSynced">—</div>
-      <div class="stat-lbl">Synced OK</div>
+    <div class="stat">
+      <div class="stat-num green" id="sSynced">&mdash;</div>
+      <div class="stat-label">Synced OK</div>
     </div>
-    <div class="stat-card">
-      <div class="stat-val stat-teal" id="sSheet">—</div>
-      <div class="stat-lbl">History Sheet</div>
+    <div class="stat">
+      <div class="stat-num cyan" id="sSheet">&mdash;</div>
+      <div class="stat-label">History Sheet</div>
     </div>
-    <div class="stat-card">
-      <div class="stat-val" id="sMode">Full-replace</div>
-      <div class="stat-lbl">Sync Mode</div>
+    <div class="stat">
+      <div class="stat-num" id="sMode">Full-replace</div>
+      <div class="stat-label">Sync Mode</div>
     </div>
   </div>
 
-  <!-- How-to-use -->
+  <!-- How-to -->
   <div class="howto" id="howtoSection">
     <div class="howto-hd" onclick="toggleHowto()">
-      <div class="howto-hd-icon">📖</div>
-      <h2>วิธีการใช้งาน</h2>
-      <span class="howto-hd-sub">— คลิกเพื่อย่อ/ขยาย</span>
-      <button class="howto-toggle" id="howtoToggleBtn" onclick="event.stopPropagation();toggleHowto()">▲ ย่อ</button>
+      <h2>&#128214; วิธีการใช้งาน</h2>
+      <button class="howto-arrow" id="howtoToggleBtn" onclick="event.stopPropagation();toggleHowto()">&#9650; ย่อ</button>
     </div>
     <div class="howto-body" id="howtoBody">
-      <!-- Steps -->
-      <div class="howto-steps">
-        <h3>ขั้นตอนการใช้งาน</h3>
-
-        <div class="ht-step">
-          <div class="ht-num">1</div>
-          <div class="ht-txt">
-            <strong>Login ด้วย Google</strong><br>
-            กดปุ่ม <code>🔑 Login with Google (SHD)</code> เพื่อยืนยันตัวตน — ใช้บัญชีที่มีสิทธิ์เข้าถึง Google Sheet ที่ต้องการ
-          </div>
+      <div class="howto-grid">
+        <div class="howto-col">
+          <h3>ขั้นตอน</h3>
+          <div class="hw-step"><div class="hw-num">1</div><div class="hw-txt"><strong>Login ด้วย Google</strong><br>กดปุ่ม Login &#8212; ใช้บัญชีที่มีสิทธิ์เข้าถึง Sheet ที่ต้องการ</div></div>
+          <div class="hw-step"><div class="hw-num">2</div><div class="hw-txt"><strong>กรอก URL ทั้งสองฝั่ง</strong><br>ใส่ <code>Google Sheet URL</code> และ <code>Lark Base URL</code></div></div>
+          <div class="hw-step"><div class="hw-num">3</div><div class="hw-txt"><strong>เลือก Direction</strong><br><code>Lark &#8594; Sheet</code> หรือ <code>Sheet &#8594; Lark</code></div></div>
+          <div class="hw-step"><div class="hw-num">4</div><div class="hw-txt"><strong>Save Pair หรือ Sync Now</strong><br><code>Save Pair</code> = Cron sync อัตโนมัติ | <code>Sync Now</code> = sync ทันที</div></div>
         </div>
-
-        <div class="ht-step">
-          <div class="ht-num">2</div>
-          <div class="ht-txt">
-            <strong>กรอก URL ทั้งสองฝั่ง</strong><br>
-            ใส่ <code>Google Sheet URL</code> และ <code>Lark / Feishu Base URL</code> ลงในช่องที่กำหนดใน Section 1
-          </div>
-        </div>
-
-        <div class="ht-step">
-          <div class="ht-num">3</div>
-          <div class="ht-txt">
-            <strong>เลือก Sync Direction</strong><br>
-            <code>Lark → Sheet</code> ข้อมูลไหลจาก Lark มาที่ Sheet<br>
-            <code>Sheet → Lark</code> ข้อมูลไหลจาก Sheet ไปที่ Lark
-          </div>
-        </div>
-
-        <div class="ht-step">
-          <div class="ht-num">4</div>
-          <div class="ht-txt">
-            <strong>บันทึก Pair</strong><br>
-            กด <code>💾 Save Pair</code> เพื่อบันทึก — Cron จะ sync อัตโนมัติแม้ปิดหน้าต่าง<br>
-            หรือกด <code>⚡ Sync Now</code> เพื่อ sync ทันที
-          </div>
-        </div>
-
-        <div class="ht-step">
-          <div class="ht-num">5</div>
-          <div class="ht-txt">
-            <strong>ตั้ง Auto-sync (ไม่บังคับ)</strong><br>
-            เลือกความถี่ใน Section 2 เช่น <code>ทุก 5 นาที</code> แล้วกด <code>🔄 เปิด Auto-sync</code>
-          </div>
-        </div>
-      </div>
-
-      <!-- Notes -->
-      <div class="howto-notes">
-        <h3>สิ่งที่ควรรู้</h3>
-
-        <div class="ht-note">
-          <span class="ht-note-icon">⚠️</span>
-          <div>
-            <b>Full-replace</b> <span class="tag tag-red">ข้อควรระวัง</span><br>
-            ทุก sync จะ<b>ลบข้อมูลทั้งหมดในปลายทาง</b>แล้ว sync ใหม่ทั้งหมด — ข้อมูลที่แก้ไขเองในฝั่งปลายทางจะหายไป
-          </div>
-        </div>
-
-        <div class="ht-note">
-          <span class="ht-note-icon">⏱️</span>
-          <div>
-            <b>แนะนำ interval 5–30 นาที</b> <span class="tag tag-amber">Performance</span><br>
-            ช่วยลด Vercel function usage และหลีกเลี่ยง rate limit ของ Google/Lark API
-          </div>
-        </div>
-
-        <div class="ht-note">
-          <span class="ht-note-icon">💾</span>
-          <div>
-            <b>Save Pair vs Sync Now</b> <span class="tag tag-green">Tips</span><br>
-            Save Pair = บันทึกให้ Cron รันต่อเนื่อง | Sync Now = sync ครั้งเดียวทันที ไม่บันทึก
-          </div>
-        </div>
-
-        <div class="ht-note">
-          <span class="ht-note-icon">🔍</span>
-          <div>
-            <b>ดู Log การ sync</b><br>
-            ดูได้ที่ส่วน <b>Logs</b> ด้านล่าง หรือเข้า Vercel Dashboard → Functions logs โดยตรง
-          </div>
-        </div>
-
-        <div class="ht-note">
-          <span class="ht-note-icon">🔒</span>
-          <div>
-            <b>สิทธิ์การเข้าถึง</b><br>
-            ต้องใช้บัญชีในโดเมนที่อนุญาตเท่านั้น และต้องมีสิทธิ์ Viewer ขึ้นไปใน Sheet/Base ที่ต้องการ sync
-          </div>
+        <div class="howto-col">
+          <h3>สิ่งที่ควรรู���</h3>
+          <div class="hw-note"><span class="hw-icon">&#9888;&#65039;</span><div><b>Full-replace</b> <span class="hw-tag warn">ระวัง</span><br>ทุก sync จะลบข้อมูลปลายทางทั้งหมดแล้ว sync ใหม่</div></div>
+          <div class="hw-note"><span class="hw-icon">&#9201;&#65039;</span><div><b>แนะนำ interval 5&#8211;30 นาที</b> <span class="hw-tag info">Performance</span><br>ลด API rate limit</div></div>
+          <div class="hw-note"><span class="hw-icon">&#128274;</span><div><b>สิทธิ์การเ���้าถึง</b><br>ต้องใช้บัญชีในโดเมนที่อนุญาต และมีสิทธิ์ Viewer ขึ้นไป</div></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Main grid -->
-  <div class="grid">
+  <!-- Main Grid -->
+  <div class="main-grid">
 
-    <!-- ── Left: Connect & Sync ── -->
+    <!-- Left: Connect & Sync -->
     <section class="card">
-      <div class="card-hd">
-        <div class="card-hd-l">
-          <span class="step">1</span>
+      <div class="card-header">
+        <div class="card-header-left">
+          <div class="card-step">1</div>
           <h2>Connect &amp; Sync</h2>
         </div>
-        <div class="hd-pill">
-          History: <span class="kbd blue" id="histLabel">loading…</span>
-        </div>
+        <span id="histLabel" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">loading...</span>
       </div>
-      <div class="card-bd">
-
-        <div class="btn-row" style="margin-top:0">
-          <button class="pri" id="btnLogin">🔑 Login with Google (SHD)</button>
+      <div class="card-body">
+        <div class="btn-group" style="margin-bottom:16px">
+          <button class="primary" id="btnLogin">&#128273; Login with Google</button>
           <button id="btnLogout" disabled>Logout</button>
         </div>
 
-        <label>Google Sheet URL</label>
-        <input id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/.../edit#gid=..." disabled />
+        <div class="field">
+          <label class="field-label">Google Sheet URL</label>
+          <input class="field-input" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/..." disabled />
+        </div>
+        <div class="field">
+          <label class="field-label">Lark / Feishu Base URL</label>
+          <input class="field-input" id="larkUrl" placeholder="https://...larksuite.com/base/<baseId>?table=<tableId>" disabled />
+        </div>
 
-        <label>Lark / Feishu Base URL</label>
-        <input id="larkUrl" placeholder="https://...larksuite.com/base/<baseId>?table=<tableId>" disabled />
-
-        <div class="sec-label">Sync Direction</div>
-        <div class="dir-row">
-          <div class="dir-chip" id="modeLark" data-active="true">
-            <div><b>Lark/Feishu → Sheet</b><small>Lark เป็นฝั่งหลัก</small></div>
-            <div class="dir-icon">↙</div>
+        <div class="section-label">Sync Direction</div>
+        <div class="dir-group">
+          <div class="dir-btn" id="modeLark" data-active="true">
+            <b>Lark &#8594; Sheet</b>
+            <small>Lark เป็นฝั่งหลัก</small>
           </div>
-          <div class="dir-chip" id="modeSheet" data-active="false">
-            <div><b>Sheet → Lark/Feishu</b><small>Sheet เป็นฝั่งหลัก</small></div>
-            <div class="dir-icon">↗</div>
+          <div class="dir-btn" id="modeSheet" data-active="false">
+            <b>Sheet &#8594; Lark</b>
+            <small>Sheet เป็นฝั่งหลัก</small>
           </div>
         </div>
 
-        <div class="btn-row">
-          <button class="ok"  id="btnSavePair" disabled>💾 Save Pair</button>
-          <button class="pri" id="btnSyncNow"  disabled>⚡ Sync Now</button>
-          <button            id="btnReload"   disabled>↻ Reload</button>
+        <!-- Edit mode indicator -->
+        <div id="editBanner" style="display:none;padding:10px 14px;border-radius:8px;background:var(--amber-bg);border:1px solid var(--amber-bd);color:var(--amber);font-size:12px;font-weight:600;margin-bottom:12px;display:none;align-items:center;justify-content:space-between">
+          <span>&#9998; Editing pair #<span id="editRowId"></span></span>
+          <button id="btnCancelEdit" style="padding:4px 10px;font-size:11px">Cancel</button>
         </div>
 
-        <div class="tip">
-          • <b>Save Pair</b> บันทึกให้ Cron sync ต่ออัตโนมัติแม้ปิดเว็บ<br/>
-          • Cron endpoint: <span class="kbd" id="cronUrl">…</span><br/>
-          • Auto-sync ทำ <b>Full-replace</b> (ลบทั้งหมด แล้ว sync ใหม่) ทุกรอบ
+        <div class="btn-group">
+          <button class="success" id="btnSavePair" disabled>&#128190; Save Pair</button>
+          <button class="primary" id="btnSyncNow" disabled>&#9889; Sync Now</button>
+          <button id="btnReload" disabled>&#8635; Reload</button>
+        </div>
+
+        <div class="hint">
+          <b>Save Pair</b> = Cron sync อัตโนมัติแม้ปิดเว็บ<br>
+          Cron endpoint: <span class="mono" id="cronUrl">...</span><br>
+          Auto-sync ทำ <b>Full-replace</b> ทุกร��บ
         </div>
       </div>
     </section>
 
-    <!-- ── Right: Saved Pairs ── -->
+    <!-- Right: Saved Pairs -->
     <section class="card">
-      <div class="card-hd">
-        <div class="card-hd-l">
-          <span class="step">2</span>
+      <div class="card-header">
+        <div class="card-header-left">
+          <div class="card-step">2</div>
           <h2>Saved Pairs</h2>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          <span class="auth-chip" id="pairCount" style="padding:4px 10px;font-size:11.5px">0 pairs</span>
-          <button class="teal" id="btnSyncAll" disabled style="padding:6px 11px;font-size:12px">⚡ Sync All</button>
+          <span class="badge-count" id="pairCount">0 pairs</span>
+          <button class="cyan-btn" id="btnSyncAll" disabled style="padding:6px 12px;font-size:11px">&#9889; Sync All</button>
         </div>
       </div>
-      <div class="card-bd">
-
+      <div class="card-body">
         <!-- Auto-sync bar -->
         <div class="auto-bar" id="autoBar" style="display:none">
-          <div class="auto-bar-l">
-            <div class="pulse"></div>
-            Auto-sync active
-          </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <select id="autoInterval" style="padding:5px 8px;font-size:11.5px">
-              <option value="60">ทุก 1 นาที</option>
-              <option value="300" selected>ทุก 5 นาที</option>
-              <option value="600">ทุก 10 นาที</option>
-              <option value="1800">ทุก 30 นาที</option>
+          <div class="auto-bar-left"><div class="pulse-dot"></div>Auto-sync active</div>
+          <div class="auto-bar-right">
+            <select id="autoInterval">
+              <option value="60">ทุก 1 น���ที</option>
+              <option value="300" selected>ท���ก 5 นาที</option>
+              <option value="600">ทุก 10 ���าที</option>
+              <option value="1800">��ุก 30 นาที</option>
             </select>
-            <span class="auto-cd" id="autoCd">—</span>
-            <button id="btnStopAuto" style="padding:5px 10px;font-size:11.5px">⏹ Stop</button>
+            <span class="countdown" id="autoCd">&mdash;</span>
+            <button id="btnStopAuto" style="padding:5px 10px;font-size:11px">&#9209; Stop</button>
           </div>
         </div>
+        <div id="autoStartRow" style="margin-bottom:12px;display:none">
+          <button class="cyan-btn" id="btnStartAuto" style="width:100%;justify-content:center;padding:10px">&#128260; เปิด Auto-sync</button>
+        </div>
 
-        <div id="autoStartRow" style="margin-bottom:10px;display:none">
-          <button class="teal" id="btnStartAuto" style="width:100%;justify-content:center">
-            🔄 เปิด Auto-sync
-          </button>
+        <!-- Progress bar -->
+        <div class="progress-wrap" id="progressWrap">
+          <div class="progress-label"><span id="progressText">Syncing...</span><span id="progressPct">0%</span></div>
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+
+        <!-- Search -->
+        <div class="search-bar" id="searchBar" style="display:none">
+          <input class="search-input" id="searchInput" placeholder="Search pairs by URL or direction..." />
         </div>
 
         <!-- Pairs list -->
-        <div class="pairs" id="pairsList">
-          <div class="empty"><div class="ico">🔗</div>Login แล้ว load pairs</div>
+        <div class="pairs-list" id="pairsList">
+          <div class="empty-state"><div class="empty-icon">&#128279;</div>Login แล้ว load pairs</div>
         </div>
 
-        <div class="tip" style="margin-top:12px">
-          Cron: <span class="kbd" id="cronUrl2">…</span> · แนะนำทุก 5–30 นาที
+        <div class="hint" style="margin-top:14px">
+          Cron: <span class="mono" id="cronUrl2">...</span> &#183; แนะนำทุก 5&#8211;30 นาที
         </div>
       </div>
     </section>
   </div>
 
   <!-- Logs -->
-  <div class="spacer"></div>
-  <section class="card">
-    <div class="card-hd">
-      <div class="card-hd-l">
-        <span class="step" style="background:var(--amber-lt);border-color:var(--amber-bd);color:var(--amber)">✦</span>
-        <h2>Logs</h2>
+  <div class="log-section">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-left">
+          <div class="card-step" style="background:var(--amber-bg);border-color:var(--amber-bd);color:var(--amber)">&#10022;</div>
+          <h2>Logs</h2>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button id="btnExportLog" style="padding:5px 12px;font-size:11px">&#128229; Export</button>
+          <button id="btnClearLog" style="padding:5px 12px;font-size:11px">&#128465; Clear</button>
+        </div>
       </div>
-      <div style="display:flex;gap:8px">
-        <button id="btnClearLog" style="padding:5px 10px;font-size:11.5px">🗑 Clear</button>
-        <span class="auth-chip" style="font-size:11px">ดู Vercel logs ได้ด้วย</span>
+      <div class="card-body">
+        <div class="log-box" id="log">&mdash; ready &mdash;</div>
       </div>
     </div>
-    <div class="card-bd">
-      <div class="log-box" id="log">— ready —</div>
-    </div>
-  </section>
+  </div>
 
 </div>
 
 <script>
-// ═════════════════════════════════════════════
+// ==================================================
 // STATE
-// ═════════════════════════════════════════════
+// ==================================================
 const CONFIG = { historySheetId: null, allowedDomain: null };
 let refreshToken = localStorage.getItem('google_refresh_token') || '';
 let userEmail    = localStorage.getItem('google_user_email')    || '';
@@ -678,26 +584,66 @@ let autoSecondsLeft = 0;
 let cdTimer      = null;
 let lastPairs    = [];
 let syncedCount  = 0;
+let editingRowId = null; // for edit pair feature
 
-// ─── elements ───
 const $ = id => document.getElementById(id);
 
-// ─── log ───
+// ==================================================
+// 1) DARK/LIGHT MODE TOGGLE
+// ==================================================
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('shd_theme', theme);
+  $('btnTheme').textContent = theme === 'dark' ? '\u263E' : '\u2600';
+  $('btnTheme').title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+}
+$('btnTheme').onclick = () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+};
+// init theme
+applyTheme(localStorage.getItem('shd_theme') || 'light');
+
+// ==================================================
+// 4) BROWSER NOTIFICATIONS
+// ==================================================
+function requestNotifPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+function sendNotif(title, body) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try { new Notification(title, { body, icon: '' }); } catch {}
+  }
+}
+
+// ==================================================
+// LOG + HELPERS
+// ==================================================
 function log(...args) {
   const s = args.map(a => typeof a === 'string' ? a : JSON.stringify(a, null, 2)).join(' ');
   const box = $('log');
-  box.textContent = (box.textContent === '— ready —' ? '' : box.textContent + '\n') + `[${new Date().toLocaleTimeString()}] ` + s;
+  box.textContent = (box.textContent === '\u2014 ready \u2014' ? '' : box.textContent + '\n') + `[${new Date().toLocaleTimeString()}] ` + s;
   box.scrollTop = box.scrollHeight;
   console.log(...args);
 }
-$('btnClearLog').onclick = () => { $('log').textContent = '— ready —'; };
+$('btnClearLog').onclick = () => { $('log').textContent = '\u2014 ready \u2014'; };
 
-// ─── fetch helper ───
+// 5) EXPORT LOGS
+$('btnExportLog').onclick = () => {
+  const text = $('log').textContent;
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `shd-sync-log-${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  log('Exported logs');
+};
+
 async function fetchJson(url, opts = {}) {
-  const res = await fetch(url, {
-    ...opts,
-    headers: { 'content-type': 'application/json', ...(opts.headers || {}) }
-  });
+  const res = await fetch(url, { ...opts, headers: { 'content-type': 'application/json', ...(opts.headers || {}) } });
   const txt = await res.text();
   let data;
   try { data = JSON.parse(txt); } catch { data = { raw: txt }; }
@@ -705,31 +651,61 @@ async function fetchJson(url, opts = {}) {
   return data;
 }
 
-// ═════════════════════════════════════════════
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ==================================================
+// 8) CONFIRM MODAL
+// ==================================================
+function showConfirm({ icon, title, desc, confirmText, confirmClass }) {
+  return new Promise(resolve => {
+    $('modalIcon').textContent = icon || '\u26a0\ufe0f';
+    $('modalTitle').textContent = title || 'Confirm';
+    $('modalDesc').innerHTML = desc || '';
+    $('modalConfirm').textContent = confirmText || 'Confirm';
+    $('modalConfirm').className = confirmClass || 'danger';
+    $('confirmModal').classList.add('show');
+
+    const cleanup = (val) => {
+      $('confirmModal').classList.remove('show');
+      $('modalConfirm').onclick = null;
+      $('modalCancel').onclick = null;
+      resolve(val);
+    };
+    $('modalConfirm').onclick = () => cleanup(true);
+    $('modalCancel').onclick  = () => cleanup(false);
+  });
+}
+
+// ==================================================
 // AUTH UI
-// ═════════════════════════════════════════════
+// ==================================================
 function setAuthed(ok) {
-  $('btnLogout').disabled  = !ok;
-  $('sheetUrl').disabled   = !ok;
-  $('larkUrl').disabled    = !ok;
+  $('btnLogout').disabled   = !ok;
+  $('sheetUrl').disabled    = !ok;
+  $('larkUrl').disabled     = !ok;
   $('btnSavePair').disabled = !ok;
   $('btnSyncNow').disabled  = !ok;
   $('btnReload').disabled   = !ok;
   $('btnSyncAll').disabled  = !ok;
 
   const chip = $('authChip');
-  chip.textContent = ok ? `✅ ${userEmail}` : '🔒 Not signed in';
-  chip.className = 'auth-chip' + (ok ? ' on' : '');
-
   if (ok) {
-    $('autoStartRow').style.display = 'block';
+    chip.innerHTML = `<div class="user-dot"></div>${escHtml(userEmail)}`;
+    chip.className = 'user-badge active';
+    requestNotifPermission();
   } else {
-    $('autoStartRow').style.display = 'none';
-    stopAutoSync();
+    chip.innerHTML = '<div class="user-dot"></div>Not signed in';
+    chip.className = 'user-badge';
   }
+  $('autoStartRow').style.display = ok ? 'block' : 'none';
+  if (!ok) stopAutoSync();
 }
 
-// ─── mode chips ───
+// mode chips
 function setMode(m) {
   masterMode = m;
   $('modeLark').dataset.active  = m === 'lark-to-sheet' ? 'true' : 'false';
@@ -738,9 +714,9 @@ function setMode(m) {
 $('modeLark').onclick  = () => setMode('lark-to-sheet');
 $('modeSheet').onclick = () => setMode('sheet-to-lark');
 
-// ═════════════════════════════════════════════
+// ==================================================
 // OAUTH POPUP
-// ═════════════════════════════════════════════
+// ==================================================
 function openPopup(url) {
   const w = 520, h = 680;
   const y = window.top.outerHeight/2 + window.top.screenY - h/2;
@@ -751,7 +727,7 @@ function openPopup(url) {
 $('btnLogin').onclick = () => {
   log('Opening Google login...');
   const p = openPopup('/api/auth/google/start');
-  if (!p) alert('Popup ถูกบล็อก กรุณาอนุญาต popup แล้วลองใหม่');
+  if (!p) alert('Popup blocked \u2014 please allow popups');
 };
 
 window.addEventListener('message', async ev => {
@@ -760,16 +736,16 @@ window.addEventListener('message', async ev => {
   if (msg.ok) {
     refreshToken = msg.refresh_token || '';
     userEmail    = msg.email || '';
-    if (!refreshToken) { alert('ไม่ได้รับ refresh_token ลอง login ใหม่'); return; }
+    if (!refreshToken) { alert('No refresh_token received. Try login again.'); return; }
     localStorage.setItem('google_refresh_token', refreshToken);
     localStorage.setItem('google_user_email', userEmail);
-    log(`✅ Logged in as ${userEmail}`);
+    log('\u2705 Logged in as ' + userEmail);
     setAuthed(true);
     await loadPairs();
-    startAutoSync(); // auto-start on login
+    startAutoSync();
   } else {
-    log(`❌ Login failed: ${msg.error}`);
-    alert(`Login failed: ${msg.error}`);
+    log('\u274c Login failed: ' + msg.error);
+    alert('Login failed: ' + msg.error);
   }
 });
 
@@ -780,246 +756,392 @@ $('btnLogout').onclick = () => {
   refreshToken = ''; userEmail = '';
   lastPairs = [];
   setAuthed(false);
-  $('pairsList').innerHTML = '<div class="empty"><div class="ico">🔗</div>Login แล้ว load pairs</div>';
+  cancelEdit();
+  $('pairsList').innerHTML = '<div class="empty-state"><div class="empty-icon">\ud83d\udd17</div>Login \u0e41\u0e25\u0e49\u0e27 load pairs</div>';
   $('pairCount').textContent = '0 pairs';
-  $('sPairs').textContent = '—';
-  $('sSynced').textContent = '—';
+  $('sPairs').textContent = '\u2014';
+  $('sSynced').textContent = '\u2014';
+  $('searchBar').style.display = 'none';
+  hideSyncSummary();
   log('Logged out');
 };
 
-// ═════════════════════════════════════════════
-// PAIRS
-// ═════════════════════════════════════════════
+// ==================================================
+// 3) EDIT PAIR
+// ==================================================
+function startEdit(pair) {
+  editingRowId = pair.rowId;
+  $('sheetUrl').value = pair.sheetUrl;
+  $('larkUrl').value  = pair.larkUrl;
+  setMode(pair.direction || 'lark-to-sheet');
+  $('editBanner').style.display = 'flex';
+  $('editRowId').textContent = pair.rowId;
+  $('btnSavePair').textContent = '\u2714 Update Pair';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function cancelEdit() {
+  editingRowId = null;
+  $('editBanner').style.display = 'none';
+  $('btnSavePair').innerHTML = '&#128190; Save Pair';
+  $('sheetUrl').value = '';
+  $('larkUrl').value = '';
+}
+$('btnCancelEdit').onclick = cancelEdit;
+
+// ==================================================
+// 6) PROGRESS BAR
+// ==================================================
+function showProgress(current, total, text) {
+  const wrap = $('progressWrap');
+  wrap.classList.add('show');
+  const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+  $('progressFill').style.width = pct + '%';
+  $('progressPct').textContent = pct + '%';
+  $('progressText').textContent = text || 'Syncing...';
+}
+function hideProgress() {
+  $('progressWrap').classList.remove('show');
+  $('progressFill').style.width = '0%';
+}
+
+// ==================================================
+// 7) LAST SYNC SUMMARY
+// ==================================================
+let lastSyncTime = null;
+let lastSyncOk = 0;
+let lastSyncFail = 0;
+function updateSyncSummary() {
+  const el = $('syncSummary');
+  const total = lastSyncOk + lastSyncFail;
+  if (!lastSyncTime || total === 0) { el.classList.remove('show'); return; }
+  const timeStr = new Date(lastSyncTime).toLocaleString('th-TH');
+  el.innerHTML = `\u26a1 Sync ล่าสุด: <b>${timeStr}</b> &mdash; สำเร็จ <b>${lastSyncOk}/${total}</b> pairs` +
+    (lastSyncFail > 0 ? ` &mdash; <span style="color:var(--red)">ล้มเหลว ${lastSyncFail}</span>` : '');
+  el.className = 'sync-summary show' + (lastSyncFail > 0 ? ' has-error' : '');
+}
+function hideSyncSummary() {
+  $('syncSummary').classList.remove('show');
+  lastSyncTime = null;
+}
+
+// ==================================================
+// PAIRS — SAVE / SYNC
+// ==================================================
 function getInputs() {
   const s = $('sheetUrl').value.trim();
   const l = $('larkUrl').value.trim();
-  if (!s || !l) throw new Error('กรุณาใส่ลิงก์ให้ครบ');
+  if (!s || !l) throw new Error('\u0e01\u0e23\u0e38\u0e13\u0e32\u0e43\u0e2a\u0e48\u0e25\u0e34\u0e07\u0e01\u0e4c\u0e43\u0e2b\u0e49\u0e04\u0e23\u0e1a');
   return { sheetUrl: s, larkUrl: l, direction: masterMode };
 }
 
 $('btnSavePair').onclick = async () => {
   try {
-    const payload = { ...getInputs(), refreshToken, userEmail };
-    log('Saving pair...');
-    const out = await fetchJson('/api/pairs', { method: 'POST', body: JSON.stringify(payload) });
-    log('✅ Pair saved', out);
+    if (editingRowId) {
+      // Deactivate old, save new
+      log('Updating pair #' + editingRowId + '...');
+      await fetchJson('/api/pairs', { method: 'PUT', body: JSON.stringify({ refreshToken, rowId: editingRowId, active: false }) });
+      const payload = { ...getInputs(), refreshToken, userEmail };
+      const out = await fetchJson('/api/pairs', { method: 'POST', body: JSON.stringify(payload) });
+      log('\u2705 Pair updated', out);
+      cancelEdit();
+    } else {
+      const payload = { ...getInputs(), refreshToken, userEmail };
+      log('Saving pair...');
+      const out = await fetchJson('/api/pairs', { method: 'POST', body: JSON.stringify(payload) });
+      log('\u2705 Pair saved', out);
+    }
     await loadPairs();
-  } catch(e) { log(`❌ Save error: ${e.message}`); alert(e.message); }
+  } catch(e) { log('\u274c Save error: ' + e.message); alert(e.message); }
 };
 
 $('btnSyncNow').onclick = async () => {
+  const ok = await showConfirm({
+    icon: '\u26a0\ufe0f',
+    title: 'Full-replace Sync',
+    desc: 'ข้อมูล<b>ปลายทางจะถูกลบทั้งหมด</b>แล้ว sync ใหม่<br>ต้องการดำเนินการ?',
+    confirmText: 'Sync Now',
+    confirmClass: 'primary'
+  });
+  if (!ok) return;
   try {
     const payload = { ...getInputs(), refreshToken, userEmail, source: 'manual', forceNew: true };
     log('Manual sync...');
     const out = await fetchJson('/api/sync', { method: 'POST', body: JSON.stringify({ pairs: [payload] }) });
-    log('✅ Sync result', out);
+    log('\u2705 Sync result', out);
+    sendNotif('SHD Sync', 'Manual sync completed');
     await loadPairs();
-  } catch(e) { log(`❌ Sync error: ${e.message}`); alert(e.message); }
+  } catch(e) { log('\u274c Sync error: ' + e.message); sendNotif('SHD Sync', 'Sync failed: ' + e.message); alert(e.message); }
 };
 
 $('btnReload').onclick = loadPairs;
-
-// ─── Sync All ───
 $('btnSyncAll').onclick = () => syncAllPairs();
 
 async function syncAllPairs() {
   if (!lastPairs.length) { log('No pairs to sync'); return; }
-  log(`🔄 Syncing all ${lastPairs.length} pairs (full-replace)...`);
+
+  const ok = await showConfirm({
+    icon: '\ud83d\udd04',
+    title: 'Sync All ' + lastPairs.length + ' Pairs',
+    desc: 'จะทำ <b>Full-replace</b> ทุก pair<br>ข้อมูลปลายทางทั้งหมดจะถูกลบแล้ว sync ใหม่',
+    confirmText: 'Sync All',
+    confirmClass: 'primary'
+  });
+  if (!ok) return;
+
+  log('\ud83d\udd04 Syncing all ' + lastPairs.length + ' pairs (full-replace)...');
   syncedCount = 0;
-  for (const p of lastPairs) {
-    await syncOnePair(p);
+  let failCount = 0;
+  showProgress(0, lastPairs.length, 'Starting...');
+
+  for (let i = 0; i < lastPairs.length; i++) {
+    showProgress(i, lastPairs.length, `Syncing ${i+1}/${lastPairs.length}...`);
+    const before = syncedCount;
+    await syncOnePair(lastPairs[i]);
+    if (syncedCount === before) failCount++;
   }
+
+  showProgress(lastPairs.length, lastPairs.length, 'Done!');
+  setTimeout(hideProgress, 2000);
+
   $('sSynced').textContent = String(syncedCount);
-  log(`✅ All pairs synced. OK: ${syncedCount}/${lastPairs.length}`);
+
+  // 7) Update summary
+  lastSyncTime = new Date();
+  lastSyncOk = syncedCount;
+  lastSyncFail = failCount;
+  updateSyncSummary();
+
+  const msg = `All pairs synced. OK: ${syncedCount}/${lastPairs.length}`;
+  log('\u2705 ' + msg);
+  sendNotif('SHD Sync', msg);
 }
 
 async function syncOnePair(pair) {
-  setPairStatus(pair.rowId, 'syncing', '⟳ Syncing…');
+  setPairStatus(pair.rowId, 'syncing', '<span class="spin">\u21bb</span> Syncing\u2026');
   markCard(pair.rowId, 'syncing');
   try {
     const out = await fetchJson('/api/sync', {
       method: 'POST',
-      body: JSON.stringify({
-        pairs: [{
-          ...pair,
-          refreshToken,
-          userEmail: pair.user || userEmail,
-          source: 'auto',
-          forceNew: true  // always full-replace
-        }]
-      })
+      body: JSON.stringify({ pairs: [{ ...pair, refreshToken, userEmail: pair.user || userEmail, source: 'auto', forceNew: true }] })
     });
     const r = out.results?.[0];
     const rows = r?.rowCount ?? '?';
-    setPairStatus(pair.rowId, 'success', `✅ ${rows} rows · ${new Date().toLocaleTimeString()}`);
+    setPairStatus(pair.rowId, 'success', '\u2705 ' + rows + ' rows \u00b7 ' + new Date().toLocaleTimeString());
     markCard(pair.rowId, 'success');
     syncedCount++;
-    log(`✅ [${pair.sheetUrl.split('/d/')[1]?.slice(0,12) || pair.sheetId}] ${rows} rows`);
-    // update lastSyncAt display
+    log('\u2705 [' + (pair.sheetUrl.split('/d/')[1]?.slice(0,12) || pair.sheetId) + '] ' + rows + ' rows');
     updatePairMeta(pair.rowId, new Date().toISOString());
   } catch(e) {
-    setPairStatus(pair.rowId, 'error', `❌ ${e.message}`);
+    setPairStatus(pair.rowId, 'error', '\u274c ' + e.message);
     markCard(pair.rowId, 'error');
-    log(`❌ Pair error [rowId=${pair.rowId}]: ${e.message}`);
+    log('\u274c Pair error [rowId=' + pair.rowId + ']: ' + e.message);
   }
 }
 
 function setPairStatus(rowId, cls, text) {
-  const el = document.querySelector(`[data-status="${rowId}"]`);
+  const el = document.querySelector('[data-status="' + rowId + '"]');
   if (!el) return;
-  el.className = `pair-status ${cls}`;
+  el.className = 'pair-status ' + cls;
   el.innerHTML = text;
 }
-
 function markCard(rowId, cls) {
-  const card = document.querySelector(`[data-card="${rowId}"]`);
+  const card = document.querySelector('[data-card="' + rowId + '"]');
   if (!card) return;
-  card.className = `pair-card ${cls}`;
-  setTimeout(() => {
-    if (card.className.includes(cls)) card.className = 'pair-card';
-  }, 4000);
+  card.className = 'pair-card ' + cls;
+  setTimeout(() => { if (card.className.includes(cls)) card.className = 'pair-card'; }, 4000);
 }
-
 function updatePairMeta(rowId, ts) {
-  const el = document.querySelector(`[data-lastsync="${rowId}"]`);
+  const el = document.querySelector('[data-lastsync="' + rowId + '"]');
   if (el) el.textContent = new Date(ts).toLocaleString('th-TH');
 }
 
-// ─── Load Pairs ───
+// ==================================================
+// LOAD PAIRS + 2) SEARCH/FILTER
+// ==================================================
 async function loadPairs() {
   log('Loading pairs...');
   try {
-    const out = await fetchJson('/api/pairs', {
-      method: 'POST',
-      body: JSON.stringify({ refreshToken })
-    });
+    const out = await fetchJson('/api/pairs', { method: 'POST', body: JSON.stringify({ refreshToken }) });
     lastPairs = out.pairs || [];
-    $('pairCount').textContent = `${lastPairs.length} pairs`;
+    $('pairCount').textContent = lastPairs.length + ' pairs';
     $('sPairs').textContent = String(lastPairs.length);
 
-    if (!lastPairs.length) {
-      $('pairsList').innerHTML = '<div class="empty"><div class="ico">📭</div>ยังไม่มี pair</div>';
-    } else {
-      $('pairsList').innerHTML = lastPairs.map(p => `
-        <div class="pair-card" data-card="${p.rowId}">
-          <div class="pair-dir">
-            ${p.direction === 'lark-to-sheet' ? '⬅ Lark → Sheet' : '➡ Sheet → Lark'}
-          </div>
-          <div class="pair-meta"><b>Sheet:</b> ${p.sheetUrl}</div>
-          <div class="pair-meta"><b>Lark:</b>  ${p.larkUrl}</div>
-          <div class="pair-meta"><b>Last:</b>   <span data-lastsync="${p.rowId}">${p.lastSyncAt ? new Date(p.lastSyncAt).toLocaleString('th-TH') : '—'}</span></div>
-          <div class="pair-status idle" data-status="${p.rowId}">● Idle</div>
-          <div class="pair-actions">
-            <button class="pri" data-sync="${p.rowId}">⚡ Sync</button>
-            <button class="del" data-deact="${p.rowId}">✕ Deactivate</button>
-          </div>
-        </div>
-      `).join('');
+    // show search bar if pairs > 2
+    $('searchBar').style.display = lastPairs.length > 2 ? 'block' : 'none';
 
-      // bind buttons
-      document.querySelectorAll('[data-sync]').forEach(btn => {
-        btn.onclick = async () => {
-          const id = btn.dataset.sync;
-          const pair = lastPairs.find(x => String(x.rowId) === id);
-          if (pair) await syncOnePair(pair);
-        };
-      });
-      document.querySelectorAll('[data-deact]').forEach(btn => {
-        btn.onclick = async () => {
-          const id = btn.dataset.deact;
-          if (!confirm('Deactivate pair นี้?')) return;
-          await fetchJson('/api/pairs', {
-            method: 'PUT',
-            body: JSON.stringify({ refreshToken, rowId: id, active: false })
-          });
-          await loadPairs();
-        };
-      });
+    if (!lastPairs.length) {
+      $('pairsList').innerHTML = '<div class="empty-state"><div class="empty-icon">\ud83d\udced</div>\u0e22\u0e31\u0e07\u0e44\u0e21\u0e48\u0e21\u0e35 pair</div>';
+    } else {
+      renderPairs(lastPairs);
     }
-    log(`✅ Loaded ${lastPairs.length} pairs`);
+    log('\u2705 Loaded ' + lastPairs.length + ' pairs');
   } catch(e) {
-    log(`❌ Load pairs error: ${e.message}`);
+    log('\u274c Load pairs error: ' + e.message);
   }
 }
 
-// ═════════════════════════════════════════════
-// AUTO-SYNC
-// ═════════════════════════════════════════════
-function startAutoSync() {
-  stopAutoSync();
-  $('autoBar').style.display    = 'flex';
-  $('autoStartRow').style.display = 'none';
-  scheduleNext();
-  log('🔄 Auto-sync started');
+function renderPairs(pairs) {
+  $('pairsList').innerHTML = pairs.map(p => `
+    <div class="pair-card" data-card="${p.rowId}" data-search="${escHtml((p.sheetUrl + ' ' + p.larkUrl + ' ' + p.direction).toLowerCase())}">
+      <div class="pair-dir-tag">
+        ${p.direction === 'lark-to-sheet' ? '\u2b05 Lark \u2192 Sheet' : '\u27a1 Sheet \u2192 Lark'}
+      </div>
+      <div class="pair-info"><b>Sheet:</b> ${escHtml(p.sheetUrl)}</div>
+      <div class="pair-info"><b>Lark:</b> ${escHtml(p.larkUrl)}</div>
+      <div class="pair-info"><b>Last:</b> <span data-lastsync="${p.rowId}">${p.lastSyncAt ? new Date(p.lastSyncAt).toLocaleString('th-TH') : '\u2014'}</span></div>
+      <div class="pair-status idle" data-status="${p.rowId}">\u25cf Idle</div>
+      <div class="pair-btns">
+        <button class="primary" data-sync="${p.rowId}">\u26a1 Sync</button>
+        <button class="warn-btn" data-edit="${p.rowId}">\u270e Edit</button>
+        <button class="danger" data-deact="${p.rowId}">\u2715 Deactivate</button>
+      </div>
+    </div>
+  `).join('');
+
+  // Bind sync buttons
+  document.querySelectorAll('[data-sync]').forEach(btn => {
+    btn.onclick = async () => {
+      const id = btn.dataset.sync;
+      const pair = lastPairs.find(x => String(x.rowId) === id);
+      if (!pair) return;
+      const ok = await showConfirm({
+        icon: '\u26a1',
+        title: 'Sync Pair',
+        desc: 'Full-replace sync<br>ข้อมูล<b>ปลายทางจะถูกลบทั้งหมด</b>แล้ว sync ใหม่',
+        confirmText: 'Sync',
+        confirmClass: 'primary'
+      });
+      if (ok) await syncOnePair(pair);
+    };
+  });
+  // Bind edit buttons
+  document.querySelectorAll('[data-edit]').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.dataset.edit;
+      const pair = lastPairs.find(x => String(x.rowId) === id);
+      if (pair) startEdit(pair);
+    };
+  });
+  // Bind deactivate buttons
+  document.querySelectorAll('[data-deact]').forEach(btn => {
+    btn.onclick = async () => {
+      const id = btn.dataset.deact;
+      const ok = await showConfirm({
+        icon: '\ud83d\uddd1\ufe0f',
+        title: 'Deactivate Pair',
+        desc: 'Pair นี้จะถูกปิดการใช้งาน<br>สามารถสร้างใหม่ได้ภายหลัง',
+        confirmText: 'Deactivate',
+        confirmClass: 'danger'
+      });
+      if (!ok) return;
+      await fetchJson('/api/pairs', { method: 'PUT', body: JSON.stringify({ refreshToken, rowId: id, active: false }) });
+      await loadPairs();
+    };
+  });
 }
 
+// 2) Search/Filter
+$('searchInput').oninput = () => {
+  const q = $('searchInput').value.toLowerCase().trim();
+  document.querySelectorAll('.pair-card[data-search]').forEach(card => {
+    card.classList.toggle('hidden', q !== '' && !card.dataset.search.includes(q));
+  });
+};
+
+ // ==================================================
+// AUTO-SYNC
+// ==================================================
+function startAutoSync() {
+  stopAutoSync();
+  $('autoBar').style.display     = 'flex';
+  $('autoStartRow').style.display = 'none';
+  scheduleNext();
+  log('\ud83d\udd04 Auto-sync started');
+}
 function stopAutoSync() {
   clearTimeout(autoTimer);
   clearInterval(cdTimer);
   autoTimer = null;
-  $('autoBar').style.display    = 'none';
+  $('autoBar').style.display     = 'none';
   $('autoStartRow').style.display = refreshToken ? 'block' : 'none';
-  $('autoCd').textContent = '—';
+  $('autoCd').textContent = '\u2014';
 }
-
 function scheduleNext() {
   const secs = parseInt($('autoInterval').value, 10);
   autoSecondsLeft = secs;
   $('autoCd').textContent = fmt(autoSecondsLeft);
-
   clearInterval(cdTimer);
   cdTimer = setInterval(() => {
     autoSecondsLeft--;
     $('autoCd').textContent = fmt(Math.max(0, autoSecondsLeft));
   }, 1000);
-
   autoTimer = setTimeout(async () => {
     clearInterval(cdTimer);
     if (!lastPairs.length) await loadPairs();
-    await syncAllPairs();
-    scheduleNext(); // chain
+    await syncAllPairsAuto();
+    scheduleNext();
   }, secs * 1000);
+}
+// auto-sync version (no confirm dialog)
+async function syncAllPairsAuto() {
+  if (!lastPairs.length) return;
+  log('\ud83d\udd04 Auto-syncing ' + lastPairs.length + ' pairs...');
+  syncedCount = 0;
+  let failCount = 0;
+  showProgress(0, lastPairs.length, 'Auto-syncing...');
+  for (let i = 0; i < lastPairs.length; i++) {
+    showProgress(i, lastPairs.length, 'Syncing ' + (i+1) + '/' + lastPairs.length + '...');
+    const before = syncedCount;
+    await syncOnePair(lastPairs[i]);
+    if (syncedCount === before) failCount++;
+  }
+  showProgress(lastPairs.length, lastPairs.length, 'Done!');
+  setTimeout(hideProgress, 2000);
+  $('sSynced').textContent = String(syncedCount);
+  lastSyncTime = new Date();
+  lastSyncOk = syncedCount;
+  lastSyncFail = failCount;
+  updateSyncSummary();
+  const msg = 'Auto-sync done. OK: ' + syncedCount + '/' + lastPairs.length;
+  log('\u2705 ' + msg);
+  sendNotif('SHD Sync', msg);
 }
 
 function fmt(s) {
   const m = Math.floor(s / 60), r = s % 60;
-  return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
+  return String(m).padStart(2,'0') + ':' + String(r).padStart(2,'0');
 }
+$('btnStartAuto').onclick  = startAutoSync;
+$('btnStopAuto').onclick   = stopAutoSync;
+$('autoInterval').onchange = () => { if (autoTimer) { stopAutoSync(); startAutoSync(); } };
 
-$('btnStartAuto').onclick = startAutoSync;
-$('btnStopAuto').onclick  = stopAutoSync;
-$('autoInterval').onchange = () => {
-  if (autoTimer) { stopAutoSync(); startAutoSync(); }
-};
-
-// ═════════════════════════════════════════════
+// ==================================================
 // BOOTSTRAP
-// ═════════════════════════════════════════════
+// ==================================================
 async function bootstrap() {
   try {
     const cfg = await fetchJson('/api/config');
     CONFIG.historySheetId = cfg.historySheetId;
     CONFIG.allowedDomain  = cfg.allowedDomain;
     $('histLabel').textContent = cfg.historySheetId || '(missing)';
-    $('sSheet').textContent    = cfg.historySheetId ? '✓' : '—';
-    $('cronUrl').textContent   = `${location.origin}/api/sync`;
-    $('cronUrl2').textContent  = `${location.origin}/api/sync`;
+    $('sSheet').textContent    = cfg.historySheetId ? '\u2713' : '\u2014';
+    $('cronUrl').textContent   = location.origin + '/api/sync';
+    $('cronUrl2').textContent  = location.origin + '/api/sync';
     log('Config loaded', cfg);
-  } catch(e) { log('Config error:', e.message); }
+  } catch(e) { log('Config error: ' + e.message); }
 
   if (refreshToken && userEmail) {
     setAuthed(true);
     await loadPairs();
-    startAutoSync(); // auto-start on page load if already logged in
+    startAutoSync();
   }
 }
 
-// ─── How-to toggle ───
 function toggleHowto() {
-  const body = document.getElementById('howtoBody');
-  const btn  = document.getElementById('howtoToggleBtn');
+  const body = $('howtoBody');
+  const btn  = $('howtoToggleBtn');
   const collapsed = body.classList.toggle('collapsed');
-  btn.textContent = collapsed ? '▼ ขยาย' : '▲ ย่อ';
+  btn.textContent = collapsed ? '\u25bc \u0e02\u0e22\u0e32\u0e22' : '\u25b2 \u0e22\u0e48\u0e2d';
 }
 
 bootstrap();
