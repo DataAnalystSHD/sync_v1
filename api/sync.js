@@ -3,7 +3,8 @@ import {
   parseGoogleSheetId, parseLarkBase,
   decryptText, refreshAccessToken,
   sheetsGetValues, sheetsClear, sheetsUpdate, sheetsAppend,
-  larkListAllRecords, larkBatchDeleteAll, larkCreateRecordsBatched
+  larkListAllRecords, larkBatchDeleteAll, larkCreateRecordsBatched,
+  larkEnsureFields
 } from "./_util.js";
 
 function normalizeCell(v){
@@ -90,21 +91,35 @@ async function updatePhase({ accessToken, cfg, rowId, phase }){
 }
 
 async function syncLarkToSheet({ accessToken, cfg, sheetId, baseId, tableId }){
-  const header = await sheetsGetValues({ accessToken, spreadsheetId: sheetId, range: `A1:1` });
-  const headers = header?.[0] || [];
-  if(headers.length === 0) throw new Error("Sheet has no header row (row 1 must contain headers)");
-
   const items = await larkListAllRecords({ baseId, tableId });
   const max = cfg.maxRowsPerSync;
   const limited = items.slice(0, max);
 
+  // Auto-detect headers from Lark record fields
+  const headerSet = new Set();
+  for(const it of limited){
+    const fields = it.fields || {};
+    for(const key of Object.keys(fields)) headerSet.add(key);
+  }
+  const headers = Array.from(headerSet);
+
+  if(headers.length === 0){
+    return { rowCount: 0, truncated: items.length > limited.length };
+  }
+
+  const endCol = guessA1EndCol(headers);
+
+  // Clear entire sheet (headers + data) then rewrite everything
+  await sheetsClear({ accessToken, spreadsheetId: sheetId, range: `A1:${endCol}` });
+
+  // Write headers to row 1
+  await sheetsUpdate({ accessToken, spreadsheetId: sheetId, range: `A1:${endCol}1`, values: [headers] });
+
+  // Write data from row 2
   const rows = limited.map(it => {
     const fields = it.fields || {};
     return headers.map(h => normalizeCell(fields[h]));
   });
-
-  const endCol = guessA1EndCol(headers);
-  await sheetsClear({ accessToken, spreadsheetId: sheetId, range: `A2:${endCol}` });
 
   const chunkSize = parseInt(process.env.SHEET_WRITE_CHUNK || "2000", 10);
   for(let i=0;i<rows.length;i+=chunkSize){
@@ -158,6 +173,9 @@ async function syncSheetToLark({ accessToken, cfg, sheetId, baseId, tableId, pai
     }
 
     cursorRow = 2;
+
+    // Auto-create missing fields in Lark from Sheet headers
+    await larkEnsureFields({ baseId, tableId, fieldNames: headers });
 
     // ✅ ลบครั้งเดียวตอนเริ่มงานเท่านั้น
     await larkBatchDeleteAll({ baseId, tableId });
