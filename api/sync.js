@@ -226,6 +226,13 @@ export default async function handler(req, res){
   const cfg = getConfig();
   try{
     if(req.method === "GET"){
+      // Verify Vercel Cron secret if configured
+      const cronSecret = process.env.CRON_SECRET;
+      if(cronSecret && req.headers["authorization"] !== `Bearer ${cronSecret}`){
+        json(res, 401, { ok:false, error:"Unauthorized" });
+        return;
+      }
+
       const ownerRefresh = process.env.SYNC_OWNER_REFRESH_TOKEN;
       if(!ownerRefresh){
         json(res, 400, { ok:false, error:"Missing SYNC_OWNER_REFRESH_TOKEN env. Cron mode needs an owner refresh token to read pairs." });
