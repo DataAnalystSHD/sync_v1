@@ -27,7 +27,9 @@ export async function syncLarkToSheet({ accessToken, cfg, sheetId, baseId, table
 
   const endCol = endColumnFor(headers);
 
-  await sheetsClear({ accessToken, spreadsheetId: sheetId, range: `A1:${endCol}` });
+  // Clear the full visible width so leftover columns from a previous schema
+  // don't linger when the new Lark Base has fewer fields than the sheet.
+  await sheetsClear({ accessToken, spreadsheetId: sheetId, range: "A:ZZ" });
   await sheetsUpdate({ accessToken, spreadsheetId: sheetId, range: `A1:${endCol}1`, values: [headers] });
 
   const rows = limited.map(it => {
