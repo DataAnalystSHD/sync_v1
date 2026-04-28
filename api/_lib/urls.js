@@ -1,6 +1,12 @@
+export function parseGoogleSheetUrl(url){
+  const u = String(url);
+  const id  = (u.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/) || [])[1] || "";
+  const gid = (u.match(/[?#&]gid=(\d+)/)                       || [])[1] || "";
+  return { id, gid };
+}
+
 export function parseGoogleSheetId(url){
-  const m = String(url).match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-  return m ? m[1] : "";
+  return parseGoogleSheetUrl(url).id;
 }
 
 export function parseLarkBase(url){

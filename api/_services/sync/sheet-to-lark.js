@@ -1,4 +1,4 @@
-import { sheetsGetValues } from "../../_lib/google/sheets.js";
+import { sheetsGetValues, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
 import { larkBatchDeleteAll, larkCreateRecordsBatched } from "../../_lib/lark/records.js";
 import { larkEnsureFields } from "../../_lib/lark/fields.js";
 import { endColumnFor } from "../../_lib/urls.js";
@@ -7,8 +7,8 @@ import { updateCursor, updatePhase } from "../pairs-store.js";
 const PHASE_RUNNING = "sheet2lark_running";
 const PHASE_IDLE    = "idle";
 
-async function readHeaders({ accessToken, sheetId }){
-  const header = await sheetsGetValues({ accessToken, spreadsheetId: sheetId, range: `A1:1` });
+async function readHeaders({ accessToken, sheetId, tab }){
+  const header = await sheetsGetValues({ accessToken, spreadsheetId: sheetId, range: `${tab}A1:1` });
   const headers = header?.[0] || [];
   if(headers.length === 0) throw new Error("Sheet has no header row (row 1 must contain headers)");
   return headers;
@@ -49,8 +49,10 @@ function rowsToRecords(rows, headers){
  * Pages from cursor → cursor+pageSize, persists progress in M/N for cron resume.
  * Manual/auto runs pass forceNew=true to clear & restart from row 2 each call.
  */
-export async function syncSheetToLark({ accessToken, cfg, sheetId, baseId, tableId, pair }){
-  const headers = await readHeaders({ accessToken, sheetId });
+export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, tableId, pair }){
+  const tabName = await getSheetNameByGid({ accessToken, spreadsheetId: sheetId, gid });
+  const tab = `${quoteSheetName(tabName)}!`;
+  const headers = await readHeaders({ accessToken, sheetId, tab });
   const endCol = endColumnFor(headers);
   const pageSize = cfg.pageSize;
   const rowId = pair?.rowId;
@@ -63,7 +65,7 @@ export async function syncSheetToLark({ accessToken, cfg, sheetId, baseId, table
 
   const start = cursorRow;
   const end   = cursorRow + pageSize - 1;
-  const range = `A${start}:${endCol}${end}`;
+  const range = `${tab}A${start}:${endCol}${end}`;
 
   const values = await sheetsGetValues({ accessToken, spreadsheetId: sheetId, range });
 

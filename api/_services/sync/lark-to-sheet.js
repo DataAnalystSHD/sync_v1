@@ -1,4 +1,4 @@
-import { sheetsClear, sheetsUpdate } from "../../_lib/google/sheets.js";
+import { sheetsClear, sheetsUpdate, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
 import { larkListAllRecords } from "../../_lib/lark/records.js";
 import { larkListFields } from "../../_lib/lark/fields.js";
 import { endColumnFor } from "../../_lib/urls.js";
@@ -27,7 +27,7 @@ async function resolveHeaders({ baseId, tableId, items }){
   return collectHeadersFromRecords(items);
 }
 
-export async function syncLarkToSheet({ accessToken, cfg, sheetId, baseId, tableId }){
+export async function syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, tableId }){
   const items = await larkListAllRecords({ baseId, tableId });
   const limited = items.slice(0, cfg.maxRowsPerSync);
   const headers = await resolveHeaders({ baseId, tableId, items: limited });
@@ -36,12 +36,14 @@ export async function syncLarkToSheet({ accessToken, cfg, sheetId, baseId, table
     return { rowCount: 0, truncated: items.length > limited.length };
   }
 
+  const tabName = await getSheetNameByGid({ accessToken, spreadsheetId: sheetId, gid });
+  const tab = `${quoteSheetName(tabName)}!`;
   const endCol = endColumnFor(headers);
 
   // Clear the full visible width so leftover columns from a previous schema
   // don't linger when the new Lark Base has fewer fields than the sheet.
-  await sheetsClear({ accessToken, spreadsheetId: sheetId, range: "A:ZZ" });
-  await sheetsUpdate({ accessToken, spreadsheetId: sheetId, range: `A1:${endCol}1`, values: [headers] });
+  await sheetsClear({ accessToken, spreadsheetId: sheetId, range: `${tab}A:ZZ` });
+  await sheetsUpdate({ accessToken, spreadsheetId: sheetId, range: `${tab}A1:${endCol}1`, values: [headers] });
 
   const rows = limited.map(it => {
     const fields = it.fields || {};
@@ -51,7 +53,7 @@ export async function syncLarkToSheet({ accessToken, cfg, sheetId, baseId, table
   for(let i = 0; i < rows.length; i += cfg.sheetWriteChunk){
     const part = rows.slice(i, i + cfg.sheetWriteChunk);
     const startRow = 2 + i;
-    const range = `A${startRow}:${endCol}${startRow + part.length - 1}`;
+    const range = `${tab}A${startRow}:${endCol}${startRow + part.length - 1}`;
     await sheetsUpdate({ accessToken, spreadsheetId: sheetId, range, values: part });
   }
 

@@ -1,4 +1,4 @@
-import { parseGoogleSheetId, parseLarkBase, parseLarkSheetUrl } from "../../_lib/urls.js";
+import { parseGoogleSheetUrl, parseLarkBase, parseLarkSheetUrl } from "../../_lib/urls.js";
 import { syncLarkToSheet } from "./lark-to-sheet.js";
 import { syncSheetToLark } from "./sheet-to-lark.js";
 import { syncLarkSheetToLarkBase } from "./larksheet-to-larkbase.js";
@@ -19,10 +19,11 @@ function resolveBase(pair){
   return { baseId, tableId };
 }
 
-function resolveGoogleSheetId(pair){
-  const sheetId = pair.sheetId || parseGoogleSheetId(pair.sheetUrl);
+function resolveGoogleSheet(pair){
+  const parsed = parseGoogleSheetUrl(pair.sheetUrl);
+  const sheetId = pair.sheetId || parsed.id;
   if(!sheetId) throw new Error("Invalid Google Sheet URL");
-  return sheetId;
+  return { sheetId, gid: parsed.gid };
 }
 
 function ensureLarkSheetUrl(url){
@@ -35,15 +36,15 @@ export async function runOne({ accessToken, cfg, pair }){
   const direction = DIRECTIONS.has(pair.direction) ? pair.direction : "lark-to-sheet";
 
   if(direction === "lark-to-sheet"){
-    const sheetId = resolveGoogleSheetId(pair);
+    const { sheetId, gid } = resolveGoogleSheet(pair);
     const { baseId, tableId } = resolveBase(pair);
-    return await syncLarkToSheet({ accessToken, cfg, sheetId, baseId, tableId });
+    return await syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, tableId });
   }
 
   if(direction === "sheet-to-lark"){
-    const sheetId = resolveGoogleSheetId(pair);
+    const { sheetId, gid } = resolveGoogleSheet(pair);
     const { baseId, tableId } = resolveBase(pair);
-    return await syncSheetToLark({ accessToken, cfg, sheetId, baseId, tableId, pair });
+    return await syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, tableId, pair });
   }
 
   if(direction === "larksheet-to-larkbase"){
