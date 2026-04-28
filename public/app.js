@@ -135,6 +135,34 @@ function setAuthed(ok) {
   }
   $('autoStartRow').style.display = ok ? 'block' : 'none';
   if (!ok) stopAutoSync();
+  updateInfoRow();
+}
+
+function updateInfoRow() {
+  $('iUser').textContent = state.userEmail || 'Not signed in';
+  const userCard = $('iUser').closest('.info-card');
+  if (userCard) userCard.dataset.color = state.userEmail ? 'green' : 'gray';
+
+  $('iMode').textContent = (DIRECTION_LABELS[state.masterMode] || state.masterMode).replace(/^[^\s]+\s/, '');
+
+  const status = $('iStatus');
+  const statusCard = status.closest('.info-card');
+  if (state.autoTimer) {
+    status.textContent = 'Auto-sync ON';
+    if (statusCard) statusCard.dataset.color = 'cyan';
+  } else if (state.userEmail) {
+    status.textContent = 'Connected';
+    if (statusCard) statusCard.dataset.color = 'green';
+  } else {
+    status.textContent = 'Disconnected';
+    if (statusCard) statusCard.dataset.color = 'gray';
+  }
+
+  if (CONFIG.historySheetId) {
+    $('iSheet').textContent = CONFIG.historySheetId.slice(0, 12) + '\u2026';
+  } else {
+    $('iSheet').textContent = '\u2014';
+  }
 }
 
 const DIRECTION_LABELS = {
@@ -160,6 +188,7 @@ function setMode(m) {
   $('sheetUrl').placeholder = lark
     ? 'https://...feishu.cn/wiki/<token> หรือ /sheets/<token>'
     : 'https://docs.google.com/spreadsheets/d/...';
+  updateInfoRow();
 }
 
 // ──────────────────────────────────────────────────
@@ -542,6 +571,7 @@ function startAutoSync() {
   $('autoStartRow').style.display = 'none';
   scheduleNextAutoSync();
   log('\ud83d\udd04 Auto-sync started');
+  updateInfoRow();
 }
 
 function stopAutoSync() {
@@ -551,6 +581,7 @@ function stopAutoSync() {
   $('autoBar').style.display      = 'none';
   $('autoStartRow').style.display = state.refreshToken ? 'block' : 'none';
   $('autoCd').textContent = '\u2014';
+  updateInfoRow();
 }
 
 function scheduleNextAutoSync() {
@@ -623,6 +654,8 @@ async function bootstrap() {
     setAuthed(true);
     await loadPairs();
     startAutoSync();
+  } else {
+    updateInfoRow();
   }
 }
 
