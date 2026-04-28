@@ -1,4 +1,5 @@
 import { larkListAllRecords } from "../../_lib/lark/records.js";
+import { larkListFields } from "../../_lib/lark/fields.js";
 import { getSheetMeta, batchUpdateValues, deleteRows } from "../../_lib/lark/sheets.js";
 import { endColumnFor } from "../../_lib/urls.js";
 import { resolveLarkSheetTarget } from "./lark-sheet-target.js";
@@ -9,12 +10,19 @@ function normalizeCell(v){
   return String(v);
 }
 
-function collectHeaders(items){
+function collectHeadersFromRecords(items){
   const set = new Set();
   for(const it of items){
     for(const key of Object.keys(it.fields || {})) set.add(key);
   }
   return Array.from(set);
+}
+
+async function resolveHeaders({ baseId, tableId, items }){
+  const fields = await larkListFields({ baseId, tableId });
+  const ordered = fields.map(f => f.field_name).filter(Boolean);
+  if(ordered.length > 0) return ordered;
+  return collectHeadersFromRecords(items);
 }
 
 function readRowCount(meta){
@@ -29,7 +37,7 @@ function readRowCount(meta){
 export async function syncLarkBaseToLarkSheet({ cfg, baseId, tableId, destUrl }){
   const items = await larkListAllRecords({ baseId, tableId });
   const limited = items.slice(0, cfg.maxRowsPerSync);
-  const headers = collectHeaders(limited);
+  const headers = await resolveHeaders({ baseId, tableId, items: limited });
 
   if(headers.length === 0){
     return { rowCount: 0, truncated: items.length > limited.length };

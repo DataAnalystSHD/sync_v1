@@ -1,5 +1,6 @@
 import { sheetsClear, sheetsUpdate } from "../../_lib/google/sheets.js";
 import { larkListAllRecords } from "../../_lib/lark/records.js";
+import { larkListFields } from "../../_lib/lark/fields.js";
 import { endColumnFor } from "../../_lib/urls.js";
 
 function normalizeCell(v){
@@ -8,7 +9,7 @@ function normalizeCell(v){
   return String(v);
 }
 
-function collectHeaders(items){
+function collectHeadersFromRecords(items){
   const set = new Set();
   for(const it of items){
     for(const key of Object.keys(it.fields || {})) set.add(key);
@@ -16,10 +17,20 @@ function collectHeaders(items){
   return Array.from(set);
 }
 
+async function resolveHeaders({ baseId, tableId, items }){
+  // Lark's record.fields key order isn't guaranteed to match the table's
+  // visual column order, so prefer the /fields endpoint which returns
+  // fields in their actual column order.
+  const fields = await larkListFields({ baseId, tableId });
+  const ordered = fields.map(f => f.field_name).filter(Boolean);
+  if(ordered.length > 0) return ordered;
+  return collectHeadersFromRecords(items);
+}
+
 export async function syncLarkToSheet({ accessToken, cfg, sheetId, baseId, tableId }){
   const items = await larkListAllRecords({ baseId, tableId });
   const limited = items.slice(0, cfg.maxRowsPerSync);
-  const headers = collectHeaders(limited);
+  const headers = await resolveHeaders({ baseId, tableId, items: limited });
 
   if(headers.length === 0){
     return { rowCount: 0, truncated: items.length > limited.length };
