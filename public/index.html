@@ -114,7 +114,7 @@
         </div>
 
         <div class="field">
-          <label class="field-label">Google Sheet URL</label>
+          <label class="field-label" id="sheetUrlLabel">Google Sheet URL</label>
           <input class="field-input" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/..." disabled />
         </div>
         <div class="field">
@@ -123,14 +123,22 @@
         </div>
 
         <div class="section-label">Sync Direction</div>
-        <div class="dir-group">
-          <div class="dir-btn" id="modeLark" data-active="true">
-            <b>Lark &#8594; Sheet</b>
-            <small>Lark เป็นฝั่งหลัก</small>
+        <div class="dir-group dir-group-4">
+          <div class="dir-btn" data-mode="lark-to-sheet" data-active="true">
+            <b>Lark Base &#8594; Google Sheet</b>
+            <small>Lark Base เป็นแหล่งข้อมูล</small>
           </div>
-          <div class="dir-btn" id="modeSheet" data-active="false">
-            <b>Sheet &#8594; Lark</b>
-            <small>Sheet เป็นฝั่งหลัก</small>
+          <div class="dir-btn" data-mode="sheet-to-lark" data-active="false">
+            <b>Google Sheet &#8594; Lark Base</b>
+            <small>Google Sheet เป็นแหล่งข้อมูล</small>
+          </div>
+          <div class="dir-btn" data-mode="larksheet-to-larkbase" data-active="false">
+            <b>Lark Sheet &#8594; Lark Base</b>
+            <small>Lark ทั้งคู่ &#8212; ไม่ต้อง Google</small>
+          </div>
+          <div class="dir-btn" data-mode="larkbase-to-larksheet" data-active="false">
+            <b>Lark Base &#8594; Lark Sheet</b>
+            <small>Lark ทั้งคู่ &#8212; ไม่ต้อง Google</small>
           </div>
         </div>
 

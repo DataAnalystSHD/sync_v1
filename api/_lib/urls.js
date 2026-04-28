@@ -10,6 +10,16 @@ export function parseLarkBase(url){
   return { baseId, tableId };
 }
 
+export function parseLarkSheetUrl(url){
+  const u = String(url);
+  const wiki  = (u.match(/\/wiki\/([a-zA-Z0-9]+)/)            || [])[1] || "";
+  const sheet = (u.match(/\/sheets\/([a-zA-Z0-9]+)/)          || [])[1] || "";
+  const sheetId = (u.match(/[?&]sheet(?:_id)?=([a-zA-Z0-9]+)/) || [])[1] || "";
+  if(wiki)  return { kind: "wiki",  token: wiki,  sheetId };
+  if(sheet) return { kind: "sheet", token: sheet, sheetId };
+  return { kind: "", token: "", sheetId: "" };
+}
+
 export function colIndexToA1(colIdx){
   let n = colIdx + 1;
   let s = "";

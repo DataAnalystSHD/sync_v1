@@ -137,10 +137,29 @@ function setAuthed(ok) {
   if (!ok) stopAutoSync();
 }
 
+const DIRECTION_LABELS = {
+  'lark-to-sheet':          '\u2b05 Lark Base \u2192 Google Sheet',
+  'sheet-to-lark':          '\u27a1 Google Sheet \u2192 Lark Base',
+  'larksheet-to-larkbase':  '\ud83d\udd00 Lark Sheet \u2192 Lark Base',
+  'larkbase-to-larksheet':  '\ud83d\udd00 Lark Base \u2192 Lark Sheet',
+};
+
+function isLarkSourceMode(mode){
+  return mode === 'larksheet-to-larkbase' || mode === 'larkbase-to-larksheet';
+}
+
 function setMode(m) {
+  if (!DIRECTION_LABELS[m]) m = 'lark-to-sheet';
   state.masterMode = m;
-  $('modeLark').dataset.active  = m === 'lark-to-sheet' ? 'true' : 'false';
-  $('modeSheet').dataset.active = m === 'sheet-to-lark' ? 'true' : 'false';
+  document.querySelectorAll('[data-mode]').forEach(btn => {
+    btn.dataset.active = btn.dataset.mode === m ? 'true' : 'false';
+  });
+
+  const lark = isLarkSourceMode(m);
+  $('sheetUrlLabel').textContent = lark ? 'Lark Sheet URL' : 'Google Sheet URL';
+  $('sheetUrl').placeholder = lark
+    ? 'https://...feishu.cn/wiki/<token> หรือ /sheets/<token>'
+    : 'https://docs.google.com/spreadsheets/d/...';
 }
 
 // ──────────────────────────────────────────────────
@@ -442,14 +461,15 @@ async function loadPairs() {
 }
 
 function pairCardHtml(p) {
-  const dirTag = p.direction === 'lark-to-sheet' ? '\u2b05 Lark \u2192 Sheet' : '\u27a1 Sheet \u2192 Lark';
+  const dirTag = DIRECTION_LABELS[p.direction] || p.direction;
+  const sourceLabel = isLarkSourceMode(p.direction) ? 'Lark Sheet' : 'Sheet';
   const lastSync = p.lastSyncAt ? new Date(p.lastSyncAt).toLocaleString('th-TH') : '\u2014';
   const search = escHtml((p.sheetUrl + ' ' + p.larkUrl + ' ' + p.direction).toLowerCase());
   return `
     <div class="pair-card" data-card="${p.rowId}" data-search="${search}">
       <div class="pair-dir-tag">${dirTag}</div>
-      <div class="pair-info"><b>Sheet:</b> ${escHtml(p.sheetUrl)}</div>
-      <div class="pair-info"><b>Lark:</b> ${escHtml(p.larkUrl)}</div>
+      <div class="pair-info"><b>${sourceLabel}:</b> ${escHtml(p.sheetUrl)}</div>
+      <div class="pair-info"><b>Lark Base:</b> ${escHtml(p.larkUrl)}</div>
       <div class="pair-info"><b>Last:</b> <span data-lastsync="${p.rowId}">${lastSync}</span></div>
       <div class="pair-status idle" data-status="${p.rowId}">\u25cf Idle</div>
       <div class="pair-btns">
@@ -610,8 +630,9 @@ function bindEvents() {
   $('btnTheme').onclick    = toggleTheme;
   $('btnLogin').onclick    = startLogin;
   $('btnLogout').onclick   = logout;
-  $('modeLark').onclick    = () => setMode('lark-to-sheet');
-  $('modeSheet').onclick   = () => setMode('sheet-to-lark');
+  document.querySelectorAll('[data-mode]').forEach(btn => {
+    btn.onclick = () => setMode(btn.dataset.mode);
+  });
   $('btnCancelEdit').onclick = cancelEdit;
   $('btnSavePair').onclick = savePair;
   $('btnSyncNow').onclick  = syncNow;
