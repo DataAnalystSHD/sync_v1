@@ -639,7 +639,6 @@ async function bootstrap() {
     CONFIG.allowedDomain  = cfg.allowedDomain;
     $('histLabel').textContent = cfg.historySheetId || '(missing)';
     $('cronUrl').textContent   = location.origin + '/api/sync';
-    $('cronUrl2').textContent  = location.origin + '/api/sync';
     log('Config loaded', cfg);
   } catch (e) {
     log('Config error: ' + e.message);
