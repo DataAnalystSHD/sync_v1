@@ -102,10 +102,18 @@
           <div class="hw-step"><div class="hw-num">4</div><div class="hw-txt"><strong>Save Pair หรือ Sync Now</strong><br><code>Save Pair</code> = Cron sync อัตโนมัติ | <code>Sync Now</code> = sync ทันที</div></div>
         </div>
         <div class="howto-col">
+          <h3>ตั้งค่า Lark App</h3>
+          <div class="hw-step"><div class="hw-num">1</div><div class="hw-txt"><strong>ติดตั้ง app ใน Workspace</strong><br>Admin ของ Lark เข้า <a href="https://www.larksuite.com/admin" target="_blank" rel="noopener">Lark Admin Console</a> &#8594; <code>Workplace</code> &#8594; <code>App Management</code> &#8594; ค้นชื่อ <b>Google Sheet to Base Bot</b> &#8594; <code>Install</code></div></div>
+          <div class="hw-step"><div class="hw-num">2</div><div class="hw-txt"><strong>Approve scopes ที่จำเป็น</strong><br>หน้า App detail &#8594; <code>Permissions</code> &#8594; กด Approve:<br><code>bitable:app</code>, <code>sheets:spreadsheet</code>, <code>sheets:spreadsheet.meta:read</code>, <code>wiki:wiki:readonly</code></div></div>
+          <div class="hw-step"><div class="hw-num">3</div><div class="hw-txt"><strong>Add app เข้า Bitable / Sheet</strong><br>เปิด Bitable / Sheet ที่ต้องการ &#8594; <code>...</code> &#8594; <code>Add collaborators</code> &#8594; เพิ่ม app + ให้สิทธิ์ <b>Editor</b></div></div>
+          <div class="hw-step"><div class="hw-num">4</div><div class="hw-txt"><strong>ทดสอบเร็ว (ไม่ต้องรอ admin)</strong><br>ใน Open Platform &#8594; <code>Test Companies &amp; Users</code> &#8594; เพิ่ม email ตัวเอง &#8594; ใช้ scope ที่ Under review ได้ทันที</div></div>
+        </div>
+        <div class="howto-col">
           <h3>สิ่งที่ควรรู้</h3>
           <div class="hw-note"><span class="hw-icon">&#9888;&#65039;</span><div><b>Full-replace</b> <span class="hw-tag warn">ระวัง</span><br>ทุก sync จะลบข้อมูลปลายทางทั้งหมดแล้ว sync ใหม่</div></div>
           <div class="hw-note"><span class="hw-icon">&#9201;&#65039;</span><div><b>แนะนำ interval 5&#8211;30 นาที</b> <span class="hw-tag info">Performance</span><br>ลด API rate limit</div></div>
           <div class="hw-note"><span class="hw-icon">&#128274;</span><div><b>สิทธิ์การเข้าถึง</b><br>ต้องใช้บัญชีในโดเมนที่อนุญาต และมีสิทธิ์ Viewer ขึ้นไป</div></div>
+          <div class="hw-note"><span class="hw-icon">&#129534;</span><div><b>ถ้าเจอ permission error</b><br>เช็คก่อนว่า admin Approve scope แล้ว และเพิ่ม app เข้า Bitable / Sheet ที่จะ sync แล้ว</div></div>
         </div>
       </div>
     </div>

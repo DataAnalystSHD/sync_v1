@@ -243,11 +243,13 @@ body {
 .howto-arrow:hover { background: var(--surface3); transform: none; box-shadow: none; }
 .howto-body { transition: all .25s; }
 .howto-body.collapsed { display: none; }
-.howto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
-@media(max-width:700px){ .howto-grid{ grid-template-columns: 1fr; } }
+.howto-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
+@media(max-width:1000px){ .howto-grid{ grid-template-columns: 1fr; } }
 .howto-col { padding: 20px; }
-.howto-col:first-child { border-right: 1px solid var(--border); }
-@media(max-width:700px){ .howto-col:first-child{ border-right:none; border-bottom: 1px solid var(--border); } }
+.howto-col:not(:last-child) { border-right: 1px solid var(--border); }
+@media(max-width:1000px){
+  .howto-col:not(:last-child){ border-right: none; border-bottom: 1px solid var(--border); }
+}
 .howto-col h3 { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 16px; }
 .hw-step { display: flex; gap: 12px; margin-bottom: 14px; }
 .hw-step:last-child { margin-bottom: 0; }
