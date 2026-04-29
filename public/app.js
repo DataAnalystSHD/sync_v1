@@ -157,12 +157,6 @@ function updateInfoRow() {
     status.textContent = 'Disconnected';
     if (statusCard) statusCard.dataset.color = 'gray';
   }
-
-  if (CONFIG.historySheetId) {
-    $('iSheet').textContent = CONFIG.historySheetId.slice(0, 12) + '\u2026';
-  } else {
-    $('iSheet').textContent = '\u2014';
-  }
 }
 
 const DIRECTION_LABELS = {
@@ -237,8 +231,6 @@ function logout() {
   cancelEdit();
   $('pairsList').innerHTML = '<div class="empty-state"><div class="empty-icon">\ud83d\udd17</div>Login \u0e41\u0e25\u0e49\u0e27 load pairs</div>';
   $('pairCount').textContent = '0 pairs';
-  $('sPairs').textContent    = '\u2014';
-  $('sSynced').textContent   = '\u2014';
   $('searchBar').style.display = 'none';
   hideSyncSummary();
   log('Logged out');
@@ -406,7 +398,6 @@ async function runBatchSync(source) {
 
   showProgress(total, total, 'Done!');
   setTimeout(hideProgress, 2000);
-  $('sSynced').textContent = String(state.syncedCount);
 
   state.lastSyncTime = new Date();
   state.lastSyncOk   = state.syncedCount;
@@ -475,7 +466,6 @@ async function loadPairs() {
     });
     state.lastPairs = out.pairs || [];
     $('pairCount').textContent = state.lastPairs.length + ' pairs';
-    $('sPairs').textContent    = String(state.lastPairs.length);
     $('searchBar').style.display = state.lastPairs.length > 2 ? 'block' : 'none';
 
     if (!state.lastPairs.length) {
@@ -642,7 +632,6 @@ async function bootstrap() {
     CONFIG.historySheetId = cfg.historySheetId;
     CONFIG.allowedDomain  = cfg.allowedDomain;
     $('histLabel').textContent = cfg.historySheetId || '(missing)';
-    $('sSheet').textContent    = cfg.historySheetId ? '\u2713' : '\u2014';
     $('cronUrl').textContent   = location.origin + '/api/sync';
     $('cronUrl2').textContent  = location.origin + '/api/sync';
     log('Config loaded', cfg);
