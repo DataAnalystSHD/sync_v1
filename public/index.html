@@ -94,18 +94,18 @@
     </div>
     <div class="howto-body" id="howtoBody">
       <div class="howto-grid">
-        <div class="howto-col">
+        <div class="howto-col" data-color="purple">
           <h3>ขั้นตอน</h3>
           <div class="hw-step"><div class="hw-num">1</div><div class="hw-txt"><strong>Login ด้วย Google</strong><br>กดปุ่ม Login &#8212; ใช้บัญชีที่มีสิทธิ์เข้าถึง Sheet ที่ต้องการ</div></div>
           <div class="hw-step"><div class="hw-num">2</div><div class="hw-txt"><strong>กรอก URL ทั้งสองฝั่ง</strong><br>ใส่ <code>Google Sheet URL</code> และ <code>Lark Base URL</code></div></div>
           <div class="hw-step"><div class="hw-num">3</div><div class="hw-txt"><strong>เลือก Direction</strong><br><code>Lark &#8594; Sheet</code> หรือ <code>Sheet &#8594; Lark</code></div></div>
           <div class="hw-step"><div class="hw-num">4</div><div class="hw-txt"><strong>Save Pair หรือ Sync Now</strong><br><code>Save Pair</code> = Cron sync อัตโนมัติ | <code>Sync Now</code> = sync ทันที</div></div>
         </div>
-        <div class="howto-col">
+        <div class="howto-col" data-color="cyan">
           <h3>ตั้งค่า Lark App</h3>
           <div class="hw-step"><div class="hw-num">1</div><div class="hw-txt"><strong>Add app เข้า Bitable / Sheet</strong><br>เปิด Bitable / Sheet ที่ต้องการ &#8594; กดเมนู <code>&#8943;</code> (3 จุด) มุมขวาบน &#8594; <code>More</code> &#8594; <code>Add Applications</code> &#8594; พิมพ์ค้น <b>Google Sheet to Base Bot</b> &#8594; กด Add</div></div>
         </div>
-        <div class="howto-col">
+        <div class="howto-col" data-color="amber">
           <h3>สิ่งที่ควรรู้</h3>
           <div class="hw-note"><span class="hw-icon">&#9888;&#65039;</span><div><b>Full-replace</b> <span class="hw-tag warn">ระวัง</span><br>ทุก sync จะลบข้อมูลปลายทางทั้งหมดแล้ว sync ใหม่</div></div>
           <div class="hw-note"><span class="hw-icon">&#9201;&#65039;</span><div><b>แนะนำ interval 5&#8211;30 นาที</b> <span class="hw-tag info">Performance</span><br>ลด API rate limit</div></div>
@@ -145,19 +145,19 @@
 
         <div class="section-label">Sync Direction</div>
         <div class="dir-group dir-group-4">
-          <div class="dir-btn" data-mode="lark-to-sheet" data-active="true">
+          <div class="dir-btn" data-mode="lark-to-sheet" data-color="cyan" data-active="true">
             <b>Lark Base &#8594; Google Sheet</b>
             <small>Lark Base เป็นแหล่งข้อมูล</small>
           </div>
-          <div class="dir-btn" data-mode="sheet-to-lark" data-active="false">
+          <div class="dir-btn" data-mode="sheet-to-lark" data-color="green" data-active="false">
             <b>Google Sheet &#8594; Lark Base</b>
             <small>Google Sheet เป็นแหล่งข้อมูล</small>
           </div>
-          <div class="dir-btn" data-mode="larksheet-to-larkbase" data-active="false">
+          <div class="dir-btn" data-mode="larksheet-to-larkbase" data-color="purple" data-active="false">
             <b>Lark Sheet &#8594; Lark Base</b>
             <small>Lark ทั้งคู่ &#8212; ไม่ต้อง Google</small>
           </div>
-          <div class="dir-btn" data-mode="larkbase-to-larksheet" data-active="false">
+          <div class="dir-btn" data-mode="larkbase-to-larksheet" data-color="amber" data-active="false">
             <b>Lark Base &#8594; Lark Sheet</b>
             <small>Lark ทั้งคู่ &#8212; ไม่ต้อง Google</small>
           </div>
