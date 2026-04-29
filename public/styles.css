@@ -345,7 +345,7 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0,0,0,.06);
 }
-.dir-btn:hover::before { opacity: .55; }
+.dir-btn:hover:not([data-active="true"])::before { opacity: .45; }
 .dir-btn[data-active="true"] {
   border-color: transparent;
   box-shadow: 0 8px 24px var(--tint-icon-shadow, rgba(0,0,0,.1));
@@ -353,6 +353,7 @@ body {
 }
 .dir-btn[data-active="true"]::before { opacity: 1; }
 .dir-btn[data-active="true"] b { color: var(--tint-strong); }
+.dir-btn[data-active="true"] small { color: var(--text2); }
 .dir-btn b { font-size: 13px; font-weight: 700; display: block; color: var(--text); margin-bottom: 2px; }
 .dir-btn small { font-size: 11px; color: var(--muted); }
 .dir-btn[data-active="false"] { opacity: .75; }
@@ -463,19 +464,33 @@ select:focus { border-color: var(--accent); }
 .pair-status.syncing { color: var(--accent2); }
 .pair-status.success { color: var(--green); }
 .pair-status.error   { color: var(--red); }
-.spin { display: inline-block; animation: spin .7s linear infinite; transform-origin: center; }
-svg.spin { transform-box: fill-box; }
+.spin { display: inline-flex; animation: spin .7s linear infinite; transform-origin: center; }
+svg.spin { transform-box: fill-box; transform-origin: center; }
 @keyframes spin { to{transform:rotate(360deg)} }
 
-/* Icons inside buttons / chips inherit color from text and align with the text baseline */
-button svg, .pair-status svg, .info-icon svg, .stat-icon svg, .empty-icon svg,
-.hw-icon svg, .modal-icon svg, .howto-arrow svg, .howto-title-icon svg {
-  display: inline-block;
-  vertical-align: middle;
+/* Anything that holds an SVG icon should center-align its child so text and
+   icon sit on the same line without baseline drift. */
+[data-icon] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
   flex-shrink: 0;
 }
-.howto-title-icon { display: inline-flex; align-items: center; color: var(--muted); }
-.empty-icon { display: inline-flex; justify-content: center; align-items: center; color: var(--muted); }
+.brand-icon[data-icon] { display: grid; place-items: center; }
+.info-icon[data-icon],
+.stat-icon[data-icon] { display: grid; place-items: center; }
+
+button [data-icon],
+.pair-status [data-icon],
+.howto-arrow [data-icon],
+.hw-icon[data-icon] { line-height: 0; }
+
+.modal-icon { color: var(--accent2); }
+.modal-icon[data-icon] { display: grid; place-items: center; margin: 0 auto 12px; }
+
+.howto-title-icon { color: var(--muted); }
+.empty-icon { color: var(--muted); margin-bottom: 8px; }
 .pair-btns { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
 .pair-btns button { padding: 6px 12px; font-size: 11px; }
 .empty-state { text-align: center; padding: 32px 16px; color: var(--muted); font-size: 13px; }
