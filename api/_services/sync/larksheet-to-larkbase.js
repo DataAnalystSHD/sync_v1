@@ -1,12 +1,14 @@
 import { getSheetValues } from "../../_lib/lark/sheets.js";
 import { larkBatchDeleteAll, larkCreateRecordsBatched } from "../../_lib/lark/records.js";
-import { larkEnsureFields } from "../../_lib/lark/fields.js";
+import { larkEnsureFields, larkListFields } from "../../_lib/lark/fields.js";
+import { inferType, convertForLark } from "../../_lib/lark/infer-types.js";
 import { endColumnFor } from "../../_lib/urls.js";
 import { updateCursor, updatePhase } from "../pairs-store.js";
 import { resolveLarkSheetTarget } from "./lark-sheet-target.js";
 
 const PHASE_RUNNING = "larksheet2larkbase_running";
 const PHASE_IDLE    = "idle";
+const INFER_SAMPLE_ROWS = 100;
 
 async function readHeaders({ ssToken, sheetId }){
   const rows = await getSheetValues({ ssToken, sheetId, range: "A1:CZ1" });
@@ -26,13 +28,24 @@ function shouldStartFresh(pair){
   return false;
 }
 
-async function beginNewRun({ accessToken, cfg, baseId, tableId, headers, rowId }){
+async function inferFieldsFromLarkSheet({ ssToken, sheetId, headers, endCol }){
+  const range = `A2:${endCol}${1 + INFER_SAMPLE_ROWS}`;
+  const rows  = await getSheetValues({ ssToken, sheetId, range });
+  return headers.map((name, i) => ({
+    name,
+    type: inferType((rows || []).map(r => r[i])),
+  }));
+}
+
+async function beginNewRun({ accessToken, cfg, ssToken, srcSheetId, baseId, tableId, headers, endCol, rowId }){
   if(rowId){
     await updatePhase({ accessToken, cfg, rowId, phase: PHASE_RUNNING });
     await updateCursor({ accessToken, cfg, rowId, cursorRow: 2 });
   }
-  await larkEnsureFields({ baseId, tableId, fieldNames: headers });
+  const fields = await inferFieldsFromLarkSheet({ ssToken, sheetId: srcSheetId, headers, endCol });
+  const { typeMap } = await larkEnsureFields({ baseId, tableId, fields });
   await larkBatchDeleteAll({ baseId, tableId });
+  return typeMap;
 }
 
 async function finishRun({ accessToken, cfg, rowId }){
@@ -41,12 +54,18 @@ async function finishRun({ accessToken, cfg, rowId }){
   await updateCursor({ accessToken, cfg, rowId, cursorRow: 2 });
 }
 
-function rowsToRecords(rows, headers){
+async function readTypeMap({ baseId, tableId }){
+  const fields = await larkListFields({ baseId, tableId });
+  return new Map(fields.map(f => [f.field_name, f.type]));
+}
+
+function rowsToRecords(rows, headers, typeMap){
   return rows.map(row => {
     const obj = {};
     headers.forEach((h, idx) => {
       const v = row[idx];
-      obj[h] = v == null ? "" : (typeof v === "object" ? JSON.stringify(v) : String(v));
+      const text = v == null ? "" : (typeof v === "object" ? JSON.stringify(v) : String(v));
+      obj[h] = convertForLark(text, typeMap.get(h) || 1);
     });
     return obj;
   });
@@ -60,9 +79,16 @@ export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, bas
   const rowId = pair?.rowId;
 
   let cursorRow = Number(pair?.cursorRow || 2);
+  let typeMap;
   if(shouldStartFresh(pair)){
-    await beginNewRun({ accessToken, cfg, baseId, tableId, headers, rowId });
+    typeMap = await beginNewRun({
+      accessToken, cfg,
+      ssToken, srcSheetId: sheetId,
+      baseId, tableId, headers, endCol, rowId,
+    });
     cursorRow = 2;
+  } else {
+    typeMap = await readTypeMap({ baseId, tableId });
   }
 
   const start = cursorRow;
@@ -76,7 +102,7 @@ export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, bas
     return { rowCount: 0, truncated: false, done: true };
   }
 
-  const records = rowsToRecords(values, headers);
+  const records = rowsToRecords(values, headers, typeMap);
   await larkCreateRecordsBatched({ baseId, tableId, records });
 
   const nextCursor = cursorRow + records.length;

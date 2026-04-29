@@ -1,11 +1,13 @@
 import { sheetsGetValues, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
 import { larkBatchDeleteAll, larkCreateRecordsBatched } from "../../_lib/lark/records.js";
-import { larkEnsureFields } from "../../_lib/lark/fields.js";
+import { larkEnsureFields, larkListFields } from "../../_lib/lark/fields.js";
+import { inferType, convertForLark } from "../../_lib/lark/infer-types.js";
 import { endColumnFor } from "../../_lib/urls.js";
 import { updateCursor, updatePhase } from "../pairs-store.js";
 
 const PHASE_RUNNING = "sheet2lark_running";
 const PHASE_IDLE    = "idle";
+const INFER_SAMPLE_ROWS = 100;
 
 async function readHeaders({ accessToken, sheetId, tab }){
   const header = await sheetsGetValues({ accessToken, spreadsheetId: sheetId, range: `${tab}A1:1` });
@@ -22,13 +24,24 @@ function shouldStartFresh(pair){
   return false;
 }
 
-async function beginNewRun({ accessToken, cfg, baseId, tableId, headers, rowId }){
+async function inferFieldsFromSheet({ accessToken, sheetId, tab, headers, endCol }){
+  const range = `${tab}A2:${endCol}${1 + INFER_SAMPLE_ROWS}`;
+  const rows  = await sheetsGetValues({ accessToken, spreadsheetId: sheetId, range });
+  return headers.map((name, i) => ({
+    name,
+    type: inferType((rows || []).map(r => r[i])),
+  }));
+}
+
+async function beginNewRun({ accessToken, cfg, sheetId, tab, baseId, tableId, headers, endCol, rowId }){
   if(rowId){
     await updatePhase({ accessToken, cfg, rowId, phase: PHASE_RUNNING });
     await updateCursor({ accessToken, cfg, rowId, cursorRow: 2 });
   }
-  await larkEnsureFields({ baseId, tableId, fieldNames: headers });
+  const fields = await inferFieldsFromSheet({ accessToken, sheetId, tab, headers, endCol });
+  const { typeMap } = await larkEnsureFields({ baseId, tableId, fields });
   await larkBatchDeleteAll({ baseId, tableId });
+  return typeMap;
 }
 
 async function finishRun({ accessToken, cfg, rowId }){
@@ -37,10 +50,17 @@ async function finishRun({ accessToken, cfg, rowId }){
   await updateCursor({ accessToken, cfg, rowId, cursorRow: 2 });
 }
 
-function rowsToRecords(rows, headers){
+async function readTypeMap({ baseId, tableId }){
+  const fields = await larkListFields({ baseId, tableId });
+  return new Map(fields.map(f => [f.field_name, f.type]));
+}
+
+function rowsToRecords(rows, headers, typeMap){
   return rows.map(row => {
     const obj = {};
-    headers.forEach((h, idx) => obj[h] = row[idx] ?? "");
+    headers.forEach((h, idx) => {
+      obj[h] = convertForLark(row[idx], typeMap.get(h) || 1);
+    });
     return obj;
   });
 }
@@ -48,6 +68,10 @@ function rowsToRecords(rows, headers){
 /**
  * Pages from cursor → cursor+pageSize, persists progress in M/N for cron resume.
  * Manual/auto runs pass forceNew=true to clear & restart from row 2 each call.
+ *
+ * On a fresh start the first ~100 data rows are sampled to infer Lark field
+ * types (Number / DateTime / Checkbox / Text), and any new fields are created
+ * with the inferred type. Existing fields keep whatever type they already have.
  */
 export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, tableId, pair }){
   const tabName = await getSheetNameByGid({ accessToken, spreadsheetId: sheetId, gid });
@@ -58,9 +82,12 @@ export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, 
   const rowId = pair?.rowId;
 
   let cursorRow = Number(pair?.cursorRow || 2);
+  let typeMap;
   if(shouldStartFresh(pair)){
-    await beginNewRun({ accessToken, cfg, baseId, tableId, headers, rowId });
+    typeMap = await beginNewRun({ accessToken, cfg, sheetId, tab, baseId, tableId, headers, endCol, rowId });
     cursorRow = 2;
+  } else {
+    typeMap = await readTypeMap({ baseId, tableId });
   }
 
   const start = cursorRow;
@@ -74,7 +101,7 @@ export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, 
     return { rowCount: 0, truncated: false, done: true };
   }
 
-  const records = rowsToRecords(values, headers);
+  const records = rowsToRecords(values, headers, typeMap);
   await larkCreateRecordsBatched({ baseId, tableId, records });
 
   const nextCursor = cursorRow + records.length;
