@@ -37,22 +37,23 @@ export function inferType(samples){
 
 /**
  * Convert a string value from a Sheet cell into the native shape Lark's
- * batch_create endpoint expects for the given field type. Anything we
- * can't parse cleanly falls back to the original string so the row still
- * gets created.
+ * batch_create endpoint expects for the given field type. Returns
+ * `undefined` when the cell is empty or can't be parsed for the target
+ * type — callers should skip undefined fields entirely so Lark doesn't
+ * reject the whole record because of one bad cell.
  */
 export function convertForLark(value, type){
-  if(value === null || value === undefined) return "";
-  const s = String(value);
-  if(s === "") return "";
+  if(value === null || value === undefined) return undefined;
+  const s = String(value).trim();
+  if(s === "") return undefined;
 
   if(type === FIELD_TYPE.NUMBER){
     const n = Number(s);
-    return Number.isFinite(n) ? n : s;
+    return Number.isFinite(n) ? n : undefined;
   }
   if(type === FIELD_TYPE.DATETIME){
     const ms = Date.parse(s);
-    return Number.isFinite(ms) ? ms : s;
+    return Number.isFinite(ms) ? ms : undefined;
   }
   if(type === FIELD_TYPE.CHECKBOX){
     return TRUTHY_RE.test(s);

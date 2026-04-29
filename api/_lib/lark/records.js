@@ -71,7 +71,10 @@ export async function larkCreateRecordsBatched({ baseId, tableId, records }){
         headers: authHeader(token),
         timeout: 45000,
       });
-      assertOk(r.data, "Lark batch_create");
+      if(r.data?.code && r.data.code !== 0){
+        const sample = JSON.stringify(part[0] || {}).slice(0, 200);
+        throw new Error(`Lark batch_create code=${r.data.code} msg=${r.data.msg} sample=${sample}`);
+      }
     }, "larkBatchCreate");
     created += part.length;
     await sleep(80);

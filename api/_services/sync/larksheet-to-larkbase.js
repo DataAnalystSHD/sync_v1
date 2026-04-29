@@ -65,7 +65,8 @@ function rowsToRecords(rows, headers, typeMap){
     headers.forEach((h, idx) => {
       const v = row[idx];
       const text = v == null ? "" : (typeof v === "object" ? JSON.stringify(v) : String(v));
-      obj[h] = convertForLark(text, typeMap.get(h) || 1);
+      const converted = convertForLark(text, typeMap.get(h) || 1);
+      if(converted !== undefined) obj[h] = converted;
     });
     return obj;
   });
