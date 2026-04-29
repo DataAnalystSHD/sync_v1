@@ -1,7 +1,7 @@
 import { sheetsGetValues, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
 import { larkBatchDeleteAll, larkCreateRecordsBatched } from "../../_lib/lark/records.js";
 import { larkEnsureFields, larkListFields } from "../../_lib/lark/fields.js";
-import { inferType, convertForLark } from "../../_lib/lark/infer-types.js";
+import { inferType, inferProperty, convertForLark } from "../../_lib/lark/infer-types.js";
 import { endColumnFor } from "../../_lib/urls.js";
 import { updateCursor, updatePhase } from "../pairs-store.js";
 
@@ -27,10 +27,11 @@ function shouldStartFresh(pair){
 async function inferFieldsFromSheet({ accessToken, sheetId, tab, headers, endCol }){
   const range = `${tab}A2:${endCol}${1 + INFER_SAMPLE_ROWS}`;
   const rows  = await sheetsGetValues({ accessToken, spreadsheetId: sheetId, range });
-  return headers.map((name, i) => ({
-    name,
-    type: inferType((rows || []).map(r => r[i])),
-  }));
+  return headers.map((name, i) => {
+    const samples = (rows || []).map(r => r[i]);
+    const type = inferType(samples);
+    return { name, type, property: inferProperty(samples, type) };
+  });
 }
 
 async function beginNewRun({ accessToken, cfg, sheetId, tab, baseId, tableId, headers, endCol, rowId }){

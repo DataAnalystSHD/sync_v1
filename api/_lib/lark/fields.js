@@ -12,10 +12,12 @@ export async function larkListFields({ baseId, tableId }){
   return r.data?.data?.items || [];
 }
 
-export async function larkCreateField({ baseId, tableId, fieldName, fieldType = 1 }){
+export async function larkCreateField({ baseId, tableId, fieldName, fieldType = 1, property }){
   const token = await getTenantAccessToken();
+  const body = { field_name: fieldName, type: fieldType };
+  if(property) body.property = property;
   const r = await withBackoff(() => axios.post(tableUrl(baseId, tableId, "/fields"),
-    { field_name: fieldName, type: fieldType },
+    body,
     { headers: authHeader(token), timeout: 30000 }
   ), "larkCreateField");
   assertOk(r.data, "Lark create field");
@@ -44,6 +46,7 @@ export async function larkEnsureFields({ baseId, tableId, fields, fieldNames }){
         baseId, tableId,
         fieldName: f.name,
         fieldType: f.type || 1,
+        property: f.property,
       });
       typeMap.set(f.name, newField?.type || f.type || 1);
       created.push(f.name);
