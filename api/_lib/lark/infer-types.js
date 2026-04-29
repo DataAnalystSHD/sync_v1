@@ -32,14 +32,18 @@ function clean(samples){
  * Sample some Sheet/Lark Sheet values and pick the strictest Lark Bitable
  * field type that matches every non-empty sample. Falls back to Text when
  * the column is mixed or empty so we never lose data.
+ *
+ * Date-shaped strings are intentionally left as Text (not DateTime) —
+ * the user prefers their day/month/year cells to stay readable as
+ * literal strings rather than be reformatted by Lark's date renderer.
  */
 export function inferType(samples){
   const xs = clean(samples);
   if(xs.length === 0) return FIELD_TYPE.TEXT;
 
   if(xs.every(v => BOOL_RE.test(v))) return FIELD_TYPE.CHECKBOX;
-  if(xs.every(looksLikeDate))        return FIELD_TYPE.DATETIME;
   if(xs.every(looksLikeNumber))      return FIELD_TYPE.NUMBER;
+  if(xs.every(looksLikeDate))        return FIELD_TYPE.TEXT;
   return FIELD_TYPE.TEXT;
 }
 
