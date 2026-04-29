@@ -5,6 +5,21 @@ import { refreshAccessToken } from "./_lib/google/oauth.js";
 import { readActiveCronPairs, updateLastSync } from "./_services/pairs-store.js";
 import { logHistory } from "./_services/history.js";
 import { runOne } from "./_services/sync/runner.js";
+import { notifyLarkBot, summarizeBatch } from "./_lib/lark/notify.js";
+
+function shortLabel(url){
+  if(!url) return "(no url)";
+  const s = String(url);
+  return s.length > 60 ? s.slice(0, 57) + "..." : s;
+}
+
+function resultLine(r, fallbackUrl){
+  const label = shortLabel(r.pair || fallbackUrl);
+  if(r.status === "success"){
+    return `✅ \`${label}\` — ${r.rowCount ?? 0} rows`;
+  }
+  return `❌ \`${label}\` — ${r.error || "error"}`;
+}
 
 function pickResultFields(r){
   return {
@@ -57,6 +72,13 @@ async function handleCron({ res, cfg }){
     }
   }
 
+  const { ok, fail, total } = summarizeBatch(results);
+  await notifyLarkBot({
+    title: fail > 0 ? `⚠️ Cron sync — ${fail}/${total} failed` : `✅ Cron sync — ${ok}/${total} ok`,
+    success: fail === 0,
+    lines: results.map(r => resultLine(r)),
+  });
+
   json(res, 200, { ok: true, mode: "cron", processed: results.length, results });
 }
 
@@ -85,6 +107,13 @@ async function handleManual({ req, res, cfg }){
       await recordResult({ accessToken, cfg, pair: input, user, error: e });
     }
   }
+
+  const { ok, fail, total } = summarizeBatch(results);
+  await notifyLarkBot({
+    title: fail > 0 ? `⚠️ Manual sync — ${fail}/${total} failed` : `✅ Manual sync — ${ok}/${total} ok`,
+    success: fail === 0,
+    lines: results.map((r, idx) => resultLine(r, inputs[idx]?.sheetUrl)),
+  });
 
   json(res, 200, { ok: true, processed: results.length, results });
 }

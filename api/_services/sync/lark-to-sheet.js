@@ -1,13 +1,8 @@
 import { sheetsClear, sheetsUpdate, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
 import { larkListAllRecords } from "../../_lib/lark/records.js";
 import { larkListFields } from "../../_lib/lark/fields.js";
+import { formatBitableValue, buildFieldTypeMap } from "../../_lib/lark/field-types.js";
 import { endColumnFor } from "../../_lib/urls.js";
-
-function normalizeCell(v){
-  if(v === null || v === undefined) return "";
-  if(typeof v === "object") return JSON.stringify(v);
-  return String(v);
-}
 
 function collectHeadersFromRecords(items){
   const set = new Set();
@@ -17,20 +12,22 @@ function collectHeadersFromRecords(items){
   return Array.from(set);
 }
 
-async function resolveHeaders({ baseId, tableId, items }){
+async function resolveSchema({ baseId, tableId, items }){
   // Lark's record.fields key order isn't guaranteed to match the table's
   // visual column order, so prefer the /fields endpoint which returns
-  // fields in their actual column order.
+  // fields in their actual column order — and gives us per-field types.
   const fields = await larkListFields({ baseId, tableId });
-  const ordered = fields.map(f => f.field_name).filter(Boolean);
-  if(ordered.length > 0) return ordered;
-  return collectHeadersFromRecords(items);
+  const headers = fields.map(f => f.field_name).filter(Boolean);
+  if(headers.length > 0){
+    return { headers, typeMap: buildFieldTypeMap(fields) };
+  }
+  return { headers: collectHeadersFromRecords(items), typeMap: new Map() };
 }
 
-export async function syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, tableId }){
-  const items = await larkListAllRecords({ baseId, tableId });
+export async function syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, tableId, viewId }){
+  const items = await larkListAllRecords({ baseId, tableId, viewId });
   const limited = items.slice(0, cfg.maxRowsPerSync);
-  const headers = await resolveHeaders({ baseId, tableId, items: limited });
+  const { headers, typeMap } = await resolveSchema({ baseId, tableId, items: limited });
 
   if(headers.length === 0){
     return { rowCount: 0, truncated: items.length > limited.length };
@@ -47,7 +44,7 @@ export async function syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, 
 
   const rows = limited.map(it => {
     const fields = it.fields || {};
-    return headers.map(h => normalizeCell(fields[h]));
+    return headers.map(h => formatBitableValue(fields[h], typeMap.get(h)));
   });
 
   for(let i = 0; i < rows.length; i += cfg.sheetWriteChunk){

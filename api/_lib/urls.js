@@ -13,7 +13,8 @@ export function parseLarkBase(url){
   const u = String(url);
   const baseId  = (u.match(/\/base\/([a-zA-Z0-9]+)/)        || [])[1] || "";
   const tableId = (u.match(/[?&]table=([a-zA-Z0-9]+)/)      || [])[1] || "";
-  return { baseId, tableId };
+  const viewId  = (u.match(/[?&]view=([a-zA-Z0-9]+)/)       || [])[1] || "";
+  return { baseId, tableId, viewId };
 }
 
 export function parseLarkSheetUrl(url){

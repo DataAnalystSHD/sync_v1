@@ -1,14 +1,9 @@
 import { larkListAllRecords } from "../../_lib/lark/records.js";
 import { larkListFields } from "../../_lib/lark/fields.js";
+import { formatBitableValue, buildFieldTypeMap } from "../../_lib/lark/field-types.js";
 import { getSheetMeta, batchUpdateValues, deleteRows } from "../../_lib/lark/sheets.js";
 import { endColumnFor } from "../../_lib/urls.js";
 import { resolveLarkSheetTarget } from "./lark-sheet-target.js";
-
-function normalizeCell(v){
-  if(v === null || v === undefined) return "";
-  if(typeof v === "object") return JSON.stringify(v);
-  return String(v);
-}
 
 function collectHeadersFromRecords(items){
   const set = new Set();
@@ -18,11 +13,13 @@ function collectHeadersFromRecords(items){
   return Array.from(set);
 }
 
-async function resolveHeaders({ baseId, tableId, items }){
+async function resolveSchema({ baseId, tableId, items }){
   const fields = await larkListFields({ baseId, tableId });
-  const ordered = fields.map(f => f.field_name).filter(Boolean);
-  if(ordered.length > 0) return ordered;
-  return collectHeadersFromRecords(items);
+  const headers = fields.map(f => f.field_name).filter(Boolean);
+  if(headers.length > 0){
+    return { headers, typeMap: buildFieldTypeMap(fields) };
+  }
+  return { headers: collectHeadersFromRecords(items), typeMap: new Map() };
 }
 
 function readRowCount(meta){
@@ -34,10 +31,10 @@ function readRowCount(meta){
   );
 }
 
-export async function syncLarkBaseToLarkSheet({ cfg, baseId, tableId, destUrl }){
-  const items = await larkListAllRecords({ baseId, tableId });
+export async function syncLarkBaseToLarkSheet({ cfg, baseId, tableId, destUrl, viewId }){
+  const items = await larkListAllRecords({ baseId, tableId, viewId });
   const limited = items.slice(0, cfg.maxRowsPerSync);
-  const headers = await resolveHeaders({ baseId, tableId, items: limited });
+  const { headers, typeMap } = await resolveSchema({ baseId, tableId, items: limited });
 
   if(headers.length === 0){
     return { rowCount: 0, truncated: items.length > limited.length };
@@ -51,7 +48,7 @@ export async function syncLarkBaseToLarkSheet({ cfg, baseId, tableId, destUrl })
 
   const dataRows = limited.map(it => {
     const fields = it.fields || {};
-    return headers.map(h => normalizeCell(fields[h]));
+    return headers.map(h => formatBitableValue(fields[h], typeMap.get(h)));
   });
   const newTotalRows = 1 + dataRows.length;
 

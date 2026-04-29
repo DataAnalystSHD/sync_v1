@@ -15,8 +15,9 @@ function resolveBase(pair){
   const parsed = parseLarkBase(pair.larkUrl);
   const baseId  = pair.baseId  || parsed.baseId;
   const tableId = pair.tableId || parsed.tableId;
+  const viewId  = parsed.viewId || "";
   if(!baseId || !tableId) throw new Error("Invalid Lark Base URL (need /base/<baseId>?table=<tableId>)");
-  return { baseId, tableId };
+  return { baseId, tableId, viewId };
 }
 
 function resolveGoogleSheet(pair){
@@ -37,8 +38,8 @@ export async function runOne({ accessToken, cfg, pair }){
 
   if(direction === "lark-to-sheet"){
     const { sheetId, gid } = resolveGoogleSheet(pair);
-    const { baseId, tableId } = resolveBase(pair);
-    return await syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, tableId });
+    const { baseId, tableId, viewId } = resolveBase(pair);
+    return await syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, tableId, viewId });
   }
 
   if(direction === "sheet-to-lark"){
@@ -57,9 +58,9 @@ export async function runOne({ accessToken, cfg, pair }){
 
   if(direction === "larkbase-to-larksheet"){
     ensureLarkSheetUrl(pair.sheetUrl);
-    const { baseId, tableId } = resolveBase(pair);
+    const { baseId, tableId, viewId } = resolveBase(pair);
     return await syncLarkBaseToLarkSheet({
-      cfg, baseId, tableId, destUrl: pair.sheetUrl,
+      cfg, baseId, tableId, viewId, destUrl: pair.sheetUrl,
     });
   }
 

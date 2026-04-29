@@ -5,13 +5,17 @@ import { getTenantAccessToken, authHeader, tableUrl, assertOk } from "./auth.js"
 const PAGE_SIZE = 500;
 const MAX_PAGES = 200;
 
-async function* iterateRecordPages({ baseId, tableId, fields = true }){
+async function* iterateRecordPages({ baseId, tableId, viewId, fields = true }){
   const token = await getTenantAccessToken();
   let pageToken = "";
   for(let i = 0; i < MAX_PAGES; i++){
     const r = await withBackoff(() => axios.get(tableUrl(baseId, tableId, "/records"), {
       headers: authHeader(token),
-      params: { page_size: PAGE_SIZE, page_token: pageToken || undefined },
+      params: {
+        page_size: PAGE_SIZE,
+        page_token: pageToken || undefined,
+        view_id: viewId || undefined,
+      },
       timeout: 30000,
     }), fields ? "larkListRecords" : "larkListIds");
 
@@ -21,9 +25,9 @@ async function* iterateRecordPages({ baseId, tableId, fields = true }){
   }
 }
 
-export async function larkListAllRecords({ baseId, tableId }){
+export async function larkListAllRecords({ baseId, tableId, viewId }){
   const out = [];
-  for await (const items of iterateRecordPages({ baseId, tableId })){
+  for await (const items of iterateRecordPages({ baseId, tableId, viewId })){
     out.push(...items);
   }
   out.sort((a, b) => (a.created_time || 0) - (b.created_time || 0));
