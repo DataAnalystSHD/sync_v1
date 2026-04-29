@@ -28,14 +28,14 @@
 <header class="topbar">
   <div class="topbar-inner">
     <div class="brand">
-      <div class="brand-icon">&#8652;</div>
+      <div class="brand-icon" data-icon="sync" data-size="18"></div>
       <div>
         <h1>SHD Sync</h1>
-        <span>Sheet &#8596; Lark/Feishu</span>
+        <span>Sheet ↔ Lark/Feishu</span>
       </div>
     </div>
     <div class="topbar-right">
-      <button class="theme-toggle" id="btnTheme" title="Toggle dark/light">&#9788;</button>
+      <button class="theme-toggle" id="btnTheme" title="Toggle dark/light"><span data-icon="sun" data-size="18"></span></button>
       <div class="user-badge" id="authChip">
         <div class="user-dot"></div>
         Not signed in
@@ -53,7 +53,7 @@
   <!-- Project Info Row -->
   <div class="info-row">
     <div class="info-card" data-color="gray">
-      <div class="info-icon">&#128100;</div>
+      <div class="info-icon" data-icon="user" data-size="22"></div>
       <div class="info-body">
         <div class="info-label">USER</div>
         <div class="info-value" id="iUser">Not signed in</div>
@@ -61,15 +61,15 @@
       <div class="info-deco"></div>
     </div>
     <div class="info-card" data-color="purple">
-      <div class="info-icon">&#128260;</div>
+      <div class="info-icon" data-icon="shuffle" data-size="22"></div>
       <div class="info-body">
         <div class="info-label">MODE</div>
-        <div class="info-value" id="iMode">Lark Base &#8594; Sheet</div>
+        <div class="info-value" id="iMode">Lark Base → Sheet</div>
       </div>
       <div class="info-deco"></div>
     </div>
     <div class="info-card" data-color="green">
-      <div class="info-icon">&#10003;</div>
+      <div class="info-icon" data-icon="checkCircle" data-size="22"></div>
       <div class="info-body">
         <div class="info-label">STATUS</div>
         <div class="info-value" id="iStatus">Disconnected</div>
@@ -77,7 +77,7 @@
       <div class="info-deco"></div>
     </div>
     <div class="info-card" data-color="amber">
-      <div class="info-icon">&#9889;</div>
+      <div class="info-icon" data-icon="zap" data-size="22"></div>
       <div class="info-body">
         <div class="info-label">SYNC MODE</div>
         <div class="info-value">Full-replace</div>
@@ -89,28 +89,29 @@
   <!-- How-to -->
   <div class="howto" id="howtoSection">
     <div class="howto-hd">
-      <h2>&#128214; วิธีการใช้งาน</h2>
-      <button class="howto-arrow" id="howtoToggleBtn">&#9650; ย่อ</button>
+      <span class="howto-title-icon" data-icon="bookOpen" data-size="16"></span>
+      <h2>วิธีการใช้งาน</h2>
+      <button class="howto-arrow" id="howtoToggleBtn"><span data-icon="chevronUp" data-size="14"></span> ย่อ</button>
     </div>
     <div class="howto-body" id="howtoBody">
       <div class="howto-grid">
         <div class="howto-col" data-color="purple">
           <h3>ขั้นตอน</h3>
-          <div class="hw-step"><div class="hw-num">1</div><div class="hw-txt"><strong>Login ด้วย Google</strong><br>กดปุ่ม Login &#8212; ใช้บัญชีที่มีสิทธิ์เข้าถึง Sheet ที่ต้องการ</div></div>
+          <div class="hw-step"><div class="hw-num">1</div><div class="hw-txt"><strong>Login ด้วย Google</strong><br>กดปุ่ม Login — ใช้บัญชีที่มีสิทธิ์เข้าถึง Sheet ที่ต้องการ</div></div>
           <div class="hw-step"><div class="hw-num">2</div><div class="hw-txt"><strong>กรอก URL ทั้งสองฝั่ง</strong><br>ใส่ <code>Google Sheet URL</code> และ <code>Lark Base URL</code></div></div>
-          <div class="hw-step"><div class="hw-num">3</div><div class="hw-txt"><strong>เลือก Direction</strong><br><code>Lark &#8594; Sheet</code> หรือ <code>Sheet &#8594; Lark</code></div></div>
+          <div class="hw-step"><div class="hw-num">3</div><div class="hw-txt"><strong>เลือก Direction</strong><br><code>Lark → Sheet</code> หรือ <code>Sheet → Lark</code></div></div>
           <div class="hw-step"><div class="hw-num">4</div><div class="hw-txt"><strong>Save Pair หรือ Sync Now</strong><br><code>Save Pair</code> = Cron sync อัตโนมัติ | <code>Sync Now</code> = sync ทันที</div></div>
         </div>
         <div class="howto-col" data-color="cyan">
           <h3>ตั้งค่า Lark App</h3>
-          <div class="hw-step"><div class="hw-num">1</div><div class="hw-txt"><strong>Add app เข้า Bitable / Sheet</strong><br>เปิด Bitable / Sheet ที่ต้องการ &#8594; กดเมนู <code>&#8943;</code> (3 จุด) มุมขวาบน &#8594; <code>More</code> &#8594; <code>Add Applications</code> &#8594; พิมพ์ค้น <b>Google Sheet to Base Bot</b> &#8594; กด Add</div></div>
+          <div class="hw-step"><div class="hw-num">1</div><div class="hw-txt"><strong>Add app เข้า Bitable / Sheet</strong><br>เปิด Bitable / Sheet ที่ต้องการ → กดเมนู <code>⋯</code> (3 จุด) มุมขวาบน → <code>More</code> → <code>Add Applications</code> → พิมพ์ค้น <b>Google Sheet to Base Bot</b> → กด Add</div></div>
         </div>
         <div class="howto-col" data-color="amber">
           <h3>สิ่งที่ควรรู้</h3>
-          <div class="hw-note"><span class="hw-icon">&#9888;&#65039;</span><div><b>Full-replace</b> <span class="hw-tag warn">ระวัง</span><br>ทุก sync จะลบข้อมูลปลายทางทั้งหมดแล้ว sync ใหม่</div></div>
-          <div class="hw-note"><span class="hw-icon">&#9201;&#65039;</span><div><b>แนะนำ interval 5&#8211;30 นาที</b> <span class="hw-tag info">Performance</span><br>ลด API rate limit</div></div>
-          <div class="hw-note"><span class="hw-icon">&#128274;</span><div><b>สิทธิ์การเข้าถึง</b><br>ต้องใช้บัญชีในโดเมนที่อนุญาต และมีสิทธิ์ Viewer ขึ้นไป</div></div>
-          <div class="hw-note"><span class="hw-icon">&#129534;</span><div><b>ถ้าเจอ permission error</b><br>เช็คก่อนว่า admin Approve scope แล้ว และเพิ่ม app เข้า Bitable / Sheet ที่จะ sync แล้ว</div></div>
+          <div class="hw-note"><span class="hw-icon" data-icon="alertTriangle" data-size="16"></span><div><b>Full-replace</b> <span class="hw-tag warn">ระวัง</span><br>ทุก sync จะลบข้อมูลปลายทางทั้งหมดแล้ว sync ใหม่</div></div>
+          <div class="hw-note"><span class="hw-icon" data-icon="clock" data-size="16"></span><div><b>แนะนำ interval 5–30 นาที</b> <span class="hw-tag info">Performance</span><br>ลด API rate limit</div></div>
+          <div class="hw-note"><span class="hw-icon" data-icon="lock" data-size="16"></span><div><b>สิทธิ์การเข้าถึง</b><br>ต้องใช้บัญชีในโดเมนที่อนุญาต และมีสิทธิ์ Viewer ขึ้นไป</div></div>
+          <div class="hw-note"><span class="hw-icon" data-icon="wrench" data-size="16"></span><div><b>ถ้าเจอ permission error</b><br>เช็คก่อนว่า admin Approve scope แล้ว และเพิ่ม app เข้า Bitable / Sheet ที่จะ sync แล้ว</div></div>
         </div>
       </div>
     </div>
@@ -130,7 +131,7 @@
       </div>
       <div class="card-body">
         <div class="btn-group" style="margin-bottom:16px">
-          <button class="primary" id="btnLogin">&#128273; Login with Google</button>
+          <button class="primary" id="btnLogin"><span data-icon="key" data-size="14"></span> Login with Google</button>
           <button id="btnLogout" disabled>Logout</button>
         </div>
 
@@ -146,33 +147,33 @@
         <div class="section-label">Sync Direction</div>
         <div class="dir-group dir-group-4">
           <div class="dir-btn" data-mode="lark-to-sheet" data-color="cyan" data-active="true">
-            <b>Lark Base &#8594; Google Sheet</b>
+            <b>Lark Base → Google Sheet</b>
             <small>Lark Base เป็นแหล่งข้อมูล</small>
           </div>
           <div class="dir-btn" data-mode="sheet-to-lark" data-color="green" data-active="false">
-            <b>Google Sheet &#8594; Lark Base</b>
+            <b>Google Sheet → Lark Base</b>
             <small>Google Sheet เป็นแหล่งข้อมูล</small>
           </div>
           <div class="dir-btn" data-mode="larksheet-to-larkbase" data-color="purple" data-active="false">
-            <b>Lark Sheet &#8594; Lark Base</b>
-            <small>Lark ทั้งคู่ &#8212; ไม่ต้อง Google</small>
+            <b>Lark Sheet → Lark Base</b>
+            <small>Lark ทั้งคู่ — ไม่ต้อง Google</small>
           </div>
           <div class="dir-btn" data-mode="larkbase-to-larksheet" data-color="amber" data-active="false">
-            <b>Lark Base &#8594; Lark Sheet</b>
-            <small>Lark ทั้งคู่ &#8212; ไม่ต้อง Google</small>
+            <b>Lark Base → Lark Sheet</b>
+            <small>Lark ทั้งคู่ — ไม่ต้อง Google</small>
           </div>
         </div>
 
         <!-- Edit mode indicator -->
         <div class="edit-banner" id="editBanner">
-          <span>&#9998; Editing pair #<span id="editRowId"></span></span>
+          <span><span data-icon="pencil" data-size="14"></span> Editing pair #<span id="editRowId"></span></span>
           <button id="btnCancelEdit">Cancel</button>
         </div>
 
         <div class="btn-group">
-          <button class="success" id="btnSavePair" disabled>&#128190; Save Pair</button>
-          <button class="primary" id="btnSyncNow" disabled>&#9889; Sync Now</button>
-          <button id="btnReload" disabled>&#8635; Reload</button>
+          <button class="success" id="btnSavePair" disabled><span data-icon="save" data-size="14"></span> Save Pair</button>
+          <button class="primary" id="btnSyncNow" disabled><span data-icon="zap" data-size="14"></span> Sync Now</button>
+          <button id="btnReload" disabled><span data-icon="refreshCw" data-size="14"></span> Reload</button>
         </div>
 
         <div class="hint">
@@ -192,7 +193,7 @@
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <span class="badge-count" id="pairCount">0 pairs</span>
-          <button class="cyan-btn" id="btnSyncAll" disabled style="padding:6px 12px;font-size:11px">&#9889; Sync All</button>
+          <button class="cyan-btn" id="btnSyncAll" disabled style="padding:6px 12px;font-size:11px"><span data-icon="zap" data-size="13"></span> Sync All</button>
         </div>
       </div>
       <div class="card-body">
@@ -206,12 +207,12 @@
               <option value="600">ทุก 10 นาที</option>
               <option value="1800">ทุก 30 นาที</option>
             </select>
-            <span class="countdown" id="autoCd">&mdash;</span>
-            <button id="btnStopAuto" style="padding:5px 10px;font-size:11px">&#9209; Stop</button>
+            <span class="countdown" id="autoCd">—</span>
+            <button id="btnStopAuto" style="padding:5px 10px;font-size:11px"><span data-icon="square" data-size="12"></span> Stop</button>
           </div>
         </div>
         <div id="autoStartRow" style="margin-bottom:12px;display:none">
-          <button class="cyan-btn" id="btnStartAuto" style="width:100%;justify-content:center;padding:10px">&#128260; เปิด Auto-sync</button>
+          <button class="cyan-btn" id="btnStartAuto" style="width:100%;justify-content:center;padding:10px"><span data-icon="play" data-size="14"></span> เปิด Auto-sync</button>
         </div>
 
         <!-- Progress bar -->
@@ -227,11 +228,11 @@
 
         <!-- Pairs list -->
         <div class="pairs-list" id="pairsList">
-          <div class="empty-state"><div class="empty-icon">&#128279;</div>Login แล้ว load pairs</div>
+          <div class="empty-state"><div class="empty-icon" data-icon="link" data-size="32"></div>Login แล้ว load pairs</div>
         </div>
 
         <div class="hint" style="margin-top:14px">
-          Cron: <span class="mono" id="cronUrl2">...</span> &#183; แนะนำทุก 5&#8211;30 นาที
+          Cron: <span class="mono" id="cronUrl2">...</span> · แนะนำทุก 5–30 นาที
         </div>
       </div>
     </section>
@@ -242,22 +243,23 @@
     <div class="card">
       <div class="card-header">
         <div class="card-header-left">
-          <div class="card-step" style="background:var(--amber-bg);border-color:var(--amber-bd);color:var(--amber)">&#10022;</div>
+          <div class="card-step" data-color="amber" style="background:var(--amber-bg);border-color:var(--amber-bd);color:var(--amber)"><span data-icon="activity" data-size="12"></span></div>
           <h2>Logs</h2>
         </div>
         <div style="display:flex;gap:8px">
-          <button id="btnExportLog" style="padding:5px 12px;font-size:11px">&#128229; Export</button>
-          <button id="btnClearLog" style="padding:5px 12px;font-size:11px">&#128465; Clear</button>
+          <button id="btnExportLog" style="padding:5px 12px;font-size:11px"><span data-icon="download" data-size="13"></span> Export</button>
+          <button id="btnClearLog" style="padding:5px 12px;font-size:11px"><span data-icon="trash" data-size="13"></span> Clear</button>
         </div>
       </div>
       <div class="card-body">
-        <div class="log-box" id="log">&mdash; ready &mdash;</div>
+        <div class="log-box" id="log">— ready —</div>
       </div>
     </div>
   </div>
 
 </div>
 
+<script src="/icons.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>

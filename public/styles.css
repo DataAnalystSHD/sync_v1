@@ -463,8 +463,19 @@ select:focus { border-color: var(--accent); }
 .pair-status.syncing { color: var(--accent2); }
 .pair-status.success { color: var(--green); }
 .pair-status.error   { color: var(--red); }
-.spin { display: inline-block; animation: spin .7s linear infinite; }
+.spin { display: inline-block; animation: spin .7s linear infinite; transform-origin: center; }
+svg.spin { transform-box: fill-box; }
 @keyframes spin { to{transform:rotate(360deg)} }
+
+/* Icons inside buttons / chips inherit color from text and align with the text baseline */
+button svg, .pair-status svg, .info-icon svg, .stat-icon svg, .empty-icon svg,
+.hw-icon svg, .modal-icon svg, .howto-arrow svg, .howto-title-icon svg {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.howto-title-icon { display: inline-flex; align-items: center; color: var(--muted); }
+.empty-icon { display: inline-flex; justify-content: center; align-items: center; color: var(--muted); }
 .pair-btns { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
 .pair-btns button { padding: 6px 12px; font-size: 11px; }
 .empty-state { text-align: center; padding: 32px 16px; color: var(--muted); font-size: 13px; }

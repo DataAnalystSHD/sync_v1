@@ -30,7 +30,7 @@ const state = {
 function log(...args) {
   const s = args.map(a => typeof a === 'string' ? a : JSON.stringify(a, null, 2)).join(' ');
   const box = $('log');
-  box.textContent = (box.textContent === '\u2014 ready \u2014' ? '' : box.textContent + '\n')
+  box.textContent = (box.textContent === '— ready —' ? '' : box.textContent + '\n')
     + `[${new Date().toLocaleTimeString()}] ` + s;
   box.scrollTop = box.scrollHeight;
   console.log(...args);
@@ -65,7 +65,7 @@ function fmtTime(s) {
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem('shd_theme', theme);
-  $('btnTheme').textContent = theme === 'dark' ? '\u263E' : '\u2600';
+  $('btnTheme').innerHTML = icon(theme === 'dark' ? 'moon' : 'sun', 18);
   $('btnTheme').title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
 }
 
@@ -92,9 +92,9 @@ function sendNotif(title, body) {
 // ──────────────────────────────────────────────────
 // Confirm modal
 // ──────────────────────────────────────────────────
-function showConfirm({ icon, title, desc, confirmText, confirmClass }) {
+function showConfirm({ iconName, title, desc, confirmText, confirmClass }) {
   return new Promise(resolve => {
-    $('modalIcon').textContent  = icon || '\u26a0\ufe0f';
+    $('modalIcon').innerHTML    = icon(iconName || 'alertTriangle', 40);
     $('modalTitle').textContent = title || 'Confirm';
     $('modalDesc').innerHTML    = desc || '';
     $('modalConfirm').textContent = confirmText || 'Confirm';
@@ -143,7 +143,7 @@ function updateInfoRow() {
   const userCard = $('iUser').closest('.info-card');
   if (userCard) userCard.dataset.color = state.userEmail ? 'green' : 'gray';
 
-  $('iMode').textContent = (DIRECTION_LABELS[state.masterMode] || state.masterMode).replace(/^[^\s]+\s/, '');
+  $('iMode').textContent = DIRECTION_LABELS[state.masterMode] || state.masterMode;
 
   const status = $('iStatus');
   const statusCard = status.closest('.info-card');
@@ -160,10 +160,10 @@ function updateInfoRow() {
 }
 
 const DIRECTION_LABELS = {
-  'lark-to-sheet':          '\u2b05 Lark Base \u2192 Google Sheet',
-  'sheet-to-lark':          '\u27a1 Google Sheet \u2192 Lark Base',
-  'larksheet-to-larkbase':  '\ud83d\udd00 Lark Sheet \u2192 Lark Base',
-  'larkbase-to-larksheet':  '\ud83d\udd00 Lark Base \u2192 Lark Sheet',
+  'lark-to-sheet':          'Lark Base → Google Sheet',
+  'sheet-to-lark':          'Google Sheet → Lark Base',
+  'larksheet-to-larkbase':  'Lark Sheet → Lark Base',
+  'larkbase-to-larksheet':  'Lark Base → Lark Sheet',
 };
 
 function isLarkSourceMode(mode){
@@ -198,7 +198,7 @@ function openPopup(url) {
 function startLogin() {
   log('Opening Google login...');
   const p = openPopup('/api/auth/google/start');
-  if (!p) alert('Popup blocked \u2014 please allow popups');
+  if (!p) alert('Popup blocked — please allow popups');
 }
 
 async function onOauthMessage(ev) {
@@ -210,14 +210,18 @@ async function onOauthMessage(ev) {
     if (!state.refreshToken) { alert('No refresh_token received. Try login again.'); return; }
     localStorage.setItem('google_refresh_token', state.refreshToken);
     localStorage.setItem('google_user_email',    state.userEmail);
-    log('\u2705 Logged in as ' + state.userEmail);
+    log('[OK] Logged in as ' + state.userEmail);
     setAuthed(true);
     await loadPairs();
     startAutoSync();
   } else {
-    log('\u274c Login failed: ' + msg.error);
+    log('[ERR] Login failed: ' + msg.error);
     alert('Login failed: ' + msg.error);
   }
+}
+
+function emptyState(iconName, text){
+  return `<div class="empty-state"><div class="empty-icon">${icon(iconName, 32)}</div>${text}</div>`;
 }
 
 function logout() {
@@ -229,7 +233,7 @@ function logout() {
   state.lastPairs    = [];
   setAuthed(false);
   cancelEdit();
-  $('pairsList').innerHTML = '<div class="empty-state"><div class="empty-icon">\ud83d\udd17</div>Login \u0e41\u0e25\u0e49\u0e27 load pairs</div>';
+  $('pairsList').innerHTML = emptyState('link', 'Login แล้ว load pairs');
   $('pairCount').textContent = '0 pairs';
   $('searchBar').style.display = 'none';
   hideSyncSummary();
@@ -246,14 +250,14 @@ function startEdit(pair) {
   setMode(pair.direction || 'lark-to-sheet');
   $('editBanner').classList.add('show');
   $('editRowId').textContent = pair.rowId;
-  $('btnSavePair').textContent = '\u2714 Update Pair';
+  $('btnSavePair').innerHTML = `${icon('check', 14)} Update Pair`;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function cancelEdit() {
   state.editingRowId = null;
   $('editBanner').classList.remove('show');
-  $('btnSavePair').innerHTML = '&#128190; Save Pair';
+  $('btnSavePair').innerHTML = `${icon('save', 14)} Save Pair`;
   $('sheetUrl').value = '';
   $('larkUrl').value  = '';
 }
@@ -283,8 +287,8 @@ function updateSyncSummary() {
   const total = state.lastSyncOk + state.lastSyncFail;
   if (!state.lastSyncTime || total === 0) { el.classList.remove('show'); return; }
   const timeStr = new Date(state.lastSyncTime).toLocaleString('th-TH');
-  el.innerHTML = `\u26a1 Sync ล่าสุด: <b>${timeStr}</b> &mdash; สำเร็จ <b>${state.lastSyncOk}/${total}</b> pairs`
-    + (state.lastSyncFail > 0 ? ` &mdash; <span style="color:var(--red)">ล้มเหลว ${state.lastSyncFail}</span>` : '');
+  el.innerHTML = `${icon('zap', 14)} Sync ล่าสุด: <b>${timeStr}</b> — สำเร็จ <b>${state.lastSyncOk}/${total}</b> pairs`
+    + (state.lastSyncFail > 0 ? ` — <span style="color:var(--red)">ล้มเหลว ${state.lastSyncFail}</span>` : '');
   el.className = 'sync-summary show' + (state.lastSyncFail > 0 ? ' has-error' : '');
 }
 
@@ -299,7 +303,7 @@ function hideSyncSummary() {
 function getInputs() {
   const s = $('sheetUrl').value.trim();
   const l = $('larkUrl').value.trim();
-  if (!s || !l) throw new Error('\u0e01\u0e23\u0e38\u0e13\u0e32\u0e43\u0e2a\u0e48\u0e25\u0e34\u0e07\u0e01\u0e4c\u0e43\u0e2b\u0e49\u0e04\u0e23\u0e1a');
+  if (!s || !l) throw new Error('กรุณาใส่ลิงก์ให้ครบ');
   return { sheetUrl: s, larkUrl: l, direction: state.masterMode };
 }
 
@@ -316,7 +320,7 @@ async function savePair() {
         method: 'POST',
         body: JSON.stringify({ ...getInputs(), refreshToken, userEmail }),
       });
-      log('\u2705 Pair updated', out);
+      log('[OK] Pair updated', out);
       cancelEdit();
     } else {
       log('Saving pair...');
@@ -324,18 +328,18 @@ async function savePair() {
         method: 'POST',
         body: JSON.stringify({ ...getInputs(), refreshToken, userEmail }),
       });
-      log('\u2705 Pair saved', out);
+      log('[OK] Pair saved', out);
     }
     await loadPairs();
   } catch (e) {
-    log('\u274c Save error: ' + e.message);
+    log('[ERR] Save error: ' + e.message);
     alert(e.message);
   }
 }
 
 async function syncNow() {
   const ok = await showConfirm({
-    icon: '\u26a0\ufe0f',
+    iconName: 'alertTriangle',
     title: 'Full-replace Sync',
     desc: 'ข้อมูล<b>ปลายทางจะถูกลบทั้งหมด</b>แล้ว sync ใหม่<br>ต้องการดำเนินการ?',
     confirmText: 'Sync Now',
@@ -351,11 +355,11 @@ async function syncNow() {
         pairs: [{ ...getInputs(), refreshToken, userEmail, source: 'manual', forceNew: true }],
       }),
     });
-    log('\u2705 Sync result', out);
+    log('[OK] Sync result', out);
     sendNotif('SHD Sync', 'Manual sync completed');
     await loadPairs();
   } catch (e) {
-    log('\u274c Sync error: ' + e.message);
+    log('[ERR] Sync error: ' + e.message);
     sendNotif('SHD Sync', 'Sync failed: ' + e.message);
     alert(e.message);
   }
@@ -365,7 +369,7 @@ async function syncAllPairs() {
   if (!state.lastPairs.length) { log('No pairs to sync'); return; }
 
   const ok = await showConfirm({
-    icon: '\ud83d\udd04',
+    iconName: 'refreshCw',
     title: 'Sync All ' + state.lastPairs.length + ' Pairs',
     desc: 'จะทำ <b>Full-replace</b> ทุก pair<br>ข้อมูลปลายทางทั้งหมดจะถูกลบแล้ว sync ใหม่',
     confirmText: 'Sync All',
@@ -383,7 +387,7 @@ async function syncAllPairsAuto() {
 
 async function runBatchSync(source) {
   const total = state.lastPairs.length;
-  log((source === 'auto' ? '\ud83d\udd04 Auto-syncing ' : '\ud83d\udd04 Syncing all ') + total + ' pairs...');
+  log((source === 'auto' ? '[AUTO] Auto-syncing ' : '[SYNC] Syncing all ') + total + ' pairs...');
 
   state.syncedCount = 0;
   let failCount = 0;
@@ -405,13 +409,13 @@ async function runBatchSync(source) {
   updateSyncSummary();
 
   const msg = (source === 'auto' ? 'Auto-sync done. ' : 'All pairs synced. ') + 'OK: ' + state.syncedCount + '/' + total;
-  log('\u2705 ' + msg);
+  log('[OK] ' + msg);
   sendNotif('SHD Sync', msg);
 }
 
 async function syncOnePair(pair) {
   const { refreshToken, userEmail } = state;
-  setPairStatus(pair.rowId, 'syncing', '<span class="spin">\u21bb</span> Syncing\u2026');
+  setPairStatus(pair.rowId, 'syncing', `${icon('refreshCw', 14, 'spin')} Syncing…`);
   markCard(pair.rowId, 'syncing');
   try {
     const out = await fetchJson('/api/sync', {
@@ -422,16 +426,16 @@ async function syncOnePair(pair) {
     });
     const r = out.results?.[0];
     const rows = r?.rowCount ?? '?';
-    setPairStatus(pair.rowId, 'success', '\u2705 ' + rows + ' rows \u00b7 ' + new Date().toLocaleTimeString());
+    setPairStatus(pair.rowId, 'success', `${icon('checkCircle', 14)} ${rows} rows · ${new Date().toLocaleTimeString()}`);
     markCard(pair.rowId, 'success');
     state.syncedCount++;
     const tag = pair.sheetUrl.split('/d/')[1]?.slice(0, 12) || pair.sheetId;
-    log('\u2705 [' + tag + '] ' + rows + ' rows');
+    log('[OK] [' + tag + '] ' + rows + ' rows');
     updatePairMeta(pair.rowId, new Date().toISOString());
   } catch (e) {
-    setPairStatus(pair.rowId, 'error', '\u274c ' + e.message);
+    setPairStatus(pair.rowId, 'error', `${icon('xCircle', 14)} ${e.message}`);
     markCard(pair.rowId, 'error');
-    log('\u274c Pair error [rowId=' + pair.rowId + ']: ' + e.message);
+    log('[ERR] Pair error [rowId=' + pair.rowId + ']: ' + e.message);
   }
 }
 
@@ -469,20 +473,20 @@ async function loadPairs() {
     $('searchBar').style.display = state.lastPairs.length > 2 ? 'block' : 'none';
 
     if (!state.lastPairs.length) {
-      $('pairsList').innerHTML = '<div class="empty-state"><div class="empty-icon">\ud83d\udced</div>\u0e22\u0e31\u0e07\u0e44\u0e21\u0e48\u0e21\u0e35 pair</div>';
+      $('pairsList').innerHTML = emptyState('inbox', 'ยังไม่มี pair');
     } else {
       renderPairs(state.lastPairs);
     }
-    log('\u2705 Loaded ' + state.lastPairs.length + ' pairs');
+    log('[OK] Loaded ' + state.lastPairs.length + ' pairs');
   } catch (e) {
-    log('\u274c Load pairs error: ' + e.message);
+    log('[ERR] Load pairs error: ' + e.message);
   }
 }
 
 function pairCardHtml(p) {
   const dirTag = DIRECTION_LABELS[p.direction] || p.direction;
   const sourceLabel = isLarkSourceMode(p.direction) ? 'Lark Sheet' : 'Sheet';
-  const lastSync = p.lastSyncAt ? new Date(p.lastSyncAt).toLocaleString('th-TH') : '\u2014';
+  const lastSync = p.lastSyncAt ? new Date(p.lastSyncAt).toLocaleString('th-TH') : '—';
   const search = escHtml((p.sheetUrl + ' ' + p.larkUrl + ' ' + p.direction).toLowerCase());
   return `
     <div class="pair-card" data-card="${p.rowId}" data-search="${search}">
@@ -490,11 +494,11 @@ function pairCardHtml(p) {
       <div class="pair-info"><b>${sourceLabel}:</b> ${escHtml(p.sheetUrl)}</div>
       <div class="pair-info"><b>Lark Base:</b> ${escHtml(p.larkUrl)}</div>
       <div class="pair-info"><b>Last:</b> <span data-lastsync="${p.rowId}">${lastSync}</span></div>
-      <div class="pair-status idle" data-status="${p.rowId}">\u25cf Idle</div>
+      <div class="pair-status idle" data-status="${p.rowId}">${icon('circle', 10)} Idle</div>
       <div class="pair-btns">
-        <button class="primary" data-sync="${p.rowId}">\u26a1 Sync</button>
-        <button class="warn-btn" data-edit="${p.rowId}">\u270e Edit</button>
-        <button class="danger" data-deact="${p.rowId}">\u2715 Deactivate</button>
+        <button class="primary" data-sync="${p.rowId}">${icon('zap', 12)} Sync</button>
+        <button class="warn-btn" data-edit="${p.rowId}">${icon('pencil', 12)} Edit</button>
+        <button class="danger" data-deact="${p.rowId}">${icon('x', 12)} Deactivate</button>
       </div>
     </div>
   `;
@@ -506,7 +510,7 @@ function bindPairButtons() {
       const pair = state.lastPairs.find(x => String(x.rowId) === btn.dataset.sync);
       if (!pair) return;
       const ok = await showConfirm({
-        icon: '\u26a1',
+        iconName: 'zap',
         title: 'Sync Pair',
         desc: 'Full-replace sync<br>ข้อมูล<b>ปลายทางจะถูกลบทั้งหมด</b>แล้ว sync ใหม่',
         confirmText: 'Sync',
@@ -524,7 +528,7 @@ function bindPairButtons() {
   document.querySelectorAll('[data-deact]').forEach(btn => {
     btn.onclick = async () => {
       const ok = await showConfirm({
-        icon: '\ud83d\uddd1\ufe0f',
+        iconName: 'trash',
         title: 'Deactivate Pair',
         desc: 'Pair นี้จะถูกปิดการใช้งาน<br>สามารถสร้างใหม่ได้ภายหลัง',
         confirmText: 'Deactivate',
@@ -560,7 +564,7 @@ function startAutoSync() {
   $('autoBar').style.display      = 'flex';
   $('autoStartRow').style.display = 'none';
   scheduleNextAutoSync();
-  log('\ud83d\udd04 Auto-sync started');
+  log('[AUTO] Auto-sync started');
   updateInfoRow();
 }
 
@@ -570,7 +574,7 @@ function stopAutoSync() {
   state.autoTimer = null;
   $('autoBar').style.display      = 'none';
   $('autoStartRow').style.display = state.refreshToken ? 'block' : 'none';
-  $('autoCd').textContent = '\u2014';
+  $('autoCd').textContent = '—';
   updateInfoRow();
 }
 
@@ -602,7 +606,9 @@ function toggleHowto() {
   const body = $('howtoBody');
   const btn  = $('howtoToggleBtn');
   const collapsed = body.classList.toggle('collapsed');
-  btn.textContent = collapsed ? '\u25bc \u0e02\u0e22\u0e32\u0e22' : '\u25b2 \u0e22\u0e48\u0e2d';
+  btn.innerHTML = collapsed
+    ? `${icon('chevronDown', 14)} ขยาย`
+    : `${icon('chevronUp', 14)} ย่อ`;
 }
 
 // ──────────────────────────────────────────────────
@@ -620,7 +626,7 @@ function exportLogs() {
 }
 
 function clearLogs() {
-  $('log').textContent = '\u2014 ready \u2014';
+  $('log').textContent = '— ready —';
 }
 
 // ──────────────────────────────────────────────────
