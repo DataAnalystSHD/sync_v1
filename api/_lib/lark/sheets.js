@@ -34,7 +34,9 @@ export async function getSheetMeta({ ssToken, sheetId }){
 export async function getSheetValues({ ssToken, sheetId, range }){
   const token = await getTenantAccessToken();
   const r = await withBackoff(() => axios.get(v2(ssToken, `/values/${sheetId}!${range}`), {
-    headers: authHeader(token), timeout: 30000,
+    headers: authHeader(token),
+    params: { dateTimeRenderOption: "FormattedString" },
+    timeout: 30000,
   }), "larkSheetValuesGet");
   assertOk(r.data, "Lark sheet values get");
   return r.data?.data?.valueRange?.values || [];
