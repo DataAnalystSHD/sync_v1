@@ -60,6 +60,18 @@ async function readTypeMap({ baseId, tableId }){
   return new Map(fields.map(f => [f.field_name, f.type]));
 }
 
+function isEmptyCell(v){
+  if(v === null || v === undefined) return true;
+  if(typeof v === "string") return v.trim() === "";
+  if(Array.isArray(v)) return v.length === 0 || v.every(isEmptyCell);
+  return false;
+}
+
+function isEmptyRow(row){
+  if(!row || row.length === 0) return true;
+  return row.every(isEmptyCell);
+}
+
 function rowsToRecords(rows, headers, typeMap){
   return rows.map(row => {
     const obj = {};
@@ -97,24 +109,29 @@ export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, bas
   const end   = cursorRow + pageSize - 1;
   const range = `A${start}:${endCol}${end}`;
 
-  const values = await getSheetValues({ ssToken, sheetId, range });
+  const rawValues = await getSheetValues({ ssToken, sheetId, range });
+  const nonEmpty  = (rawValues || []).filter(r => !isEmptyRow(r));
 
-  if(!values || values.length === 0){
+  if(nonEmpty.length === 0){
     await finishRun({ accessToken, cfg, rowId });
     return { rowCount: 0, truncated: false, done: true };
   }
 
-  const records = rowsToRecords(values, headers, typeMap);
+  const records = rowsToRecords(nonEmpty, headers, typeMap);
   await larkCreateRecordsBatched({ baseId, tableId, records });
 
-  const nextCursor = cursorRow + records.length;
-  if(rowId) await updateCursor({ accessToken, cfg, rowId, cursorRow: nextCursor });
+  const done = nonEmpty.length < pageSize;
+  const nextCursor = cursorRow + (rawValues?.length || 0);
+  if(rowId){
+    if(done) await finishRun({ accessToken, cfg, rowId });
+    else     await updateCursor({ accessToken, cfg, rowId, cursorRow: nextCursor });
+  }
 
   return {
     rowCount: records.length,
     truncated: false,
-    done: false,
-    page: { startRow: cursorRow, endRow: nextCursor - 1, pageSize },
-    nextCursorRow: nextCursor,
+    done,
+    page: { startRow: cursorRow, endRow: cursorRow + (rawValues?.length || 0) - 1, pageSize },
+    nextCursorRow: done ? null : nextCursor,
   };
 }
