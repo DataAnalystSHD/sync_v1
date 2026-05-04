@@ -21,6 +21,20 @@ function isTransient(err){
   );
 }
 
+function describeError(err, label){
+  const status = err?.response?.status;
+  const data = err?.response?.data;
+  if(data && typeof data === "object"){
+    const code = data.code ?? data.error_code;
+    const msg  = data.msg  ?? data.error_msg ?? data.error_description ?? data.error;
+    if(code != null || msg){
+      return `[${label}] HTTP ${status ?? "?"} code=${code ?? "?"} msg=${msg ?? "?"}`;
+    }
+  }
+  if(status) return `[${label}] HTTP ${status} ${err?.message || ""}`.trim();
+  return `[${label}] ${err?.message || String(err)}`;
+}
+
 export async function withBackoff(fn, label){
   const max = getConfig().larkRetries;
   let lastErr = null;
@@ -35,5 +49,9 @@ export async function withBackoff(fn, label){
       await sleep(wait);
     }
   }
-  throw lastErr;
+  const wrapped = new Error(describeError(lastErr, label));
+  wrapped.cause = lastErr;
+  wrapped.status = lastErr?.response?.status;
+  wrapped.larkCode = lastErr?.response?.data?.code;
+  throw wrapped;
 }
