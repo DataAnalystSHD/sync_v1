@@ -102,10 +102,11 @@ function showConfirm({ iconName, title, desc, confirmText, confirmClass }) {
 // Auth UI
 // ──────────────────────────────────────────────────
 function setAuthed(ok) {
-  $('btnLogout').disabled   = !ok;
-  $('sheetUrl').disabled    = !ok;
-  $('larkUrl').disabled     = !ok;
-  $('btnSyncNow').disabled  = !ok;
+  $('btnLogout').disabled       = !ok;
+  $('sheetUrl').disabled        = !ok;
+  $('larkUrl').disabled         = !ok;
+  $('syncDirection').disabled   = !ok;
+  $('btnSyncNow').disabled      = !ok;
 
   const chip = $('authChip');
   if (ok) {
@@ -165,9 +166,7 @@ const FIELD_KINDS = {
 function setMode(m) {
   if (!DIRECTION_LABELS[m]) m = 'lark-to-sheet';
   state.masterMode = m;
-  document.querySelectorAll('[data-mode]').forEach(btn => {
-    btn.dataset.active = btn.dataset.mode === m ? 'true' : 'false';
-  });
+  if ($('syncDirection').value !== m) $('syncDirection').value = m;
 
   const kinds = FIELD_KINDS[m];
   const top = URL_KIND[kinds.top];
@@ -313,9 +312,7 @@ function bindEvents() {
   $('btnTheme').onclick    = toggleTheme;
   $('btnLogin').onclick    = startLogin;
   $('btnLogout').onclick   = logout;
-  document.querySelectorAll('[data-mode]').forEach(btn => {
-    btn.onclick = () => setMode(btn.dataset.mode);
-  });
+  $('syncDirection').onchange = (ev) => setMode(ev.target.value);
   $('btnSyncNow').onclick  = syncNow;
   $('btnClearLog').onclick   = clearLogs;
   $('btnExportLog').onclick  = exportLogs;

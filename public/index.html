@@ -141,32 +141,16 @@
           <input class="field-input" id="larkUrl" placeholder="https://...larksuite.com/base/<baseId>?table=<tableId>" disabled />
         </div>
 
-        <div class="section-label">Sync Direction</div>
-        <div class="dir-group dir-group-4">
-          <div class="dir-btn" data-mode="lark-to-sheet" data-color="cyan" data-active="true">
-            <b>Lark Base → Google Sheet</b>
-            <small>Lark Base เป็นแหล่งข้อมูล</small>
-          </div>
-          <div class="dir-btn" data-mode="sheet-to-lark" data-color="green" data-active="false">
-            <b>Google Sheet → Lark Base</b>
-            <small>Google Sheet เป็นแหล่งข้อมูล</small>
-          </div>
-          <div class="dir-btn" data-mode="larksheet-to-larkbase" data-color="purple" data-active="false">
-            <b>Lark Sheet → Lark Base</b>
-            <small>Lark ทั้งคู่ — ไม่ต้อง Google</small>
-          </div>
-          <div class="dir-btn" data-mode="larkbase-to-larksheet" data-color="amber" data-active="false">
-            <b>Lark Base → Lark Sheet</b>
-            <small>Lark ทั้งคู่ — ไม่ต้อง Google</small>
-          </div>
-          <div class="dir-btn" data-mode="larksheet-to-googlesheet" data-color="purple" data-active="false">
-            <b>Lark Sheet → Google Sheet</b>
-            <small>ไม่ต้องผ่าน Lark Base</small>
-          </div>
-          <div class="dir-btn" data-mode="googlesheet-to-larksheet" data-color="green" data-active="false">
-            <b>Google Sheet → Lark Sheet</b>
-            <small>ไม่ต้องผ่าน Lark Base</small>
-          </div>
+        <div class="field">
+          <label class="field-label">Sync Direction</label>
+          <select class="field-input" id="syncDirection">
+            <option value="lark-to-sheet">Lark Base → Google Sheet</option>
+            <option value="sheet-to-lark">Google Sheet → Lark Base</option>
+            <option value="larksheet-to-larkbase">Lark Sheet → Lark Base</option>
+            <option value="larkbase-to-larksheet">Lark Base → Lark Sheet</option>
+            <option value="larksheet-to-googlesheet">Lark Sheet → Google Sheet</option>
+            <option value="googlesheet-to-larksheet">Google Sheet → Lark Sheet</option>
+          </select>
         </div>
 
         <div class="btn-group">
