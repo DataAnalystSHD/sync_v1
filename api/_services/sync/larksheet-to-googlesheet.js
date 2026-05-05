@@ -1,26 +1,13 @@
-import { getSheetValues, getSheetMeta } from "../../_lib/lark/sheets.js";
+import { getSheetValues, getSheetMeta, cellTextValue } from "../../_lib/lark/sheets.js";
 import { sheetsClear, sheetsUpdate, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
 import { endColumnFor } from "../../_lib/urls.js";
 import { resolveLarkSheetTarget } from "./lark-sheet-target.js";
 
 const READ_CHUNK = 5000;
 
-function isEmptyCell(v){
-  if(v === null || v === undefined) return true;
-  if(typeof v === "string") return v.trim() === "";
-  if(Array.isArray(v)) return v.length === 0 || v.every(isEmptyCell);
-  return false;
-}
-
 function isEmptyRow(row){
   if(!row || row.length === 0) return true;
-  return row.every(isEmptyCell);
-}
-
-function cellToString(v){
-  if(v === null || v === undefined) return "";
-  if(typeof v === "object") return JSON.stringify(v);
-  return String(v);
+  return row.every(v => cellTextValue(v).trim() === "");
 }
 
 function readGridSize(meta){
@@ -53,7 +40,7 @@ export async function syncLarkSheetToGoogleSheet({ accessToken, cfg, sourceUrl, 
 
   const headerRange = `A1:${endColumnFor(new Array(Math.max(totalCols, 1)).fill(""))}1`;
   const headerRows = await getSheetValues({ ssToken, sheetId, range: headerRange });
-  const rawHeaders = (headerRows?.[0] || []).map(cellToString);
+  const rawHeaders = (headerRows?.[0] || []).map(cellTextValue);
   const headers = [];
   for(let i = 0; i < rawHeaders.length; i++){
     const h = rawHeaders[i].trim();
@@ -66,7 +53,7 @@ export async function syncLarkSheetToGoogleSheet({ accessToken, cfg, sourceUrl, 
   const allRows = await readAllRows({ ssToken, sheetId, endCol, totalRows });
   const dataRows = allRows.slice(1)
     .filter(r => !isEmptyRow(r))
-    .map(r => headers.map((_, i) => cellToString(r[i])));
+    .map(r => headers.map((_, i) => cellTextValue(r[i])));
 
   const tabName = await getSheetNameByGid({ accessToken, spreadsheetId: destSheetId, gid: destGid });
   const tab = `${quoteSheetName(tabName)}!`;

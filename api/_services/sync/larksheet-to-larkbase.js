@@ -1,4 +1,4 @@
-import { getSheetValues } from "../../_lib/lark/sheets.js";
+import { getSheetValues, cellTextValue } from "../../_lib/lark/sheets.js";
 import { larkBatchDeleteAll, larkCreateRecordsBatched } from "../../_lib/lark/records.js";
 import { larkEnsureFields, larkListFields } from "../../_lib/lark/fields.js";
 import { inferType, inferProperty, convertForLark } from "../../_lib/lark/infer-types.js";
@@ -14,7 +14,7 @@ async function readHeaders({ ssToken, sheetId }){
   const rows = await getSheetValues({ ssToken, sheetId, range: "A1:CZ1" });
   const raw = rows?.[0] || [];
   const headers = raw
-    .map(v => (v == null ? "" : String(v).trim()))
+    .map(v => cellTextValue(v).trim())
     .filter(v => v !== "");
   if(headers.length === 0) throw new Error("Lark Sheet has no header row (row 1 must contain headers)");
   return headers;
@@ -76,8 +76,7 @@ function rowsToRecords(rows, headers, typeMap){
   return rows.map(row => {
     const obj = {};
     headers.forEach((h, idx) => {
-      const v = row[idx];
-      const text = v == null ? "" : (typeof v === "object" ? JSON.stringify(v) : String(v));
+      const text = cellTextValue(row[idx]);
       const converted = convertForLark(text, typeMap.get(h) || 1);
       if(converted !== undefined) obj[h] = converted;
     });

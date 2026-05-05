@@ -3,6 +3,41 @@ import { withBackoff } from "../retry.js";
 import { getConfig } from "../config.js";
 import { getTenantAccessToken, authHeader, assertOk } from "./auth.js";
 
+/**
+ * Normalize a Lark Sheet cell value to a plain display string.
+ *
+ * Lark returns rich-content cells (hyperlinks, mailto, mentions, multi-run
+ * rich text) as an array of segments like
+ *   [{ text: "user@x.com", link: "mailto:user@x.com", type: "url" }]
+ * — JSON.stringify on that array would leak the structure into downstream
+ * sheets/Bitable. We extract the user-facing `text` from each segment so
+ * the value becomes the same string the user sees in Lark Sheet.
+ */
+export function cellTextValue(v){
+  if(v === null || v === undefined) return "";
+  if(typeof v === "string")  return v;
+  if(typeof v === "number")  return String(v);
+  if(typeof v === "boolean") return String(v);
+  if(Array.isArray(v)){
+    return v.map(seg => {
+      if(seg === null || seg === undefined) return "";
+      if(typeof seg === "string") return seg;
+      if(typeof seg === "object"){
+        if(typeof seg.text === "string") return seg.text;
+        if(typeof seg.link === "string") return seg.link;
+        return "";
+      }
+      return String(seg);
+    }).join("");
+  }
+  if(typeof v === "object"){
+    if(typeof v.text === "string") return v.text;
+    if(typeof v.link === "string") return v.link;
+    return "";
+  }
+  return String(v);
+}
+
 function v2(ssToken, suffix = ""){
   const { larkApiBase } = getConfig();
   return `${larkApiBase}/open-apis/sheets/v2/spreadsheets/${ssToken}${suffix}`;
