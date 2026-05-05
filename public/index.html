@@ -137,7 +137,7 @@
           <input class="field-input" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/..." disabled />
         </div>
         <div class="field">
-          <label class="field-label">Lark / Feishu Base URL</label>
+          <label class="field-label" id="larkUrlLabel">Lark / Feishu Base URL</label>
           <input class="field-input" id="larkUrl" placeholder="https://...larksuite.com/base/<baseId>?table=<tableId>" disabled />
         </div>
 
@@ -158,6 +158,14 @@
           <div class="dir-btn" data-mode="larkbase-to-larksheet" data-color="amber" data-active="false">
             <b>Lark Base → Lark Sheet</b>
             <small>Lark ทั้งคู่ — ไม่ต้อง Google</small>
+          </div>
+          <div class="dir-btn" data-mode="larksheet-to-googlesheet" data-color="purple" data-active="false">
+            <b>Lark Sheet → Google Sheet</b>
+            <small>ไม่ต้องผ่าน Lark Base</small>
+          </div>
+          <div class="dir-btn" data-mode="googlesheet-to-larksheet" data-color="green" data-active="false">
+            <b>Google Sheet → Lark Sheet</b>
+            <small>ไม่ต้องผ่าน Lark Base</small>
           </div>
         </div>
 

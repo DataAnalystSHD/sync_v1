@@ -3,12 +3,16 @@ import { syncLarkToSheet } from "./lark-to-sheet.js";
 import { syncSheetToLark } from "./sheet-to-lark.js";
 import { syncLarkSheetToLarkBase } from "./larksheet-to-larkbase.js";
 import { syncLarkBaseToLarkSheet } from "./larkbase-to-larksheet.js";
+import { syncLarkSheetToGoogleSheet } from "./larksheet-to-googlesheet.js";
+import { syncGoogleSheetToLarkSheet } from "./googlesheet-to-larksheet.js";
 
 const DIRECTIONS = new Set([
   "lark-to-sheet",
   "sheet-to-lark",
   "larksheet-to-larkbase",
   "larkbase-to-larksheet",
+  "larksheet-to-googlesheet",
+  "googlesheet-to-larksheet",
 ]);
 
 function resolveBase(pair){
@@ -61,6 +65,32 @@ export async function runOne({ accessToken, cfg, pair }){
     const { baseId, tableId, viewId } = resolveBase(pair);
     return await syncLarkBaseToLarkSheet({
       cfg, baseId, tableId, viewId, destUrl: pair.sheetUrl,
+    });
+  }
+
+  // For Sheet ↔ Lark Sheet directions there is no Lark Base in the picture,
+  // so the form's two fields hold (source URL, dest URL) directly:
+  //   pair.sheetUrl = top input    (the source side)
+  //   pair.larkUrl  = bottom input (the destination side)
+  if(direction === "larksheet-to-googlesheet"){
+    ensureLarkSheetUrl(pair.sheetUrl);
+    const { id: gSheetId, gid } = parseGoogleSheetUrl(pair.larkUrl);
+    if(!gSheetId) throw new Error("Invalid Google Sheet URL (destination)");
+    return await syncLarkSheetToGoogleSheet({
+      accessToken, cfg,
+      sourceUrl: pair.sheetUrl,
+      destSheetId: gSheetId, destGid: gid,
+    });
+  }
+
+  if(direction === "googlesheet-to-larksheet"){
+    const { id: gSheetId, gid } = parseGoogleSheetUrl(pair.sheetUrl);
+    if(!gSheetId) throw new Error("Invalid Google Sheet URL (source)");
+    ensureLarkSheetUrl(pair.larkUrl);
+    return await syncGoogleSheetToLarkSheet({
+      accessToken, cfg,
+      srcSheetId: gSheetId, srcGid: gid,
+      destUrl: pair.larkUrl,
     });
   }
 

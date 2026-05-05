@@ -138,15 +138,29 @@ function updateInfoRow() {
 }
 
 const DIRECTION_LABELS = {
-  'lark-to-sheet':          'Lark Base → Google Sheet',
-  'sheet-to-lark':          'Google Sheet → Lark Base',
-  'larksheet-to-larkbase':  'Lark Sheet → Lark Base',
-  'larkbase-to-larksheet':  'Lark Base → Lark Sheet',
+  'lark-to-sheet':            'Lark Base → Google Sheet',
+  'sheet-to-lark':            'Google Sheet → Lark Base',
+  'larksheet-to-larkbase':    'Lark Sheet → Lark Base',
+  'larkbase-to-larksheet':    'Lark Base → Lark Sheet',
+  'larksheet-to-googlesheet': 'Lark Sheet → Google Sheet',
+  'googlesheet-to-larksheet': 'Google Sheet → Lark Sheet',
 };
 
-function isLarkSourceMode(mode){
-  return mode === 'larksheet-to-larkbase' || mode === 'larkbase-to-larksheet';
-}
+const URL_KIND = {
+  google:    { label: 'Google Sheet URL',     placeholder: 'https://docs.google.com/spreadsheets/d/...' },
+  larkSheet: { label: 'Lark Sheet URL',       placeholder: 'https://...feishu.cn/wiki/<token> หรือ /sheets/<token>' },
+  larkBase:  { label: 'Lark / Feishu Base URL', placeholder: 'https://...larksuite.com/base/<baseId>?table=<tableId>' },
+};
+
+// For each direction, what does the top input (sheetUrl) and bottom input (larkUrl) hold?
+const FIELD_KINDS = {
+  'lark-to-sheet':            { top: 'google',    bottom: 'larkBase'  },
+  'sheet-to-lark':            { top: 'google',    bottom: 'larkBase'  },
+  'larksheet-to-larkbase':    { top: 'larkSheet', bottom: 'larkBase'  },
+  'larkbase-to-larksheet':    { top: 'larkSheet', bottom: 'larkBase'  },
+  'larksheet-to-googlesheet': { top: 'larkSheet', bottom: 'google'    },
+  'googlesheet-to-larksheet': { top: 'google',    bottom: 'larkSheet' },
+};
 
 function setMode(m) {
   if (!DIRECTION_LABELS[m]) m = 'lark-to-sheet';
@@ -155,11 +169,13 @@ function setMode(m) {
     btn.dataset.active = btn.dataset.mode === m ? 'true' : 'false';
   });
 
-  const lark = isLarkSourceMode(m);
-  $('sheetUrlLabel').textContent = lark ? 'Lark Sheet URL' : 'Google Sheet URL';
-  $('sheetUrl').placeholder = lark
-    ? 'https://...feishu.cn/wiki/<token> หรือ /sheets/<token>'
-    : 'https://docs.google.com/spreadsheets/d/...';
+  const kinds = FIELD_KINDS[m];
+  const top = URL_KIND[kinds.top];
+  const bot = URL_KIND[kinds.bottom];
+  $('sheetUrlLabel').textContent = top.label;
+  $('sheetUrl').placeholder      = top.placeholder;
+  $('larkUrlLabel').textContent  = bot.label;
+  $('larkUrl').placeholder       = bot.placeholder;
   updateInfoRow();
 }
 
