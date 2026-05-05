@@ -13,12 +13,6 @@ const state = {
   refreshToken: localStorage.getItem('google_refresh_token') || '',
   userEmail:    localStorage.getItem('google_user_email')    || '',
   masterMode:   'lark-to-sheet',
-  lastPairs:    [],
-  syncedCount:  0,
-  editingRowId: null,
-  lastSyncTime: null,
-  lastSyncOk:   0,
-  lastSyncFail: 0,
 };
 
 // ──────────────────────────────────────────────────
@@ -111,10 +105,7 @@ function setAuthed(ok) {
   $('btnLogout').disabled   = !ok;
   $('sheetUrl').disabled    = !ok;
   $('larkUrl').disabled     = !ok;
-  $('btnSavePair').disabled = !ok;
   $('btnSyncNow').disabled  = !ok;
-  $('btnReload').disabled   = !ok;
-  $('btnSyncAll').disabled  = !ok;
 
   const chip = $('authChip');
   if (ok) {
@@ -199,15 +190,10 @@ async function onOauthMessage(ev) {
     localStorage.setItem('google_user_email',    state.userEmail);
     log('[OK] Logged in as ' + state.userEmail);
     setAuthed(true);
-    await loadPairs();
   } else {
     log('[ERR] Login failed: ' + msg.error);
     alert('Login failed: ' + msg.error);
   }
-}
-
-function emptyState(iconName, text){
-  return `<div class="empty-state"><div class="empty-icon">${icon(iconName, 32)}</div>${text}</div>`;
 }
 
 function logout() {
@@ -215,111 +201,18 @@ function logout() {
   localStorage.removeItem('google_user_email');
   state.refreshToken = '';
   state.userEmail    = '';
-  state.lastPairs    = [];
   setAuthed(false);
-  cancelEdit();
-  $('pairsList').innerHTML = emptyState('link', 'Login แล้ว load pairs');
-  $('pairCount').textContent = '0 pairs';
-  $('searchBar').style.display = 'none';
-  hideSyncSummary();
   log('Logged out');
 }
 
 // ──────────────────────────────────────────────────
-// Edit pair
-// ──────────────────────────────────────────────────
-function startEdit(pair) {
-  state.editingRowId = pair.rowId;
-  $('sheetUrl').value = pair.sheetUrl;
-  $('larkUrl').value  = pair.larkUrl;
-  setMode(pair.direction || 'lark-to-sheet');
-  $('editBanner').classList.add('show');
-  $('editRowId').textContent = pair.rowId;
-  $('btnSavePair').innerHTML = `${icon('check', 14)} Update Pair`;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function cancelEdit() {
-  state.editingRowId = null;
-  $('editBanner').classList.remove('show');
-  $('btnSavePair').innerHTML = `${icon('save', 14)} Save Pair`;
-  $('sheetUrl').value = '';
-  $('larkUrl').value  = '';
-}
-
-// ──────────────────────────────────────────────────
-// Progress bar
-// ──────────────────────────────────────────────────
-function showProgress(current, total, text) {
-  const wrap = $('progressWrap');
-  wrap.classList.add('show');
-  const pct = total > 0 ? Math.round((current / total) * 100) : 0;
-  $('progressFill').style.width = pct + '%';
-  $('progressPct').textContent  = pct + '%';
-  $('progressText').textContent = text || 'Syncing...';
-}
-
-function hideProgress() {
-  $('progressWrap').classList.remove('show');
-  $('progressFill').style.width = '0%';
-}
-
-// ──────────────────────────────────────────────────
-// Last sync summary
-// ──────────────────────────────────────────────────
-function updateSyncSummary() {
-  const el = $('syncSummary');
-  const total = state.lastSyncOk + state.lastSyncFail;
-  if (!state.lastSyncTime || total === 0) { el.classList.remove('show'); return; }
-  const timeStr = new Date(state.lastSyncTime).toLocaleString('th-TH');
-  el.innerHTML = `${icon('zap', 14)} Sync ล่าสุด: <b>${timeStr}</b> — สำเร็จ <b>${state.lastSyncOk}/${total}</b> pairs`
-    + (state.lastSyncFail > 0 ? ` — <span style="color:var(--red)">ล้มเหลว ${state.lastSyncFail}</span>` : '');
-  el.className = 'sync-summary show' + (state.lastSyncFail > 0 ? ' has-error' : '');
-}
-
-function hideSyncSummary() {
-  $('syncSummary').classList.remove('show');
-  state.lastSyncTime = null;
-}
-
-// ──────────────────────────────────────────────────
-// Pair save / sync
+// Sync
 // ──────────────────────────────────────────────────
 function getInputs() {
   const s = $('sheetUrl').value.trim();
   const l = $('larkUrl').value.trim();
   if (!s || !l) throw new Error('กรุณาใส่ลิงก์ให้ครบ');
   return { sheetUrl: s, larkUrl: l, direction: state.masterMode };
-}
-
-async function savePair() {
-  try {
-    const { refreshToken, userEmail } = state;
-    if (state.editingRowId) {
-      log('Updating pair #' + state.editingRowId + '...');
-      await fetchJson('/api/pairs', {
-        method: 'PUT',
-        body: JSON.stringify({ refreshToken, rowId: state.editingRowId, active: false }),
-      });
-      const out = await fetchJson('/api/pairs', {
-        method: 'POST',
-        body: JSON.stringify({ ...getInputs(), refreshToken, userEmail }),
-      });
-      log('[OK] Pair updated', out);
-      cancelEdit();
-    } else {
-      log('Saving pair...');
-      const out = await fetchJson('/api/pairs', {
-        method: 'POST',
-        body: JSON.stringify({ ...getInputs(), refreshToken, userEmail }),
-      });
-      log('[OK] Pair saved', out);
-    }
-    await loadPairs();
-  } catch (e) {
-    log('[ERR] Save error: ' + e.message);
-    alert(e.message);
-  }
 }
 
 async function syncNow() {
@@ -342,198 +235,11 @@ async function syncNow() {
     });
     log('[OK] Sync result', out);
     sendNotif('SHD Sync', 'Manual sync completed');
-    await loadPairs();
   } catch (e) {
     log('[ERR] Sync error: ' + e.message);
     sendNotif('SHD Sync', 'Sync failed: ' + e.message);
     alert(e.message);
   }
-}
-
-async function syncAllPairs() {
-  if (!state.lastPairs.length) { log('No pairs to sync'); return; }
-
-  const ok = await showConfirm({
-    iconName: 'refreshCw',
-    title: 'Sync All ' + state.lastPairs.length + ' Pairs',
-    desc: 'จะทำ <b>Full-replace</b> ทุก pair<br>ข้อมูลปลายทางทั้งหมดจะถูกลบแล้ว sync ใหม่',
-    confirmText: 'Sync All',
-    confirmClass: 'primary',
-  });
-  if (!ok) return;
-
-  await runBatchSync();
-}
-
-async function runBatchSync() {
-  const total = state.lastPairs.length;
-  log('[SYNC] Syncing all ' + total + ' pairs...');
-
-  state.syncedCount = 0;
-  let failCount = 0;
-  showProgress(0, total, 'Starting...');
-
-  for (let i = 0; i < total; i++) {
-    showProgress(i, total, `Syncing ${i + 1}/${total}...`);
-    const before = state.syncedCount;
-    await syncOnePair(state.lastPairs[i]);
-    if (state.syncedCount === before) failCount++;
-  }
-
-  showProgress(total, total, 'Done!');
-  setTimeout(hideProgress, 2000);
-
-  state.lastSyncTime = new Date();
-  state.lastSyncOk   = state.syncedCount;
-  state.lastSyncFail = failCount;
-  updateSyncSummary();
-
-  const msg = 'All pairs synced. OK: ' + state.syncedCount + '/' + total;
-  log('[OK] ' + msg);
-  sendNotif('SHD Sync', msg);
-}
-
-async function syncOnePair(pair) {
-  const { refreshToken, userEmail } = state;
-  setPairStatus(pair.rowId, 'syncing', `${icon('refreshCw', 14, 'spin')} Syncing…`);
-  markCard(pair.rowId, 'syncing');
-  try {
-    const out = await fetchJson('/api/sync', {
-      method: 'POST',
-      body: JSON.stringify({
-        pairs: [{ ...pair, refreshToken, userEmail: pair.user || userEmail, source: 'auto', forceNew: true }],
-      }),
-    });
-    const r = out.results?.[0];
-    const rows = r?.rowCount ?? '?';
-    setPairStatus(pair.rowId, 'success', `${icon('checkCircle', 14)} ${rows} rows · ${new Date().toLocaleTimeString()}`);
-    markCard(pair.rowId, 'success');
-    state.syncedCount++;
-    const tag = pair.sheetUrl.split('/d/')[1]?.slice(0, 12) || pair.sheetId;
-    log('[OK] [' + tag + '] ' + rows + ' rows');
-    updatePairMeta(pair.rowId, new Date().toISOString());
-  } catch (e) {
-    setPairStatus(pair.rowId, 'error', `${icon('xCircle', 14)} ${e.message}`);
-    markCard(pair.rowId, 'error');
-    log('[ERR] Pair error [rowId=' + pair.rowId + ']: ' + e.message);
-  }
-}
-
-function setPairStatus(rowId, cls, text) {
-  const el = document.querySelector('[data-status="' + rowId + '"]');
-  if (!el) return;
-  el.className = 'pair-status ' + cls;
-  el.innerHTML = text;
-}
-
-function markCard(rowId, cls) {
-  const card = document.querySelector('[data-card="' + rowId + '"]');
-  if (!card) return;
-  card.className = 'pair-card ' + cls;
-  setTimeout(() => { if (card.className.includes(cls)) card.className = 'pair-card'; }, 4000);
-}
-
-function updatePairMeta(rowId, ts) {
-  const el = document.querySelector('[data-lastsync="' + rowId + '"]');
-  if (el) el.textContent = new Date(ts).toLocaleString('th-TH');
-}
-
-// ──────────────────────────────────────────────────
-// Pair list rendering
-// ──────────────────────────────────────────────────
-async function loadPairs() {
-  log('Loading pairs...');
-  try {
-    const out = await fetchJson('/api/pairs', {
-      method: 'POST',
-      body: JSON.stringify({ refreshToken: state.refreshToken }),
-    });
-    state.lastPairs = out.pairs || [];
-    $('pairCount').textContent = state.lastPairs.length + ' pairs';
-    $('searchBar').style.display = state.lastPairs.length > 2 ? 'block' : 'none';
-
-    if (!state.lastPairs.length) {
-      $('pairsList').innerHTML = emptyState('inbox', 'ยังไม่มี pair');
-    } else {
-      renderPairs(state.lastPairs);
-    }
-    log('[OK] Loaded ' + state.lastPairs.length + ' pairs');
-  } catch (e) {
-    log('[ERR] Load pairs error: ' + e.message);
-  }
-}
-
-function pairCardHtml(p) {
-  const dirTag = DIRECTION_LABELS[p.direction] || p.direction;
-  const sourceLabel = isLarkSourceMode(p.direction) ? 'Lark Sheet' : 'Sheet';
-  const lastSync = p.lastSyncAt ? new Date(p.lastSyncAt).toLocaleString('th-TH') : '—';
-  const search = escHtml((p.sheetUrl + ' ' + p.larkUrl + ' ' + p.direction).toLowerCase());
-  return `
-    <div class="pair-card" data-card="${p.rowId}" data-search="${search}">
-      <div class="pair-dir-tag">${dirTag}</div>
-      <div class="pair-info"><b>${sourceLabel}:</b> ${escHtml(p.sheetUrl)}</div>
-      <div class="pair-info"><b>Lark Base:</b> ${escHtml(p.larkUrl)}</div>
-      <div class="pair-info"><b>Last:</b> <span data-lastsync="${p.rowId}">${lastSync}</span></div>
-      <div class="pair-status idle" data-status="${p.rowId}">${icon('circle', 10)} Idle</div>
-      <div class="pair-btns">
-        <button class="primary" data-sync="${p.rowId}">${icon('zap', 12)} Sync</button>
-        <button class="warn-btn" data-edit="${p.rowId}">${icon('pencil', 12)} Edit</button>
-        <button class="danger" data-deact="${p.rowId}">${icon('x', 12)} Deactivate</button>
-      </div>
-    </div>
-  `;
-}
-
-function bindPairButtons() {
-  document.querySelectorAll('[data-sync]').forEach(btn => {
-    btn.onclick = async () => {
-      const pair = state.lastPairs.find(x => String(x.rowId) === btn.dataset.sync);
-      if (!pair) return;
-      const ok = await showConfirm({
-        iconName: 'zap',
-        title: 'Sync Pair',
-        desc: 'Full-replace sync<br>ข้อมูล<b>ปลายทางจะถูกลบทั้งหมด</b>แล้ว sync ใหม่',
-        confirmText: 'Sync',
-        confirmClass: 'primary',
-      });
-      if (ok) await syncOnePair(pair);
-    };
-  });
-  document.querySelectorAll('[data-edit]').forEach(btn => {
-    btn.onclick = () => {
-      const pair = state.lastPairs.find(x => String(x.rowId) === btn.dataset.edit);
-      if (pair) startEdit(pair);
-    };
-  });
-  document.querySelectorAll('[data-deact]').forEach(btn => {
-    btn.onclick = async () => {
-      const ok = await showConfirm({
-        iconName: 'trash',
-        title: 'Deactivate Pair',
-        desc: 'Pair นี้จะถูกปิดการใช้งาน<br>สามารถสร้างใหม่ได้ภายหลัง',
-        confirmText: 'Deactivate',
-        confirmClass: 'danger',
-      });
-      if (!ok) return;
-      await fetchJson('/api/pairs', {
-        method: 'PUT',
-        body: JSON.stringify({ refreshToken: state.refreshToken, rowId: btn.dataset.deact, active: false }),
-      });
-      await loadPairs();
-    };
-  });
-}
-
-function renderPairs(pairs) {
-  $('pairsList').innerHTML = pairs.map(pairCardHtml).join('');
-  bindPairButtons();
-}
-
-function filterPairs() {
-  const q = $('searchInput').value.toLowerCase().trim();
-  document.querySelectorAll('.pair-card[data-search]').forEach(card => {
-    card.classList.toggle('hidden', q !== '' && !card.dataset.search.includes(q));
-  });
 }
 
 // ──────────────────────────────────────────────────
@@ -575,7 +281,6 @@ async function bootstrap() {
     CONFIG.historySheetId = cfg.historySheetId;
     CONFIG.allowedDomain  = cfg.allowedDomain;
     $('histLabel').textContent = cfg.historySheetId || '(missing)';
-    $('cronUrl').textContent   = location.origin + '/api/sync';
     log('Config loaded', cfg);
   } catch (e) {
     log('Config error: ' + e.message);
@@ -583,7 +288,6 @@ async function bootstrap() {
 
   if (state.refreshToken && state.userEmail) {
     setAuthed(true);
-    await loadPairs();
   } else {
     updateInfoRow();
   }
@@ -596,12 +300,7 @@ function bindEvents() {
   document.querySelectorAll('[data-mode]').forEach(btn => {
     btn.onclick = () => setMode(btn.dataset.mode);
   });
-  $('btnCancelEdit').onclick = cancelEdit;
-  $('btnSavePair').onclick = savePair;
   $('btnSyncNow').onclick  = syncNow;
-  $('btnReload').onclick   = loadPairs;
-  $('btnSyncAll').onclick  = syncAllPairs;
-  $('searchInput').oninput   = filterPairs;
   $('btnClearLog').onclick   = clearLogs;
   $('btnExportLog').onclick  = exportLogs;
   $('howtoSection').querySelector('.howto-hd').onclick = toggleHowto;

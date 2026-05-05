@@ -296,8 +296,7 @@ body {
 .hw-tag.tip  { background: var(--green-bg); border: 1px solid var(--green-bd); color: var(--green); }
 
 /* ───── Main Grid ───── */
-.main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-@media(max-width:900px){ .main-grid{ grid-template-columns: 1fr; } }
+.main-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
 
 /* ───── Card ───── */
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); overflow: hidden; box-shadow: var(--sh); animation: fadeUp .35s ease both; transition: box-shadow .25s; }
