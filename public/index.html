@@ -179,7 +179,7 @@
         <div class="hint">
           <b>Save Pair</b> = Cron sync อัตโนมัติแม้ปิดเว็บ<br>
           Cron endpoint: <span class="mono" id="cronUrl">...</span><br>
-          Auto-sync ทำ <b>Full-replace</b> ทุกรอบ
+          Cron sync ทำ <b>Full-replace</b> ทุกรอบ
         </div>
       </div>
     </section>
@@ -197,24 +197,6 @@
         </div>
       </div>
       <div class="card-body">
-        <!-- Auto-sync bar -->
-        <div class="auto-bar" id="autoBar" style="display:none">
-          <div class="auto-bar-left"><div class="pulse-dot"></div>Auto-sync active</div>
-          <div class="auto-bar-right">
-            <select id="autoInterval">
-              <option value="60">ทุก 1 นาที</option>
-              <option value="300" selected>ทุก 5 นาที</option>
-              <option value="600">ทุก 10 นาที</option>
-              <option value="1800">ทุก 30 นาที</option>
-            </select>
-            <span class="countdown" id="autoCd">—</span>
-            <button id="btnStopAuto" style="padding:5px 10px;font-size:11px"><span data-icon="square" data-size="12"></span> Stop</button>
-          </div>
-        </div>
-        <div id="autoStartRow" style="margin-bottom:12px;display:none">
-          <button class="cyan-btn" id="btnStartAuto" style="width:100%;justify-content:center;padding:10px"><span data-icon="play" data-size="14"></span> เปิด Auto-sync</button>
-        </div>
-
         <!-- Progress bar -->
         <div class="progress-wrap" id="progressWrap">
           <div class="progress-label"><span id="progressText">Syncing...</span><span id="progressPct">0%</span></div>

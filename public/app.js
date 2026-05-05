@@ -19,9 +19,6 @@ const state = {
   lastSyncTime: null,
   lastSyncOk:   0,
   lastSyncFail: 0,
-  autoTimer:    null,
-  cdTimer:      null,
-  autoSecondsLeft: 0,
 };
 
 // ──────────────────────────────────────────────────
@@ -52,11 +49,6 @@ function escHtml(s) {
   const d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
-}
-
-function fmtTime(s) {
-  const m = Math.floor(s / 60), r = s % 60;
-  return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
 }
 
 // ──────────────────────────────────────────────────
@@ -133,8 +125,6 @@ function setAuthed(ok) {
     chip.innerHTML = '<div class="user-dot"></div>Not signed in';
     chip.className = 'user-badge';
   }
-  $('autoStartRow').style.display = ok ? 'block' : 'none';
-  if (!ok) stopAutoSync();
   updateInfoRow();
 }
 
@@ -147,10 +137,7 @@ function updateInfoRow() {
 
   const status = $('iStatus');
   const statusCard = status.closest('.info-card');
-  if (state.autoTimer) {
-    status.textContent = 'Auto-sync ON';
-    if (statusCard) statusCard.dataset.color = 'cyan';
-  } else if (state.userEmail) {
+  if (state.userEmail) {
     status.textContent = 'Connected';
     if (statusCard) statusCard.dataset.color = 'green';
   } else {
@@ -213,7 +200,6 @@ async function onOauthMessage(ev) {
     log('[OK] Logged in as ' + state.userEmail);
     setAuthed(true);
     await loadPairs();
-    startAutoSync();
   } else {
     log('[ERR] Login failed: ' + msg.error);
     alert('Login failed: ' + msg.error);
@@ -225,7 +211,6 @@ function emptyState(iconName, text){
 }
 
 function logout() {
-  stopAutoSync();
   localStorage.removeItem('google_refresh_token');
   localStorage.removeItem('google_user_email');
   state.refreshToken = '';
@@ -377,21 +362,16 @@ async function syncAllPairs() {
   });
   if (!ok) return;
 
-  await runBatchSync('manual');
+  await runBatchSync();
 }
 
-async function syncAllPairsAuto() {
-  if (!state.lastPairs.length) return;
-  await runBatchSync('auto');
-}
-
-async function runBatchSync(source) {
+async function runBatchSync() {
   const total = state.lastPairs.length;
-  log((source === 'auto' ? '[AUTO] Auto-syncing ' : '[SYNC] Syncing all ') + total + ' pairs...');
+  log('[SYNC] Syncing all ' + total + ' pairs...');
 
   state.syncedCount = 0;
   let failCount = 0;
-  showProgress(0, total, source === 'auto' ? 'Auto-syncing...' : 'Starting...');
+  showProgress(0, total, 'Starting...');
 
   for (let i = 0; i < total; i++) {
     showProgress(i, total, `Syncing ${i + 1}/${total}...`);
@@ -408,7 +388,7 @@ async function runBatchSync(source) {
   state.lastSyncFail = failCount;
   updateSyncSummary();
 
-  const msg = (source === 'auto' ? 'Auto-sync done. ' : 'All pairs synced. ') + 'OK: ' + state.syncedCount + '/' + total;
+  const msg = 'All pairs synced. OK: ' + state.syncedCount + '/' + total;
   log('[OK] ' + msg);
   sendNotif('SHD Sync', msg);
 }
@@ -557,49 +537,6 @@ function filterPairs() {
 }
 
 // ──────────────────────────────────────────────────
-// Auto-sync
-// ──────────────────────────────────────────────────
-function startAutoSync() {
-  stopAutoSync();
-  $('autoBar').style.display      = 'flex';
-  $('autoStartRow').style.display = 'none';
-  scheduleNextAutoSync();
-  log('[AUTO] Auto-sync started');
-  updateInfoRow();
-}
-
-function stopAutoSync() {
-  clearTimeout(state.autoTimer);
-  clearInterval(state.cdTimer);
-  state.autoTimer = null;
-  $('autoBar').style.display      = 'none';
-  $('autoStartRow').style.display = state.refreshToken ? 'block' : 'none';
-  $('autoCd').textContent = '—';
-  updateInfoRow();
-}
-
-function scheduleNextAutoSync() {
-  const secs = parseInt($('autoInterval').value, 10);
-  state.autoSecondsLeft = secs;
-  $('autoCd').textContent = fmtTime(state.autoSecondsLeft);
-  clearInterval(state.cdTimer);
-  state.cdTimer = setInterval(() => {
-    state.autoSecondsLeft--;
-    $('autoCd').textContent = fmtTime(Math.max(0, state.autoSecondsLeft));
-  }, 1000);
-  state.autoTimer = setTimeout(async () => {
-    clearInterval(state.cdTimer);
-    if (!state.lastPairs.length) await loadPairs();
-    await syncAllPairsAuto();
-    scheduleNextAutoSync();
-  }, secs * 1000);
-}
-
-function restartAutoIfRunning() {
-  if (state.autoTimer) { stopAutoSync(); startAutoSync(); }
-}
-
-// ──────────────────────────────────────────────────
 // How-to toggle
 // ──────────────────────────────────────────────────
 function toggleHowto() {
@@ -647,7 +584,6 @@ async function bootstrap() {
   if (state.refreshToken && state.userEmail) {
     setAuthed(true);
     await loadPairs();
-    startAutoSync();
   } else {
     updateInfoRow();
   }
@@ -665,9 +601,6 @@ function bindEvents() {
   $('btnSyncNow').onclick  = syncNow;
   $('btnReload').onclick   = loadPairs;
   $('btnSyncAll').onclick  = syncAllPairs;
-  $('btnStartAuto').onclick = startAutoSync;
-  $('btnStopAuto').onclick  = stopAutoSync;
-  $('autoInterval').onchange = restartAutoIfRunning;
   $('searchInput').oninput   = filterPairs;
   $('btnClearLog').onclick   = clearLogs;
   $('btnExportLog').onclick  = exportLogs;
