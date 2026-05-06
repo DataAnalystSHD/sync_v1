@@ -46,21 +46,6 @@ function escHtml(s) {
 }
 
 // ──────────────────────────────────────────────────
-// Theme
-// ──────────────────────────────────────────────────
-function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('shd_theme', theme);
-  $('btnTheme').innerHTML = icon(theme === 'dark' ? 'moon' : 'sun', 18);
-  $('btnTheme').title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
-}
-
-function toggleTheme() {
-  const cur = document.documentElement.getAttribute('data-theme');
-  applyTheme(cur === 'dark' ? 'light' : 'dark');
-}
-
-// ──────────────────────────────────────────────────
 // Notifications
 // ──────────────────────────────────────────────────
 function requestNotifPermission() {
@@ -309,7 +294,6 @@ async function bootstrap() {
 }
 
 function bindEvents() {
-  $('btnTheme').onclick    = toggleTheme;
   $('btnLogin').onclick    = startLogin;
   $('btnLogout').onclick   = logout;
   $('syncDirection').onchange = (ev) => setMode(ev.target.value);
@@ -322,6 +306,5 @@ function bindEvents() {
   window.addEventListener('message', onOauthMessage);
 }
 
-applyTheme(localStorage.getItem('shd_theme') || 'light');
 bindEvents();
 bootstrap();

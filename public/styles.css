@@ -1,5 +1,4 @@
-/* ═══════ THEME: LIGHT ═══════ */
-[data-theme="light"] {
+:root {
   --bg:       #f0f2f5;
   --bg2:      #ffffff;
   --surface:  #ffffff;
@@ -29,42 +28,8 @@
   --topbar-bg: rgba(255,255,255,.85);
   --sh:       0 1px 3px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.04);
   --sh2:      0 4px 24px rgba(0,0,0,.08);
+  --r: 14px; --r2: 22px; --r3: 28px; --transition: .2s cubic-bezier(.4,0,.2,1);
 }
-
-/* ═══════ THEME: DARK ═══════ */
-[data-theme="dark"] {
-  --bg:       #0f1117;
-  --bg2:      #161922;
-  --surface:  #1c1f2e;
-  --surface2: #232738;
-  --surface3: #2a2f44;
-  --border:   #2e3348;
-  --border2:  #3d4263;
-  --text:     #e8eaf0;
-  --text2:    #a0a6c0;
-  --muted:    #636b8a;
-  --accent:   #7c6df0;
-  --accent2:  #a29bfe;
-  --accent-bg:#7c6df015;
-  --accent-bd:#7c6df040;
-  --green:    #00b894;
-  --green-bg: #00b89412;
-  --green-bd: #00b89440;
-  --red:      #ff6b6b;
-  --red-bg:   #ff6b6b12;
-  --red-bd:   #ff6b6b40;
-  --amber:    #fdcb6e;
-  --amber-bg: #fdcb6e12;
-  --amber-bd: #fdcb6e40;
-  --cyan:     #00cec9;
-  --cyan-bg:  #00cec912;
-  --cyan-bd:  #00cec940;
-  --topbar-bg: rgba(22,25,34,.85);
-  --sh:       0 2px 8px rgba(0,0,0,.25);
-  --sh2:      0 8px 32px rgba(0,0,0,.35);
-}
-
-:root { --r: 14px; --r2: 22px; --r3: 28px; --transition: .2s cubic-bezier(.4,0,.2,1); }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -80,13 +45,6 @@ body {
     radial-gradient(circle at 50% 100%, rgba(245,158,11,.06), transparent 60%);
   background-attachment: fixed;
 }
-[data-theme="dark"] body {
-  background-image:
-    radial-gradient(circle at 12% 0%, rgba(124,109,240,.18), transparent 45%),
-    radial-gradient(circle at 88% 8%, rgba(8,145,168,.14), transparent 50%),
-    radial-gradient(circle at 50% 100%, rgba(245,158,11,.10), transparent 60%);
-}
-
 /* ───── Topbar ───── */
 .topbar {
   background: var(--topbar-bg);
@@ -111,15 +69,6 @@ body {
 .brand h1 { font-size: 14px; font-weight: 700; letter-spacing: -.02em; }
 .brand span { font-size: 11px; color: var(--muted); }
 .topbar-right { display: flex; align-items: center; gap: 10px; }
-
-/* ───── Theme toggle ───── */
-.theme-toggle {
-  width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--surface2); cursor: pointer;
-  display: grid; place-items: center; font-size: 16px;
-  transition: var(--transition);
-}
-.theme-toggle:hover { background: var(--surface3); transform: none; box-shadow: none; }
 
 .user-badge {
   display: flex; align-items: center; gap: 8px;
