@@ -215,6 +215,13 @@ function getInputs() {
   return { sheetUrl: s, larkUrl: l, direction: state.masterMode };
 }
 
+function resetForm() {
+  $('sheetUrl').value = '';
+  $('larkUrl').value  = '';
+  setMode('lark-to-sheet');
+  log('Form reset');
+}
+
 async function syncNow() {
   const ok = await showConfirm({
     iconName: 'alertTriangle',
@@ -298,6 +305,7 @@ function bindEvents() {
   $('btnLogout').onclick   = logout;
   $('syncDirection').onchange = (ev) => setMode(ev.target.value);
   $('btnSyncNow').onclick  = syncNow;
+  $('btnReset').onclick    = resetForm;
   $('btnClearLog').onclick   = clearLogs;
   $('btnExportLog').onclick  = exportLogs;
   $('howtoSection').querySelector('.howto-hd').onclick = toggleHowto;
