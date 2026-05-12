@@ -16,20 +16,20 @@ function readGridSize(meta){
   return { rows, cols };
 }
 
-async function readAllRows({ ssToken, sheetId, endCol, totalRows }){
+async function readRowsInRange({ ssToken, sheetId, endCol, startRow, endRow }){
   const out = [];
-  for(let start = 1; start <= totalRows; start += READ_CHUNK){
-    const end = Math.min(start + READ_CHUNK - 1, totalRows);
-    const range = `A${start}:${endCol}${end}`;
+  for(let s = startRow; s <= endRow; s += READ_CHUNK){
+    const e = Math.min(s + READ_CHUNK - 1, endRow);
+    const range = `A${s}:${endCol}${e}`;
     const chunk = await getSheetValues({ ssToken, sheetId, range });
     if(!chunk || chunk.length === 0) break;
     out.push(...chunk);
-    if(chunk.length < (end - start + 1)) break;
+    if(chunk.length < (e - s + 1)) break;
   }
   return out;
 }
 
-export async function syncLarkSheetToGoogleSheet({ accessToken, cfg, sourceUrl, destSheetId, destGid }){
+export async function syncLarkSheetToGoogleSheet({ accessToken, cfg, sourceUrl, destSheetId, destGid, rowFrom, rowTo }){
   const { ssToken, sheetId } = await resolveLarkSheetTarget(sourceUrl);
 
   const meta = await getSheetMeta({ ssToken, sheetId });
@@ -50,8 +50,14 @@ export async function syncLarkSheetToGoogleSheet({ accessToken, cfg, sourceUrl, 
   if(headers.length === 0) throw new Error("Lark Sheet has no header row (row 1 must contain headers)");
 
   const endCol = endColumnFor(headers);
-  const allRows = await readAllRows({ ssToken, sheetId, endCol, totalRows });
-  const dataRows = allRows.slice(1)
+  // Translate user-facing data rows (1-indexed, excludes header) to sheet rows
+  // (header is row 1, data starts at row 2). Cap to grid extent.
+  const dataStartSheetRow = (rowFrom || 1) + 1;
+  const dataEndSheetRow   = Math.min(totalRows, rowTo ? (rowTo + 1) : totalRows);
+  const rangeRows = dataEndSheetRow >= dataStartSheetRow
+    ? await readRowsInRange({ ssToken, sheetId, endCol, startRow: dataStartSheetRow, endRow: dataEndSheetRow })
+    : [];
+  const dataRows = rangeRows
     .filter(r => !isEmptyRow(r))
     .map(r => headers.map((_, i) => cellTextValue(r[i])));
 

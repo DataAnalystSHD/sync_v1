@@ -152,6 +152,16 @@
           </select>
         </div>
 
+        <div class="field">
+          <label class="field-label">Row Range <span style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted)">(optional)</span></label>
+          <div class="row-range">
+            <input class="field-input" id="rowFrom" type="number" min="1" placeholder="From (e.g. 1)" disabled />
+            <span class="row-range-sep">→</span>
+            <input class="field-input" id="rowTo" type="number" min="1" placeholder="To (e.g. 500)" disabled />
+          </div>
+          <div class="hint-sub">เว้นว่าง = sync ทั้งหมด · Row 1 = ข้อมูลแถวแรก (ไม่นับ header)</div>
+        </div>
+
         <div class="btn-group">
           <button class="primary" id="btnSyncNow" disabled><span data-icon="zap" data-size="14"></span> Sync Now</button>
           <button id="btnReset"><span data-icon="refreshCw" data-size="14"></span> Reset</button>

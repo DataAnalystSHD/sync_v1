@@ -84,16 +84,18 @@ function rowsToRecords(rows, headers, typeMap){
   });
 }
 
-export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, baseId, tableId, pair }){
+export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, baseId, tableId, pair, rowFrom, rowTo }){
   const { ssToken, sheetId } = await resolveLarkSheetTarget(sourceUrl);
   const headers = await readHeaders({ ssToken, sheetId });
   const endCol  = endColumnFor(headers);
   const pageSize = cfg.pageSize;
   const rowId = pair?.rowId;
+  // Row range overrides cursor logic: pull just that data slice and return done.
+  const hasRange = rowFrom != null || rowTo != null;
 
   let cursorRow = Number(pair?.cursorRow || 2);
   let typeMap;
-  if(shouldStartFresh(pair)){
+  if(shouldStartFresh(pair) || hasRange){
     typeMap = await beginNewRun({
       accessToken, cfg,
       ssToken, srcSheetId: sheetId,
@@ -104,9 +106,12 @@ export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, bas
     typeMap = await readTypeMap({ baseId, tableId });
   }
 
-  const start = cursorRow;
-  const end   = cursorRow + pageSize - 1;
-  const range = `A${start}:${endCol}${end}`;
+  // 1-based data rows → sheet rows = +1 (skip header at row 1).
+  const startSheetRow = hasRange ? ((rowFrom || 1) + 1) : cursorRow;
+  const endSheetRow   = hasRange
+    ? (rowTo ? (rowTo + 1) : startSheetRow + pageSize - 1)
+    : (cursorRow + pageSize - 1);
+  const range = `A${startSheetRow}:${endCol}${endSheetRow}`;
 
   const rawValues = await getSheetValues({ ssToken, sheetId, range });
   const nonEmpty  = (rawValues || []).filter(r => !isEmptyRow(r));
@@ -118,6 +123,17 @@ export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, bas
 
   const records = rowsToRecords(nonEmpty, headers, typeMap);
   await larkCreateRecordsBatched({ baseId, tableId, records });
+
+  if(hasRange){
+    await finishRun({ accessToken, cfg, rowId });
+    return {
+      rowCount: records.length,
+      truncated: false,
+      done: true,
+      page: { startRow: startSheetRow, endRow: startSheetRow + records.length - 1, pageSize: records.length },
+      nextCursorRow: null,
+    };
+  }
 
   const done = nonEmpty.length < pageSize;
   const nextCursor = cursorRow + (rawValues?.length || 0);

@@ -91,6 +91,8 @@ function setAuthed(ok) {
   $('sheetUrl').disabled        = !ok;
   $('larkUrl').disabled         = !ok;
   $('syncDirection').disabled   = !ok;
+  $('rowFrom').disabled         = !ok;
+  $('rowTo').disabled           = !ok;
   $('btnSyncNow').disabled      = !ok;
 
   const chip = $('authChip');
@@ -208,16 +210,34 @@ function logout() {
 // ──────────────────────────────────────────────────
 // Sync
 // ──────────────────────────────────────────────────
+function parseRow(v){
+  const s = String(v ?? '').trim();
+  if (s === '') return null;
+  const n = parseInt(s, 10);
+  if (!Number.isFinite(n) || n < 1) return null;
+  return n;
+}
+
 function getInputs() {
   const s = $('sheetUrl').value.trim();
   const l = $('larkUrl').value.trim();
   if (!s || !l) throw new Error('กรุณาใส่ลิงก์ให้ครบ');
-  return { sheetUrl: s, larkUrl: l, direction: state.masterMode };
+  const rowFrom = parseRow($('rowFrom').value);
+  const rowTo   = parseRow($('rowTo').value);
+  if (rowFrom && rowTo && rowTo < rowFrom) {
+    throw new Error('Row Range: "To" ต้อง ≥ "From"');
+  }
+  return {
+    sheetUrl: s, larkUrl: l, direction: state.masterMode,
+    rowFrom, rowTo,
+  };
 }
 
 function resetForm() {
   $('sheetUrl').value = '';
   $('larkUrl').value  = '';
+  $('rowFrom').value  = '';
+  $('rowTo').value    = '';
   setMode('lark-to-sheet');
   log('Form reset');
 }

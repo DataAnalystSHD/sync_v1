@@ -336,6 +336,11 @@ body {
 }
 .field-input:disabled { opacity: .4; cursor: not-allowed; }
 
+.row-range { display: flex; align-items: center; gap: 12px; }
+.row-range .field-input { flex: 1; }
+.row-range-sep { color: var(--muted); font-weight: 600; flex-shrink: 0; }
+.hint-sub { font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.6; }
+
 select.field-input {
   appearance: none; -webkit-appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%238a92ab' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");

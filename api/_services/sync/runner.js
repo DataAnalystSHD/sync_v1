@@ -37,26 +37,38 @@ function ensureLarkSheetUrl(url){
   }
 }
 
+// Sanitize the row-range hints coming from the form. Stored as 1-based data
+// row indices (header excluded for sheets, record index for Lark Base).
+// Anything falsey / non-positive becomes null = "no limit".
+function normRowRange(pair){
+  const toPos = v => {
+    const n = Number(v);
+    return Number.isFinite(n) && n >= 1 ? Math.floor(n) : null;
+  };
+  return { rowFrom: toPos(pair?.rowFrom), rowTo: toPos(pair?.rowTo) };
+}
+
 export async function runOne({ accessToken, cfg, pair }){
   const direction = DIRECTIONS.has(pair.direction) ? pair.direction : "lark-to-sheet";
+  const { rowFrom, rowTo } = normRowRange(pair);
 
   if(direction === "lark-to-sheet"){
     const { sheetId, gid } = resolveGoogleSheet(pair);
     const { baseId, tableId, viewId } = resolveBase(pair);
-    return await syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, tableId, viewId });
+    return await syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, tableId, viewId, rowFrom, rowTo });
   }
 
   if(direction === "sheet-to-lark"){
     const { sheetId, gid } = resolveGoogleSheet(pair);
     const { baseId, tableId } = resolveBase(pair);
-    return await syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, tableId, pair });
+    return await syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, tableId, pair, rowFrom, rowTo });
   }
 
   if(direction === "larksheet-to-larkbase"){
     ensureLarkSheetUrl(pair.sheetUrl);
     const { baseId, tableId } = resolveBase(pair);
     return await syncLarkSheetToLarkBase({
-      accessToken, cfg, sourceUrl: pair.sheetUrl, baseId, tableId, pair,
+      accessToken, cfg, sourceUrl: pair.sheetUrl, baseId, tableId, pair, rowFrom, rowTo,
     });
   }
 
@@ -64,7 +76,7 @@ export async function runOne({ accessToken, cfg, pair }){
     ensureLarkSheetUrl(pair.sheetUrl);
     const { baseId, tableId, viewId } = resolveBase(pair);
     return await syncLarkBaseToLarkSheet({
-      cfg, baseId, tableId, viewId, destUrl: pair.sheetUrl,
+      cfg, baseId, tableId, viewId, destUrl: pair.sheetUrl, rowFrom, rowTo,
     });
   }
 
@@ -80,6 +92,7 @@ export async function runOne({ accessToken, cfg, pair }){
       accessToken, cfg,
       sourceUrl: pair.sheetUrl,
       destSheetId: gSheetId, destGid: gid,
+      rowFrom, rowTo,
     });
   }
 
@@ -91,6 +104,7 @@ export async function runOne({ accessToken, cfg, pair }){
       accessToken, cfg,
       srcSheetId: gSheetId, srcGid: gid,
       destUrl: pair.larkUrl,
+      rowFrom, rowTo,
     });
   }
 

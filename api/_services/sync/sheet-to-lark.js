@@ -75,26 +75,32 @@ function rowsToRecords(rows, headers, typeMap){
  * types (Number / DateTime / Checkbox / Text), and any new fields are created
  * with the inferred type. Existing fields keep whatever type they already have.
  */
-export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, tableId, pair }){
+export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, tableId, pair, rowFrom, rowTo }){
   const tabName = await getSheetNameByGid({ accessToken, spreadsheetId: sheetId, gid });
   const tab = `${quoteSheetName(tabName)}!`;
   const headers = await readHeaders({ accessToken, sheetId, tab });
   const endCol = endColumnFor(headers);
   const pageSize = cfg.pageSize;
   const rowId = pair?.rowId;
+  // Row range overrides cron pagination — read exactly the requested data rows
+  // in one shot and return done:true, ignoring cursor bookkeeping.
+  const hasRange = rowFrom != null || rowTo != null;
 
   let cursorRow = Number(pair?.cursorRow || 2);
   let typeMap;
-  if(shouldStartFresh(pair)){
+  if(shouldStartFresh(pair) || hasRange){
     typeMap = await beginNewRun({ accessToken, cfg, sheetId, tab, baseId, tableId, headers, endCol, rowId });
     cursorRow = 2;
   } else {
     typeMap = await readTypeMap({ baseId, tableId });
   }
 
-  const start = cursorRow;
-  const end   = cursorRow + pageSize - 1;
-  const range = `${tab}A${start}:${endCol}${end}`;
+  // Data rows are 1-indexed for the user; sheet rows are 2..N (after header).
+  const startSheetRow = hasRange ? ((rowFrom || 1) + 1) : cursorRow;
+  const endSheetRow   = hasRange
+    ? (rowTo ? (rowTo + 1) : startSheetRow + pageSize - 1)
+    : (cursorRow + pageSize - 1);
+  const range = `${tab}A${startSheetRow}:${endCol}${endSheetRow}`;
 
   const values = await sheetsGetValues({ accessToken, spreadsheetId: sheetId, range });
 
@@ -105,6 +111,17 @@ export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, 
 
   const records = rowsToRecords(values, headers, typeMap);
   await larkCreateRecordsBatched({ baseId, tableId, records });
+
+  if(hasRange){
+    await finishRun({ accessToken, cfg, rowId });
+    return {
+      rowCount: records.length,
+      truncated: false,
+      done: true,
+      page: { startRow: startSheetRow, endRow: startSheetRow + records.length - 1, pageSize: records.length },
+      nextCursorRow: null,
+    };
+  }
 
   const nextCursor = cursorRow + records.length;
   if(rowId) await updateCursor({ accessToken, cfg, rowId, cursorRow: nextCursor });

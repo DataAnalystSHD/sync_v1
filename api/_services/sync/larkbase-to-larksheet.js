@@ -31,13 +31,14 @@ function readRowCount(meta){
   );
 }
 
-export async function syncLarkBaseToLarkSheet({ cfg, baseId, tableId, destUrl, viewId }){
+export async function syncLarkBaseToLarkSheet({ cfg, baseId, tableId, destUrl, viewId, rowFrom, rowTo }){
   const items = await larkListAllRecords({ baseId, tableId, viewId });
-  const limited = items.slice(0, cfg.maxRowsPerSync);
+  const sliced = items.slice((rowFrom || 1) - 1, rowTo || items.length);
+  const limited = sliced.slice(0, cfg.maxRowsPerSync);
   const { headers, typeMap } = await resolveSchema({ baseId, tableId, items: limited });
 
   if(headers.length === 0){
-    return { rowCount: 0, truncated: items.length > limited.length };
+    return { rowCount: 0, truncated: sliced.length > limited.length };
   }
 
   const { ssToken, sheetId } = await resolveLarkSheetTarget(destUrl);
@@ -77,5 +78,5 @@ export async function syncLarkBaseToLarkSheet({ cfg, baseId, tableId, destUrl, v
     }
   }
 
-  return { rowCount: dataRows.length, truncated: items.length > dataRows.length };
+  return { rowCount: dataRows.length, truncated: sliced.length > dataRows.length };
 }

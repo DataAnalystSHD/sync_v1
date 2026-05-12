@@ -29,7 +29,7 @@ function readRowCount(meta){
   );
 }
 
-export async function syncGoogleSheetToLarkSheet({ accessToken, cfg, srcSheetId, srcGid, destUrl }){
+export async function syncGoogleSheetToLarkSheet({ accessToken, cfg, srcSheetId, srcGid, destUrl, rowFrom, rowTo }){
   const tabName = await getSheetNameByGid({ accessToken, spreadsheetId: srcSheetId, gid: srcGid });
   const tab = `${quoteSheetName(tabName)}!`;
 
@@ -44,9 +44,14 @@ export async function syncGoogleSheetToLarkSheet({ accessToken, cfg, srcSheetId,
   if(headers.length === 0) throw new Error("Google Sheet has no header row (row 1 must contain headers)");
 
   const endCol = endColumnFor(headers);
+  // Data rows (1-indexed, excludes header) → sheet rows (header at 1, data 2+).
+  const dataStartSheetRow = (rowFrom || 1) + 1;
+  const dataRange = rowTo
+    ? `${tab}A${dataStartSheetRow}:${endCol}${rowTo + 1}`
+    : `${tab}A${dataStartSheetRow}:${endCol}`;
   const dataValues = await sheetsGetValues({
     accessToken, spreadsheetId: srcSheetId,
-    range: `${tab}A2:${endCol}`,
+    range: dataRange,
   });
   const dataRows = (dataValues || [])
     .filter(r => !isEmptyRow(r))

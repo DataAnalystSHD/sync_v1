@@ -24,13 +24,14 @@ async function resolveSchema({ baseId, tableId, items }){
   return { headers: collectHeadersFromRecords(items), typeMap: new Map() };
 }
 
-export async function syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, tableId, viewId }){
+export async function syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, tableId, viewId, rowFrom, rowTo }){
   const items = await larkListAllRecords({ baseId, tableId, viewId });
-  const limited = items.slice(0, cfg.maxRowsPerSync);
+  const sliced = items.slice((rowFrom || 1) - 1, rowTo || items.length);
+  const limited = sliced.slice(0, cfg.maxRowsPerSync);
   const { headers, typeMap } = await resolveSchema({ baseId, tableId, items: limited });
 
   if(headers.length === 0){
-    return { rowCount: 0, truncated: items.length > limited.length };
+    return { rowCount: 0, truncated: sliced.length > limited.length };
   }
 
   const tabName = await getSheetNameByGid({ accessToken, spreadsheetId: sheetId, gid });
@@ -54,5 +55,5 @@ export async function syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, 
     await sheetsUpdate({ accessToken, spreadsheetId: sheetId, range, values: part });
   }
 
-  return { rowCount: rows.length, truncated: items.length > rows.length };
+  return { rowCount: rows.length, truncated: sliced.length > rows.length };
 }
