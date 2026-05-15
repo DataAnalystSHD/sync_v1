@@ -40,9 +40,9 @@ async function beginNewRun({ accessToken, cfg, sheetId, tab, baseId, tableId, he
     await updateCursor({ accessToken, cfg, rowId, cursorRow: 2 });
   }
   const fields = await inferFieldsFromSheet({ accessToken, sheetId, tab, headers, endCol });
-  const { typeMap } = await larkEnsureFields({ baseId, tableId, fields });
+  const { typeMap, nameMap } = await larkEnsureFields({ baseId, tableId, fields });
   await larkBatchDeleteAll({ baseId, tableId });
-  return typeMap;
+  return { typeMap, nameMap };
 }
 
 async function finishRun({ accessToken, cfg, rowId }){
@@ -53,15 +53,20 @@ async function finishRun({ accessToken, cfg, rowId }){
 
 async function readTypeMap({ baseId, tableId }){
   const fields = await larkListFields({ baseId, tableId });
-  return new Map(fields.map(f => [f.field_name, f.type]));
+  const typeMap = new Map(fields.map(f => [f.field_name, f.type]));
+  const nameMap = new Map(fields.map(f => [f.field_name, f.field_name]));
+  return { typeMap, nameMap };
 }
 
-function rowsToRecords(rows, headers, typeMap){
+function rowsToRecords(rows, headers, typeMap, nameMap){
   return rows.map(row => {
     const obj = {};
     headers.forEach((h, idx) => {
       const v = convertForLark(row[idx], typeMap.get(h) || 1);
-      if(v !== undefined) obj[h] = v;
+      if(v !== undefined){
+        const key = nameMap?.get(h) || h;
+        obj[key] = v;
+      }
     });
     return obj;
   });
@@ -87,12 +92,12 @@ export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, 
   const hasRange = rowFrom != null || rowTo != null;
 
   let cursorRow = Number(pair?.cursorRow || 2);
-  let typeMap;
+  let typeMap, nameMap;
   if(shouldStartFresh(pair) || hasRange){
-    typeMap = await beginNewRun({ accessToken, cfg, sheetId, tab, baseId, tableId, headers, endCol, rowId });
+    ({ typeMap, nameMap } = await beginNewRun({ accessToken, cfg, sheetId, tab, baseId, tableId, headers, endCol, rowId }));
     cursorRow = 2;
   } else {
-    typeMap = await readTypeMap({ baseId, tableId });
+    ({ typeMap, nameMap } = await readTypeMap({ baseId, tableId }));
   }
 
   // Data rows are 1-indexed for the user; sheet rows are 2..N (after header).
@@ -109,7 +114,7 @@ export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, 
     return { rowCount: 0, truncated: false, done: true };
   }
 
-  const records = rowsToRecords(values, headers, typeMap);
+  const records = rowsToRecords(values, headers, typeMap, nameMap);
   await larkCreateRecordsBatched({ baseId, tableId, records });
 
   if(hasRange){

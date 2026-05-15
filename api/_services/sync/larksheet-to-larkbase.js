@@ -44,9 +44,9 @@ async function beginNewRun({ accessToken, cfg, ssToken, srcSheetId, baseId, tabl
     await updateCursor({ accessToken, cfg, rowId, cursorRow: 2 });
   }
   const fields = await inferFieldsFromLarkSheet({ ssToken, sheetId: srcSheetId, headers, endCol });
-  const { typeMap } = await larkEnsureFields({ baseId, tableId, fields });
+  const { typeMap, nameMap } = await larkEnsureFields({ baseId, tableId, fields });
   await larkBatchDeleteAll({ baseId, tableId });
-  return typeMap;
+  return { typeMap, nameMap };
 }
 
 async function finishRun({ accessToken, cfg, rowId }){
@@ -57,7 +57,12 @@ async function finishRun({ accessToken, cfg, rowId }){
 
 async function readTypeMap({ baseId, tableId }){
   const fields = await larkListFields({ baseId, tableId });
-  return new Map(fields.map(f => [f.field_name, f.type]));
+  // For resume runs we don't have the original requested names, so the
+  // typeMap is keyed by the actual Bitable name and we treat that as the
+  // canonical key (nameMap is an identity).
+  const typeMap = new Map(fields.map(f => [f.field_name, f.type]));
+  const nameMap = new Map(fields.map(f => [f.field_name, f.field_name]));
+  return { typeMap, nameMap };
 }
 
 function isEmptyCell(v){
@@ -72,13 +77,16 @@ function isEmptyRow(row){
   return row.every(isEmptyCell);
 }
 
-function rowsToRecords(rows, headers, typeMap){
+function rowsToRecords(rows, headers, typeMap, nameMap){
   return rows.map(row => {
     const obj = {};
     headers.forEach((h, idx) => {
       const text = cellTextValue(row[idx]);
       const converted = convertForLark(text, typeMap.get(h) || 1);
-      if(converted !== undefined) obj[h] = converted;
+      if(converted !== undefined){
+        const key = nameMap?.get(h) || h;
+        obj[key] = converted;
+      }
     });
     return obj;
   });
@@ -94,16 +102,16 @@ export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, bas
   const hasRange = rowFrom != null || rowTo != null;
 
   let cursorRow = Number(pair?.cursorRow || 2);
-  let typeMap;
+  let typeMap, nameMap;
   if(shouldStartFresh(pair) || hasRange){
-    typeMap = await beginNewRun({
+    ({ typeMap, nameMap } = await beginNewRun({
       accessToken, cfg,
       ssToken, srcSheetId: sheetId,
       baseId, tableId, headers, endCol, rowId,
-    });
+    }));
     cursorRow = 2;
   } else {
-    typeMap = await readTypeMap({ baseId, tableId });
+    ({ typeMap, nameMap } = await readTypeMap({ baseId, tableId }));
   }
 
   // 1-based data rows → sheet rows = +1 (skip header at row 1).
@@ -121,7 +129,7 @@ export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, bas
     return { rowCount: 0, truncated: false, done: true };
   }
 
-  const records = rowsToRecords(nonEmpty, headers, typeMap);
+  const records = rowsToRecords(nonEmpty, headers, typeMap, nameMap);
   await larkCreateRecordsBatched({ baseId, tableId, records });
 
   if(hasRange){
