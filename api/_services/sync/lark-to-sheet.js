@@ -1,4 +1,4 @@
-import { sheetsClear, sheetsUpdate, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
+import { sheetsClear, sheetsUpdate, sheetsGetValues, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
 import { larkListAllRecords } from "../../_lib/lark/records.js";
 import { larkListFields } from "../../_lib/lark/fields.js";
 import { formatBitableValue, buildFieldTypeMap } from "../../_lib/lark/field-types.js";
@@ -24,7 +24,12 @@ async function resolveSchema({ baseId, tableId, items }){
   return { headers: collectHeadersFromRecords(items), typeMap: new Map() };
 }
 
-export async function syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, tableId, viewId, rowFrom, rowTo }){
+async function findLastUsedRowGoogle({ accessToken, spreadsheetId, tab }){
+  const colA = await sheetsGetValues({ accessToken, spreadsheetId, range: `${tab}A:A` });
+  return (colA || []).length;
+}
+
+export async function syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, tableId, viewId, rowFrom, rowTo, syncMode }){
   const items = await larkListAllRecords({ baseId, tableId, viewId });
   const sliced = items.slice((rowFrom || 1) - 1, rowTo || items.length);
   const limited = sliced.slice(0, cfg.maxRowsPerSync);
@@ -37,11 +42,24 @@ export async function syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, 
   const tabName = await getSheetNameByGid({ accessToken, spreadsheetId: sheetId, gid });
   const tab = `${quoteSheetName(tabName)}!`;
   const endCol = endColumnFor(headers);
+  const isAppend = syncMode === "append";
 
-  // Clear the full visible width so leftover columns from a previous schema
-  // don't linger when the new Lark Base has fewer fields than the sheet.
-  await sheetsClear({ accessToken, spreadsheetId: sheetId, range: `${tab}A:ZZ` });
-  await sheetsUpdate({ accessToken, spreadsheetId: sheetId, range: `${tab}A1:${endCol}1`, values: [headers] });
+  let startRow;
+  if(isAppend){
+    const lastRow = await findLastUsedRowGoogle({ accessToken, spreadsheetId: sheetId, tab });
+    // If sheet is empty, treat as fresh: write headers at row 1, data from row 2.
+    if(lastRow === 0){
+      await sheetsUpdate({ accessToken, spreadsheetId: sheetId, range: `${tab}A1:${endCol}1`, values: [headers] });
+      startRow = 2;
+    } else {
+      startRow = lastRow + 1;
+    }
+  } else {
+    // Replace: wipe the visible width so a shrunk schema doesn't leave stale columns.
+    await sheetsClear({ accessToken, spreadsheetId: sheetId, range: `${tab}A:ZZ` });
+    await sheetsUpdate({ accessToken, spreadsheetId: sheetId, range: `${tab}A1:${endCol}1`, values: [headers] });
+    startRow = 2;
+  }
 
   const rows = limited.map(it => {
     const fields = it.fields || {};
@@ -50,8 +68,8 @@ export async function syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, 
 
   for(let i = 0; i < rows.length; i += cfg.sheetWriteChunk){
     const part = rows.slice(i, i + cfg.sheetWriteChunk);
-    const startRow = 2 + i;
-    const range = `${tab}A${startRow}:${endCol}${startRow + part.length - 1}`;
+    const start = startRow + i;
+    const range = `${tab}A${start}:${endCol}${start + part.length - 1}`;
     await sheetsUpdate({ accessToken, spreadsheetId: sheetId, range, values: part });
   }
 

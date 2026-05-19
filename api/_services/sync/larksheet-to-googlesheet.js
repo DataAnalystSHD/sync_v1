@@ -1,5 +1,5 @@
 import { getSheetValues, getSheetMeta, cellTextValue } from "../../_lib/lark/sheets.js";
-import { sheetsClear, sheetsUpdate, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
+import { sheetsClear, sheetsUpdate, sheetsGetValues, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
 import { endColumnFor } from "../../_lib/urls.js";
 import { resolveLarkSheetTarget } from "./lark-sheet-target.js";
 
@@ -29,7 +29,12 @@ async function readRowsInRange({ ssToken, sheetId, endCol, startRow, endRow }){
   return out;
 }
 
-export async function syncLarkSheetToGoogleSheet({ accessToken, cfg, sourceUrl, destSheetId, destGid, rowFrom, rowTo }){
+async function findLastUsedRowGoogle({ accessToken, spreadsheetId, tab }){
+  const colA = await sheetsGetValues({ accessToken, spreadsheetId, range: `${tab}A:A` });
+  return (colA || []).length;
+}
+
+export async function syncLarkSheetToGoogleSheet({ accessToken, cfg, sourceUrl, destSheetId, destGid, rowFrom, rowTo, syncMode }){
   const { ssToken, sheetId } = await resolveLarkSheetTarget(sourceUrl);
 
   const meta = await getSheetMeta({ ssToken, sheetId });
@@ -63,14 +68,27 @@ export async function syncLarkSheetToGoogleSheet({ accessToken, cfg, sourceUrl, 
 
   const tabName = await getSheetNameByGid({ accessToken, spreadsheetId: destSheetId, gid: destGid });
   const tab = `${quoteSheetName(tabName)}!`;
+  const isAppend = syncMode === "append";
 
-  await sheetsClear({ accessToken, spreadsheetId: destSheetId, range: `${tab}A:ZZ` });
-  await sheetsUpdate({ accessToken, spreadsheetId: destSheetId, range: `${tab}A1:${endCol}1`, values: [headers] });
+  let startRow;
+  if(isAppend){
+    const lastRow = await findLastUsedRowGoogle({ accessToken, spreadsheetId: destSheetId, tab });
+    if(lastRow === 0){
+      await sheetsUpdate({ accessToken, spreadsheetId: destSheetId, range: `${tab}A1:${endCol}1`, values: [headers] });
+      startRow = 2;
+    } else {
+      startRow = lastRow + 1;
+    }
+  } else {
+    await sheetsClear({ accessToken, spreadsheetId: destSheetId, range: `${tab}A:ZZ` });
+    await sheetsUpdate({ accessToken, spreadsheetId: destSheetId, range: `${tab}A1:${endCol}1`, values: [headers] });
+    startRow = 2;
+  }
 
   for(let i = 0; i < dataRows.length; i += cfg.sheetWriteChunk){
     const part = dataRows.slice(i, i + cfg.sheetWriteChunk);
-    const startRow = 2 + i;
-    const range = `${tab}A${startRow}:${endCol}${startRow + part.length - 1}`;
+    const s = startRow + i;
+    const range = `${tab}A${s}:${endCol}${s + part.length - 1}`;
     await sheetsUpdate({ accessToken, spreadsheetId: destSheetId, range, values: part });
   }
 

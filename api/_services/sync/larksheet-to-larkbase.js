@@ -38,14 +38,16 @@ async function inferFieldsFromLarkSheet({ ssToken, sheetId, headers, endCol }){
   });
 }
 
-async function beginNewRun({ accessToken, cfg, ssToken, srcSheetId, baseId, tableId, headers, endCol, rowId }){
+async function beginNewRun({ accessToken, cfg, ssToken, srcSheetId, baseId, tableId, headers, endCol, rowId, syncMode }){
   if(rowId){
     await updatePhase({ accessToken, cfg, rowId, phase: PHASE_RUNNING });
     await updateCursor({ accessToken, cfg, rowId, cursorRow: 2 });
   }
   const fields = await inferFieldsFromLarkSheet({ ssToken, sheetId: srcSheetId, headers, endCol });
   const { typeMap, nameMap } = await larkEnsureFields({ baseId, tableId, fields });
-  await larkBatchDeleteAll({ baseId, tableId });
+  if(syncMode !== "append"){
+    await larkBatchDeleteAll({ baseId, tableId });
+  }
   return { typeMap, nameMap };
 }
 
@@ -92,7 +94,7 @@ function rowsToRecords(rows, headers, typeMap, nameMap){
   });
 }
 
-export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, baseId, tableId, pair, rowFrom, rowTo }){
+export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, baseId, tableId, pair, rowFrom, rowTo, syncMode }){
   const { ssToken, sheetId } = await resolveLarkSheetTarget(sourceUrl);
   const headers = await readHeaders({ ssToken, sheetId });
   const endCol  = endColumnFor(headers);
@@ -107,7 +109,7 @@ export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, bas
     ({ typeMap, nameMap } = await beginNewRun({
       accessToken, cfg,
       ssToken, srcSheetId: sheetId,
-      baseId, tableId, headers, endCol, rowId,
+      baseId, tableId, headers, endCol, rowId, syncMode,
     }));
     cursorRow = 2;
   } else {

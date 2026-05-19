@@ -34,14 +34,16 @@ async function inferFieldsFromSheet({ accessToken, sheetId, tab, headers, endCol
   });
 }
 
-async function beginNewRun({ accessToken, cfg, sheetId, tab, baseId, tableId, headers, endCol, rowId }){
+async function beginNewRun({ accessToken, cfg, sheetId, tab, baseId, tableId, headers, endCol, rowId, syncMode }){
   if(rowId){
     await updatePhase({ accessToken, cfg, rowId, phase: PHASE_RUNNING });
     await updateCursor({ accessToken, cfg, rowId, cursorRow: 2 });
   }
   const fields = await inferFieldsFromSheet({ accessToken, sheetId, tab, headers, endCol });
   const { typeMap, nameMap } = await larkEnsureFields({ baseId, tableId, fields });
-  await larkBatchDeleteAll({ baseId, tableId });
+  if(syncMode !== "append"){
+    await larkBatchDeleteAll({ baseId, tableId });
+  }
   return { typeMap, nameMap };
 }
 
@@ -80,7 +82,7 @@ function rowsToRecords(rows, headers, typeMap, nameMap){
  * types (Number / DateTime / Checkbox / Text), and any new fields are created
  * with the inferred type. Existing fields keep whatever type they already have.
  */
-export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, tableId, pair, rowFrom, rowTo }){
+export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, tableId, pair, rowFrom, rowTo, syncMode }){
   const tabName = await getSheetNameByGid({ accessToken, spreadsheetId: sheetId, gid });
   const tab = `${quoteSheetName(tabName)}!`;
   const headers = await readHeaders({ accessToken, sheetId, tab });
@@ -94,7 +96,7 @@ export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, 
   let cursorRow = Number(pair?.cursorRow || 2);
   let typeMap, nameMap;
   if(shouldStartFresh(pair) || hasRange){
-    ({ typeMap, nameMap } = await beginNewRun({ accessToken, cfg, sheetId, tab, baseId, tableId, headers, endCol, rowId }));
+    ({ typeMap, nameMap } = await beginNewRun({ accessToken, cfg, sheetId, tab, baseId, tableId, headers, endCol, rowId, syncMode }));
     cursorRow = 2;
   } else {
     ({ typeMap, nameMap } = await readTypeMap({ baseId, tableId }));

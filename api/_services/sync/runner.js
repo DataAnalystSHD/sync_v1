@@ -48,27 +48,32 @@ function normRowRange(pair){
   return { rowFrom: toPos(pair?.rowFrom), rowTo: toPos(pair?.rowTo) };
 }
 
+function normSyncMode(pair){
+  return pair?.syncMode === "append" ? "append" : "replace";
+}
+
 export async function runOne({ accessToken, cfg, pair }){
   const direction = DIRECTIONS.has(pair.direction) ? pair.direction : "lark-to-sheet";
   const { rowFrom, rowTo } = normRowRange(pair);
+  const syncMode = normSyncMode(pair);
 
   if(direction === "lark-to-sheet"){
     const { sheetId, gid } = resolveGoogleSheet(pair);
     const { baseId, tableId, viewId } = resolveBase(pair);
-    return await syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, tableId, viewId, rowFrom, rowTo });
+    return await syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, tableId, viewId, rowFrom, rowTo, syncMode });
   }
 
   if(direction === "sheet-to-lark"){
     const { sheetId, gid } = resolveGoogleSheet(pair);
     const { baseId, tableId } = resolveBase(pair);
-    return await syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, tableId, pair, rowFrom, rowTo });
+    return await syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, tableId, pair, rowFrom, rowTo, syncMode });
   }
 
   if(direction === "larksheet-to-larkbase"){
     ensureLarkSheetUrl(pair.sheetUrl);
     const { baseId, tableId } = resolveBase(pair);
     return await syncLarkSheetToLarkBase({
-      accessToken, cfg, sourceUrl: pair.sheetUrl, baseId, tableId, pair, rowFrom, rowTo,
+      accessToken, cfg, sourceUrl: pair.sheetUrl, baseId, tableId, pair, rowFrom, rowTo, syncMode,
     });
   }
 
@@ -76,7 +81,7 @@ export async function runOne({ accessToken, cfg, pair }){
     ensureLarkSheetUrl(pair.sheetUrl);
     const { baseId, tableId, viewId } = resolveBase(pair);
     return await syncLarkBaseToLarkSheet({
-      cfg, baseId, tableId, viewId, destUrl: pair.sheetUrl, rowFrom, rowTo,
+      cfg, baseId, tableId, viewId, destUrl: pair.sheetUrl, rowFrom, rowTo, syncMode,
     });
   }
 
@@ -92,7 +97,7 @@ export async function runOne({ accessToken, cfg, pair }){
       accessToken, cfg,
       sourceUrl: pair.sheetUrl,
       destSheetId: gSheetId, destGid: gid,
-      rowFrom, rowTo,
+      rowFrom, rowTo, syncMode,
     });
   }
 
@@ -104,7 +109,7 @@ export async function runOne({ accessToken, cfg, pair }){
       accessToken, cfg,
       srcSheetId: gSheetId, srcGid: gid,
       destUrl: pair.larkUrl,
-      rowFrom, rowTo,
+      rowFrom, rowTo, syncMode,
     });
   }
 

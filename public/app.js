@@ -93,6 +93,7 @@ function setAuthed(ok) {
   $('syncDirection').disabled   = !ok;
   $('rowFrom').disabled         = !ok;
   $('rowTo').disabled           = !ok;
+  $('syncMode').disabled        = !ok;
   $('btnSyncNow').disabled      = !ok;
 
   const chip = $('authChip');
@@ -227,9 +228,10 @@ function getInputs() {
   if (rowFrom && rowTo && rowTo < rowFrom) {
     throw new Error('Row Range: "To" ต้อง ≥ "From"');
   }
+  const syncMode = $('syncMode').value === 'append' ? 'append' : 'replace';
   return {
     sheetUrl: s, larkUrl: l, direction: state.masterMode,
-    rowFrom, rowTo,
+    rowFrom, rowTo, syncMode,
   };
 }
 
@@ -238,15 +240,19 @@ function resetForm() {
   $('larkUrl').value  = '';
   $('rowFrom').value  = '';
   $('rowTo').value    = '';
+  $('syncMode').value = 'replace';
   setMode('lark-to-sheet');
   log('Form reset');
 }
 
 async function syncNow() {
+  const isAppend = $('syncMode').value === 'append';
   const ok = await showConfirm({
     iconName: 'alertTriangle',
-    title: 'Full-replace Sync',
-    desc: 'ข้อมูล<b>ปลายทางจะถูกลบทั้งหมด</b>แล้ว sync ใหม่<br>ต้องการดำเนินการ?',
+    title: isAppend ? 'Append Sync' : 'Full-replace Sync',
+    desc: isAppend
+      ? 'จะ <b>เพิ่มข้อมูลต่อท้าย</b>ข้อมูลที่มีอยู่<br>ไม่ลบของเดิม ต้องการดำเนินการ?'
+      : 'ข้อมูล<b>ปลายทางจะถูกลบทั้งหมด</b>แล้ว sync ใหม่<br>ต้องการดำเนินการ?',
     confirmText: 'Sync Now',
     confirmClass: 'primary',
   });

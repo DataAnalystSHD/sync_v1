@@ -162,6 +162,14 @@
           <div class="hint-sub">เว้นว่าง = sync ทั้งหมด · Row 1 = ข้อมูลแถวแรก (ไม่นับ header)</div>
         </div>
 
+        <div class="field">
+          <label class="field-label">Sync Mode</label>
+          <select class="field-input" id="syncMode" disabled>
+            <option value="replace">Replace — ลบข้อมูลปลายทางทิ้งทั้งหมด แล้ว sync ใหม่</option>
+            <option value="append">Append — เพิ่มต่อท้ายข้อมูลเดิม (ไม่ลบ)</option>
+          </select>
+        </div>
+
         <div class="btn-group">
           <button class="primary" id="btnSyncNow" disabled><span data-icon="zap" data-size="14"></span> Sync Now</button>
           <button id="btnReset"><span data-icon="refreshCw" data-size="14"></span> Reset</button>
