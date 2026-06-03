@@ -448,6 +448,42 @@ async function deletePair(rowId) {
   }
 }
 
+// ── External cron URL helper ──────────────────────
+function buildCronUrl() {
+  const secret = $('cronSecret').value.trim();
+  const base = window.location.origin + '/api/sync';
+  return secret ? `${base}?key=${encodeURIComponent(secret)}` : base;
+}
+
+function refreshCronUrl() {
+  $('cronUrl').value = buildCronUrl();
+  const warn = $('cronSecretWarn');
+  if (warn) {
+    warn.textContent = $('cronSecret').value.trim()
+      ? 'URL พร้อมใช้ — ต้องตั้ง CRON_SECRET ค่านี้ใน Vercel ให้ตรงกันด้วย'
+      : '⚠ ไม่ใส่ secret = endpoint เปิดให้ยิงได้อิสระ แนะนำให้ตั้ง CRON_SECRET เพื่อความปลอดภัย';
+  }
+}
+
+async function copyCronUrl() {
+  const url = buildCronUrl();
+  const btn = $('btnCopyCron');
+  try {
+    await navigator.clipboard.writeText(url);
+  } catch {
+    // Fallback for non-secure contexts / older browsers
+    const ta = document.createElement('textarea');
+    ta.value = url; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch {}
+    ta.remove();
+  }
+  const orig = btn.innerHTML;
+  btn.innerHTML = `${icon('check', 13)} Copied!`;
+  btn.classList.add('success');
+  setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('success'); }, 1500);
+  log('Copied cron URL');
+}
+
 // ── In-tab auto-runner ────────────────────────────
 // While this tab stays open, check every minute for pairs whose interval has
 // elapsed and run them. This makes "leave the tab open" work without any
@@ -543,6 +579,8 @@ async function bootstrap() {
     log('Config error: ' + e.message);
   }
 
+  refreshCronUrl();
+
   if (state.refreshToken && state.userEmail) {
     setAuthed(true);
   } else {
@@ -557,6 +595,8 @@ function bindEvents() {
   $('btnSyncNow').onclick  = syncNow;
   $('btnSaveCron').onclick = saveCron;
   $('btnReloadCron').onclick = loadPairs;
+  $('cronSecret').oninput  = refreshCronUrl;
+  $('btnCopyCron').onclick = copyCronUrl;
   $('btnReset').onclick    = resetForm;
   $('btnClearLog').onclick   = clearLogs;
   $('btnExportLog').onclick  = exportLogs;
