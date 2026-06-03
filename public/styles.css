@@ -471,3 +471,62 @@ button [data-icon], .howto-arrow [data-icon], .hw-icon[data-icon] { line-height:
 .modal-desc b { color: var(--red); }
 .modal-btns { display: flex; gap: 10px; justify-content: center; }
 .modal-btns button { min-width: 110px; justify-content: center; }
+
+/* ───── Cron Manager (auto-sync) ───── */
+.cron-section { margin-top: 22px; }
+.cron-empty {
+  font-size: 13px; color: var(--muted); text-align: center;
+  padding: 26px 16px; border: 1.5px dashed var(--border2); border-radius: var(--r);
+  background: var(--surface2);
+}
+.cron-list { display: flex; flex-direction: column; gap: 12px; }
+.cron-row {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 16px; border-radius: var(--r);
+  border: 1.5px solid var(--border); background: var(--surface2);
+  transition: var(--transition);
+}
+.cron-row:hover { border-color: var(--border2); box-shadow: var(--sh); }
+.cron-row.off { opacity: .62; }
+
+.cron-toggle {
+  flex: 0 0 auto; width: 42px; height: 24px; padding: 0; margin-top: 2px;
+  border-radius: 999px; border: 1.5px solid var(--border2);
+  background: var(--surface3); position: relative; cursor: pointer;
+  transition: var(--transition); box-shadow: none;
+}
+.cron-toggle:hover { transform: none; box-shadow: none; }
+.cron-toggle.on { background: var(--green); border-color: var(--green); }
+.cron-knob {
+  position: absolute; top: 50%; left: 3px; transform: translateY(-50%);
+  width: 17px; height: 17px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: var(--transition);
+}
+.cron-toggle.on .cron-knob { left: calc(100% - 20px); }
+
+.cron-info { flex: 1 1 auto; min-width: 0; }
+.cron-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.cron-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+.cron-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+  background: var(--accent-bg); border: 1px solid var(--accent-bd); color: var(--accent);
+}
+.cron-tag.warn { background: var(--amber-bg); border-color: var(--amber-bd); color: var(--amber); }
+.cron-tag.info { background: var(--cyan-bg); border-color: var(--cyan-bd); color: var(--cyan); }
+.cron-tag [data-icon] { line-height: 0; }
+.cron-sub { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+.cron-urls {
+  font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace;
+  line-height: 1.5; word-break: break-all; opacity: .85;
+}
+
+.cron-actions { flex: 0 0 auto; display: flex; gap: 8px; align-items: flex-start; }
+.cron-run { padding: 6px 12px; font-size: 11px; }
+.cron-del { padding: 6px 10px; font-size: 11px; }
+.cron-del:hover { background: var(--red); border-color: var(--red); color: #fff; }
+
+@media (max-width: 720px) {
+  .cron-row { flex-wrap: wrap; }
+  .cron-actions { width: 100%; }
+}

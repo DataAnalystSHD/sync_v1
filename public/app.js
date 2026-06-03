@@ -94,16 +94,20 @@ function setAuthed(ok) {
   $('rowFrom').disabled         = !ok;
   $('rowTo').disabled           = !ok;
   $('syncMode').disabled        = !ok;
+  $('syncInterval').disabled    = !ok;
   $('btnSyncNow').disabled      = !ok;
+  $('btnSaveCron').disabled     = !ok;
 
   const chip = $('authChip');
   if (ok) {
     chip.innerHTML = `<div class="user-dot"></div>${escHtml(state.userEmail)}`;
     chip.className = 'user-badge active';
     requestNotifPermission();
+    loadPairs();
   } else {
     chip.innerHTML = '<div class="user-dot"></div>Not signed in';
     chip.className = 'user-badge';
+    renderPairs([]);
   }
   updateInfoRow();
 }
@@ -276,6 +280,173 @@ async function syncNow() {
 }
 
 // ──────────────────────────────────────────────────
+// Cron Manager (auto-sync schedules)
+// ──────────────────────────────────────────────────
+const INTERVAL_LABELS = {
+  5: 'ทุก 5 นาที', 15: 'ทุก 15 นาที', 30: 'ทุก 30 นาที', 60: 'ทุก 1 ชม.',
+  120: 'ทุก 2 ชม.', 360: 'ทุก 6 ชม.', 720: 'ทุก 12 ชม.', 1440: 'ทุกวัน',
+};
+
+let cronPairs = [];
+
+function fmtTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d)) return '—';
+  return d.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+function nextRunLabel(p) {
+  if (!p.active) return 'paused';
+  if (!p.lastSyncAt) return 'รอบถัดไป';
+  const last = new Date(p.lastSyncAt).getTime();
+  if (isNaN(last)) return 'รอบถัดไป';
+  const next = last + (p.intervalMin || 60) * 60000;
+  const diff = next - Date.now();
+  if (diff <= 0) return 'ครบกำหนดแล้ว';
+  const mins = Math.round(diff / 60000);
+  if (mins < 60) return `อีก ~${mins} นาที`;
+  return `อีก ~${Math.round(mins / 60)} ชม.`;
+}
+
+async function loadPairs() {
+  if (!state.refreshToken) return;
+  try {
+    const out = await fetchJson('/api/pairs', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken: state.refreshToken }),
+    });
+    cronPairs = out.pairs || [];
+    renderPairs(cronPairs);
+  } catch (e) {
+    log('[ERR] Load auto-sync list: ' + e.message);
+  }
+}
+
+function renderPairs(pairs) {
+  const list = $('cronList');
+  const empty = $('cronEmpty');
+  list.innerHTML = '';
+  if (!pairs || pairs.length === 0) {
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  for (const p of pairs) {
+    const row = document.createElement('div');
+    row.className = 'cron-row' + (p.active ? '' : ' off');
+    const dirLabel = DIRECTION_LABELS[p.direction] || p.direction;
+    row.innerHTML = `
+      <button class="cron-toggle ${p.active ? 'on' : ''}" data-act="toggle" data-row="${p.rowId}" title="${p.active ? 'Active — กดเพื่อหยุด' : 'Paused — กดเพื่อเปิด'}">
+        <span class="cron-knob"></span>
+      </button>
+      <div class="cron-info">
+        <div class="cron-title">${escHtml(dirLabel)}</div>
+        <div class="cron-meta">
+          <span class="cron-tag">${icon('clock', 11)} ${INTERVAL_LABELS[p.intervalMin] || (p.intervalMin + ' นาที')}</span>
+          <span class="cron-tag ${p.syncMode === 'append' ? 'info' : 'warn'}">${p.syncMode === 'append' ? 'Append' : 'Replace'}</span>
+          <span class="cron-sub">last: ${fmtTime(p.lastSyncAt)} · ${nextRunLabel(p)}</span>
+        </div>
+        <div class="cron-urls">${escHtml(p.sheetUrl)}<br>${escHtml(p.larkUrl)}</div>
+      </div>
+      <div class="cron-actions">
+        <button class="cron-run" data-act="run" data-row="${p.rowId}">${icon('play', 13)} Run now</button>
+        <button class="cron-del" data-act="del" data-row="${p.rowId}" title="ลบงานนี้">${icon('trash', 13)}</button>
+      </div>`;
+    list.appendChild(row);
+  }
+
+  list.querySelectorAll('[data-act]').forEach(btn => {
+    const rowId = parseInt(btn.dataset.row, 10);
+    const act = btn.dataset.act;
+    btn.onclick = () => {
+      if (act === 'toggle') togglePair(rowId);
+      else if (act === 'run') runPairNow(rowId, btn);
+      else if (act === 'del') deletePair(rowId);
+    };
+  });
+}
+
+async function saveCron() {
+  try {
+    const inputs = getInputs();
+    const intervalMin = parseInt($('syncInterval').value, 10) || 60;
+    const { refreshToken, userEmail } = state;
+    log(`Saving auto-sync (${INTERVAL_LABELS[intervalMin] || intervalMin + ' นาที'})...`);
+    await fetchJson('/api/pairs', {
+      method: 'POST',
+      body: JSON.stringify({ ...inputs, intervalMin, refreshToken, userEmail }),
+    });
+    log('[OK] Auto-sync saved');
+    sendNotif('SHD Sync', 'Auto-sync schedule saved');
+    await loadPairs();
+  } catch (e) {
+    log('[ERR] Save auto-sync: ' + e.message);
+    alert(e.message);
+  }
+}
+
+async function togglePair(rowId) {
+  const p = cronPairs.find(x => x.rowId === rowId);
+  if (!p) return;
+  try {
+    await fetchJson('/api/pairs', {
+      method: 'PUT',
+      body: JSON.stringify({ rowId, active: !p.active, refreshToken: state.refreshToken }),
+    });
+    log(`[OK] ${!p.active ? 'Enabled' : 'Paused'} auto-sync #${rowId}`);
+    await loadPairs();
+  } catch (e) {
+    log('[ERR] Toggle: ' + e.message);
+    alert(e.message);
+  }
+}
+
+async function runPairNow(rowId, btn) {
+  if (btn) { btn.disabled = true; btn.innerHTML = `${icon('refreshCw', 13)} Running...`; }
+  try {
+    log(`Running auto-sync #${rowId} now...`);
+    const out = await fetchJson('/api/sync', {
+      method: 'POST',
+      body: JSON.stringify({ runRowId: rowId, refreshToken: state.refreshToken }),
+    });
+    const r = (out.results || [])[0] || {};
+    if (r.status === 'error') log('[ERR] Run result: ' + r.error);
+    else log('[OK] Run result', out);
+    sendNotif('SHD Sync', `Run now #${rowId}: ${r.status || 'done'}`);
+    await loadPairs();
+  } catch (e) {
+    log('[ERR] Run now: ' + e.message);
+    alert(e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = `${icon('play', 13)} Run now`; }
+  }
+}
+
+async function deletePair(rowId) {
+  const ok = await showConfirm({
+    iconName: 'trash',
+    title: 'ลบงาน Auto-sync',
+    desc: 'จะลบงานซิงค์อัตโนมัตินี้ออก (ไม่กระทบข้อมูลที่ซิงค์ไปแล้ว)<br>ต้องการดำเนินการ?',
+    confirmText: 'Delete',
+    confirmClass: 'danger',
+  });
+  if (!ok) return;
+  try {
+    await fetchJson('/api/pairs', {
+      method: 'DELETE',
+      body: JSON.stringify({ rowId, refreshToken: state.refreshToken }),
+    });
+    log(`[OK] Deleted auto-sync #${rowId}`);
+    await loadPairs();
+  } catch (e) {
+    log('[ERR] Delete: ' + e.message);
+    alert(e.message);
+  }
+}
+
+// ──────────────────────────────────────────────────
 // How-to toggle
 // ──────────────────────────────────────────────────
 function toggleHowto() {
@@ -331,6 +502,8 @@ function bindEvents() {
   $('btnLogout').onclick   = logout;
   $('syncDirection').onchange = (ev) => setMode(ev.target.value);
   $('btnSyncNow').onclick  = syncNow;
+  $('btnSaveCron').onclick = saveCron;
+  $('btnReloadCron').onclick = loadPairs;
   $('btnReset').onclick    = resetForm;
   $('btnClearLog').onclick   = clearLogs;
   $('btnExportLog').onclick  = exportLogs;

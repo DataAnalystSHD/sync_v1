@@ -2,10 +2,35 @@ import { json, methodNotAllowed, errorResponse } from "./_lib/http.js";
 import { getConfig, mustEnv } from "./_lib/config.js";
 import { decryptText } from "./_lib/crypto.js";
 import { refreshAccessToken } from "./_lib/google/oauth.js";
-import { readActiveCronPairs, updateLastSync } from "./_services/pairs-store.js";
+import { readActiveCronPairs, findPairByRowId, updateLastSync } from "./_services/pairs-store.js";
 import { logHistory } from "./_services/history.js";
 import { runOne } from "./_services/sync/runner.js";
 import { notifyLarkBot, summarizeBatch } from "./_lib/lark/notify.js";
+
+// When CRON_SECRET is set, the scheduled GET must present it (Vercel Cron sends
+// it as `Authorization: Bearer <secret>`; external crons can use `?key=<secret>`).
+// Left open only if no secret is configured, so existing setups keep working.
+function cronAuthorized(req){
+  const secret = process.env.CRON_SECRET;
+  if(!secret) return true;
+  const auth = req.headers?.authorization || "";
+  if(auth === `Bearer ${secret}`) return true;
+  let key = req.query?.key;
+  if(!key && req.url){
+    try { key = new URL(req.url, "http://x").searchParams.get("key"); } catch {}
+  }
+  return key === secret;
+}
+
+// A pair is due when it has never run, or its interval has elapsed. 30s of
+// slack absorbs cron jitter so a "5 min" pair isn't skipped at 4m59s.
+function isDue(pair, now){
+  if(!pair.lastSyncAt) return true;
+  const last = Date.parse(pair.lastSyncAt);
+  if(!Number.isFinite(last)) return true;
+  const intervalMs = (pair.intervalMin || 60) * 60000;
+  return (now - last) >= (intervalMs - 30000);
+}
 
 function shortLabel(url){
   if(!url) return "(no url)";
@@ -45,7 +70,12 @@ async function recordResult({ accessToken, cfg, pair, user, result, error }){
   });
 }
 
-async function handleCron({ res, cfg }){
+async function handleCron({ req, res, cfg }){
+  if(!cronAuthorized(req)){
+    json(res, 401, { ok: false, error: "Unauthorized cron request" });
+    return;
+  }
+
   const ownerRefresh = process.env.SYNC_OWNER_REFRESH_TOKEN;
   if(!ownerRefresh){
     json(res, 400, { ok: false, error: "Missing SYNC_OWNER_REFRESH_TOKEN env. Cron mode needs an owner refresh token to read pairs." });
@@ -53,11 +83,15 @@ async function handleCron({ res, cfg }){
   }
 
   const ownerAccess = await refreshAccessToken(ownerRefresh);
-  const pairs = await readActiveCronPairs({ accessToken: ownerAccess, cfg });
+  const allActive = await readActiveCronPairs({ accessToken: ownerAccess, cfg });
   const secret = mustEnv("SYNC_SECRET");
 
+  const now = Date.now();
+  const due = allActive.filter(p => isDue(p, now));
+  const skipped = allActive.length - due.length;
+
   const results = [];
-  for(const p of pairs){
+  for(const p of due){
     const pairRefresh = decryptText(p.refreshEnc, secret);
     const accessToken = await refreshAccessToken(pairRefresh);
     const user = p.user || "cron";
@@ -72,18 +106,54 @@ async function handleCron({ res, cfg }){
     }
   }
 
-  const { ok, fail, total } = summarizeBatch(results);
-  await notifyLarkBot({
-    title: fail > 0 ? `⚠️ Cron sync — ${fail}/${total} failed` : `✅ Cron sync — ${ok}/${total} ok`,
-    success: fail === 0,
-    lines: results.map(r => resultLine(r)),
-  });
+  // Stay quiet on idle ticks — only ping Lark when something actually ran.
+  if(results.length > 0){
+    const { ok, fail, total } = summarizeBatch(results);
+    await notifyLarkBot({
+      title: fail > 0 ? `⚠️ Cron sync — ${fail}/${total} failed` : `✅ Cron sync — ${ok}/${total} ok`,
+      success: fail === 0,
+      lines: results.map(r => resultLine(r)),
+    });
+  }
 
-  json(res, 200, { ok: true, mode: "cron", processed: results.length, results });
+  json(res, 200, { ok: true, mode: "cron", processed: results.length, skipped, results });
+}
+
+// "Run now" from the Cron Manager: run one saved pair immediately, ignoring its
+// interval. Uses the owner token to read the pair + its own encrypted token,
+// so it works regardless of who is logged in.
+async function handleRunRow({ res, cfg, rowId }){
+  const ownerRefresh = process.env.SYNC_OWNER_REFRESH_TOKEN;
+  if(!ownerRefresh) throw new Error("Missing SYNC_OWNER_REFRESH_TOKEN env");
+  const secret = mustEnv("SYNC_SECRET");
+
+  const ownerAccess = await refreshAccessToken(ownerRefresh);
+  const p = await findPairByRowId({ accessToken: ownerAccess, cfg, rowId });
+  if(!p) throw new Error(`No pair at row ${rowId}`);
+  if(!p.refreshEnc) throw new Error("Pair has no stored credentials");
+
+  const pairRefresh = decryptText(p.refreshEnc, secret);
+  const accessToken = await refreshAccessToken(pairRefresh);
+  const user = p.user || "manual";
+
+  try{
+    const r = await runOne({ accessToken, cfg, pair: { ...p, refreshToken: pairRefresh, userEmail: user } });
+    await updateLastSync({ accessToken, cfg, rowId: p.rowId });
+    await recordResult({ accessToken, cfg, pair: p, user, result: r });
+    json(res, 200, { ok: true, processed: 1, results: [{ pair: p.sheetUrl, status: "success", ...pickResultFields(r) }] });
+  }catch(e){
+    await recordResult({ accessToken, cfg, pair: p, user, error: e });
+    json(res, 200, { ok: true, processed: 1, results: [{ pair: p.sheetUrl, status: "error", error: e.message }] });
+  }
 }
 
 async function handleManual({ req, res, cfg }){
   const body = req.body || {};
+
+  // Cron Manager "Run now": run a single saved pair by its row id.
+  const runRowId = parseInt(body.runRowId, 10);
+  if(runRowId) return await handleRunRow({ res, cfg, rowId: runRowId });
+
   const inputs = body.pairs || [];
   if(!Array.isArray(inputs) || inputs.length === 0) throw new Error("Missing pairs[]");
 
@@ -121,7 +191,7 @@ async function handleManual({ req, res, cfg }){
 export default async function handler(req, res){
   const cfg = getConfig();
   try{
-    if(req.method === "GET")  return await handleCron({ res, cfg });
+    if(req.method === "GET")  return await handleCron({ req, res, cfg });
     if(req.method === "POST") return await handleManual({ req, res, cfg });
     methodNotAllowed(res);
   }catch(e){

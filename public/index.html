@@ -170,12 +170,46 @@
           </select>
         </div>
 
+        <div class="field">
+          <label class="field-label">Auto-sync ทุก ๆ <span style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted)">(ใช้ตอนกด Save Auto-sync)</span></label>
+          <select class="field-input" id="syncInterval" disabled>
+            <option value="5">ทุก 5 นาที</option>
+            <option value="15">ทุก 15 นาที</option>
+            <option value="30">ทุก 30 นาที</option>
+            <option value="60" selected>ทุก 1 ชั่วโมง</option>
+            <option value="120">ทุก 2 ชั่วโมง</option>
+            <option value="360">ทุก 6 ชั่วโมง</option>
+            <option value="720">ทุก 12 ชั่วโมง</option>
+            <option value="1440">ทุกวัน (24 ชม.)</option>
+          </select>
+        </div>
+
         <div class="btn-group">
           <button class="primary" id="btnSyncNow" disabled><span data-icon="zap" data-size="14"></span> Sync Now</button>
+          <button class="primary" id="btnSaveCron" disabled><span data-icon="clock" data-size="14"></span> Save Auto-sync</button>
           <button id="btnReset"><span data-icon="refreshCw" data-size="14"></span> Reset</button>
         </div>
       </div>
     </section>
+  </div>
+
+  <!-- Cron Manager -->
+  <div class="cron-section">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-left">
+          <div class="card-step" data-color="purple"><span data-icon="clock" data-size="13"></span></div>
+          <h2>Auto-sync (Cron Manager)</h2>
+        </div>
+        <button id="btnReloadCron" style="padding:5px 12px;font-size:11px"><span data-icon="refreshCw" data-size="13"></span> Refresh</button>
+      </div>
+      <div class="card-body">
+        <div class="cron-empty" id="cronEmpty">
+          ยังไม่มีงาน auto-sync — กรอกลิงก์ด้านบน เลือกช่วงเวลา แล้วกด <b>Save Auto-sync</b>
+        </div>
+        <div class="cron-list" id="cronList"></div>
+      </div>
+    </div>
   </div>
 
   <!-- Logs -->
