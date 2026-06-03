@@ -34,7 +34,16 @@
         <span>Sheet ↔ Lark/Feishu</span>
       </div>
     </div>
+
+    <nav class="tabs" id="tabNav">
+      <button class="tab active" data-tab="sync"><span data-icon="sync" data-size="15"></span> Sync</button>
+      <button class="tab" data-tab="cron"><span data-icon="clock" data-size="15"></span> Auto-sync</button>
+      <button class="tab" data-tab="logs"><span data-icon="activity" data-size="15"></span> Logs</button>
+    </nav>
+
     <div class="topbar-right">
+      <button class="primary" id="btnLogin"><span data-icon="key" data-size="14"></span> Login</button>
+      <button id="btnLogout" disabled>Logout</button>
       <div class="user-badge" id="authChip">
         <div class="user-dot"></div>
         Not signed in
@@ -46,51 +55,8 @@
 <!-- ═══ MAIN ═══ -->
 <div class="container">
 
-  <!-- ═══ TAB NAV ═══ -->
-  <nav class="tabs" id="tabNav">
-    <button class="tab active" data-tab="sync"><span data-icon="sync" data-size="15"></span> Sync</button>
-    <button class="tab" data-tab="cron"><span data-icon="clock" data-size="15"></span> Auto-sync</button>
-    <button class="tab" data-tab="logs"><span data-icon="activity" data-size="15"></span> Logs</button>
-  </nav>
-
   <!-- ═══ TAB: SYNC ═══ -->
   <div class="tab-panel active" data-panel="sync">
-
-  <!-- Project Info Row -->
-  <div class="info-row">
-    <div class="info-card" data-color="gray">
-      <div class="info-icon" data-icon="user" data-size="22"></div>
-      <div class="info-body">
-        <div class="info-label">USER</div>
-        <div class="info-value" id="iUser">Not signed in</div>
-      </div>
-      <div class="info-deco"></div>
-    </div>
-    <div class="info-card" data-color="purple">
-      <div class="info-icon" data-icon="shuffle" data-size="22"></div>
-      <div class="info-body">
-        <div class="info-label">MODE</div>
-        <div class="info-value" id="iMode">Lark Base → Sheet</div>
-      </div>
-      <div class="info-deco"></div>
-    </div>
-    <div class="info-card" data-color="green">
-      <div class="info-icon" data-icon="checkCircle" data-size="22"></div>
-      <div class="info-body">
-        <div class="info-label">STATUS</div>
-        <div class="info-value" id="iStatus">Disconnected</div>
-      </div>
-      <div class="info-deco"></div>
-    </div>
-    <div class="info-card" data-color="amber">
-      <div class="info-icon" data-icon="zap" data-size="22"></div>
-      <div class="info-body">
-        <div class="info-label">SYNC MODE</div>
-        <div class="info-value">Full-replace</div>
-      </div>
-      <div class="info-deco"></div>
-    </div>
-  </div>
 
   <!-- How-to -->
   <div class="howto" id="howtoSection">
@@ -136,11 +102,6 @@
         <span id="histLabel" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">loading...</span>
       </div>
       <div class="card-body">
-        <div class="btn-group" style="margin-bottom:16px">
-          <button class="primary" id="btnLogin"><span data-icon="key" data-size="14"></span> Login with Google</button>
-          <button id="btnLogout" disabled>Logout</button>
-        </div>
-
         <div class="field">
           <label class="field-label" id="sheetUrlLabel">Google Sheet URL</label>
           <input class="field-input" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/..." disabled />

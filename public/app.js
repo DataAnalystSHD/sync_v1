@@ -113,21 +113,7 @@ function setAuthed(ok) {
 }
 
 function updateInfoRow() {
-  $('iUser').textContent = state.userEmail || 'Not signed in';
-  const userCard = $('iUser').closest('.info-card');
-  if (userCard) userCard.dataset.color = state.userEmail ? 'green' : 'gray';
-
-  $('iMode').textContent = DIRECTION_LABELS[state.masterMode] || state.masterMode;
-
-  const status = $('iStatus');
-  const statusCard = status.closest('.info-card');
-  if (state.userEmail) {
-    status.textContent = 'Connected';
-    if (statusCard) statusCard.dataset.color = 'green';
-  } else {
-    status.textContent = 'Disconnected';
-    if (statusCard) statusCard.dataset.color = 'gray';
-  }
+  // Info cards were removed — auth status now lives in the topbar chip only.
 }
 
 const DIRECTION_LABELS = {

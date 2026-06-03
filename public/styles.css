@@ -568,3 +568,22 @@ button [data-icon], .howto-arrow [data-icon], .hw-icon[data-icon] { line-height:
   .tabs { width: 100%; }
   .tab { flex: 1 1 0; justify-content: center; padding: 9px 8px; }
 }
+
+/* ───── Tabs + auth inside the topbar ───── */
+.topbar .tabs { margin: 0; }
+.topbar-right button {
+  padding: 8px 14px; font-size: 12.5px;
+}
+.topbar-right button [data-icon] { line-height: 0; }
+
+@media (max-width: 960px) {
+  .topbar-inner { gap: 12px; padding: 0 16px; }
+  .brand span { display: none; }
+  .topbar .tabs { padding: 4px; }
+  .topbar .tab { padding: 8px 12px; font-size: 12.5px; }
+}
+@media (max-width: 720px) {
+  .topbar-inner { height: auto; flex-wrap: wrap; padding: 10px 14px; gap: 10px; }
+  .topbar .tabs { order: 3; width: 100%; }
+  .topbar .tab { flex: 1 1 0; justify-content: center; }
+}
