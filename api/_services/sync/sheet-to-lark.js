@@ -1,5 +1,5 @@
 import { sheetsGetValues, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
-import { larkBatchDeleteAll, larkCreateRecordsBatched } from "../../_lib/lark/records.js";
+import { larkBatchDeleteAll, larkCreateRecordsBatched, larkCountRecords } from "../../_lib/lark/records.js";
 import { larkEnsureFields, larkListFields } from "../../_lib/lark/fields.js";
 import { inferType, inferProperty, convertForLark } from "../../_lib/lark/infer-types.js";
 import { endColumnFor } from "../../_lib/urls.js";
@@ -89,10 +89,42 @@ export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, 
   const endCol = endColumnFor(headers);
   const pageSize = cfg.pageSize;
   const rowId = pair?.rowId;
-  // Row range overrides cron pagination — read exactly the requested data rows
-  // in one shot and return done:true, ignoring cursor bookkeeping.
-  const hasRange = rowFrom != null || rowTo != null;
+  const isAppend = syncMode === "append";
 
+  // ── Append: add only the source rows the destination doesn't have yet ──
+  // The destination record count is the high-water mark, so a recurring sync
+  // never re-appends rows it already wrote — and it stays correct after a
+  // Replace→Append switch. Row Range is intentionally ignored for append.
+  if(isAppend){
+    const existing = await larkCountRecords({ baseId, tableId });
+    let typeMap, nameMap;
+    if(existing === 0){
+      const fields = await inferFieldsFromSheet({ accessToken, sheetId, tab, headers, endCol });
+      ({ typeMap, nameMap } = await larkEnsureFields({ baseId, tableId, fields }));
+    } else {
+      ({ typeMap, nameMap } = await readTypeMap({ baseId, tableId }));
+    }
+    const startSheetRow = 2 + existing;   // header is row 1; skip rows already appended
+    const endSheetRow   = startSheetRow + pageSize - 1;
+    const values = await sheetsGetValues({
+      accessToken, spreadsheetId: sheetId,
+      range: `${tab}A${startSheetRow}:${endCol}${endSheetRow}`,
+    });
+    if(!values || values.length === 0){
+      return { rowCount: 0, truncated: false, done: true };
+    }
+    const records = rowsToRecords(values, headers, typeMap, nameMap);
+    await larkCreateRecordsBatched({ baseId, tableId, records });
+    return {
+      rowCount: records.length,
+      truncated: false,
+      done: values.length < pageSize,
+      page: { startRow: startSheetRow, endRow: startSheetRow + records.length - 1, pageSize },
+    };
+  }
+
+  // ── Replace (and range one-shot): paginated full refresh ──
+  const hasRange = rowFrom != null || rowTo != null;
   let cursorRow = Number(pair?.cursorRow || 2);
   let typeMap, nameMap;
   if(shouldStartFresh(pair) || hasRange){

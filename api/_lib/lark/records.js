@@ -34,6 +34,19 @@ export async function larkListAllRecords({ baseId, tableId, viewId }){
   return out;
 }
 
+// Cheap record count: the Bitable list endpoint returns `total`, so a 1-row
+// page is enough. Used by append mode to know how many rows the destination
+// already holds (its high-water mark) without listing everything.
+export async function larkCountRecords({ baseId, tableId, viewId }){
+  const token = await getTenantAccessToken();
+  const r = await withBackoff(() => axios.get(tableUrl(baseId, tableId, "/records"), {
+    headers: authHeader(token),
+    params: { page_size: 1, view_id: viewId || undefined },
+    timeout: 30000,
+  }), "larkCountRecords");
+  return Number(r.data?.data?.total || 0);
+}
+
 export async function larkBatchDeleteAll({ baseId, tableId }){
   const ids = [];
   for await (const items of iterateRecordPages({ baseId, tableId, fields: false })){

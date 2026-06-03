@@ -45,6 +45,7 @@ export async function syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, 
   const isAppend = syncMode === "append";
 
   let startRow;
+  let appendSkip = 0;   // data rows the destination already holds (append only the rest)
   if(isAppend){
     const lastRow = await findLastUsedRowGoogle({ accessToken, spreadsheetId: sheetId, tab });
     // If sheet is empty, treat as fresh: write headers at row 1, data from row 2.
@@ -53,6 +54,7 @@ export async function syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, 
       startRow = 2;
     } else {
       startRow = lastRow + 1;
+      appendSkip = lastRow - 1;
     }
   } else {
     // Replace: wipe the visible width so a shrunk schema doesn't leave stale columns.
@@ -61,10 +63,13 @@ export async function syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, 
     startRow = 2;
   }
 
-  const rows = limited.map(it => {
+  const allRows = limited.map(it => {
     const fields = it.fields || {};
     return headers.map(h => formatBitableValue(fields[h], typeMap.get(h)));
   });
+  // Append mode: only the source rows beyond what's already in the destination,
+  // so a recurring sync doesn't duplicate rows it already wrote.
+  const rows = isAppend ? allRows.slice(appendSkip) : allRows;
 
   for(let i = 0; i < rows.length; i += cfg.sheetWriteChunk){
     const part = rows.slice(i, i + cfg.sheetWriteChunk);
@@ -73,5 +78,5 @@ export async function syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, 
     await sheetsUpdate({ accessToken, spreadsheetId: sheetId, range, values: part });
   }
 
-  return { rowCount: rows.length, truncated: sliced.length > rows.length };
+  return { rowCount: rows.length, truncated: sliced.length > limited.length };
 }

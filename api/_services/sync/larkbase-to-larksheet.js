@@ -65,6 +65,7 @@ export async function syncLarkBaseToLarkSheet({ cfg, baseId, tableId, destUrl, v
   });
 
   let startRow;
+  let appendSkip = 0;   // data rows the destination already holds (append only the rest)
   if(isAppend){
     const lastRow = await findLastUsedRowLark({ ssToken, sheetId, totalRows: oldRowCount });
     if(lastRow === 0){
@@ -75,6 +76,7 @@ export async function syncLarkBaseToLarkSheet({ cfg, baseId, tableId, destUrl, v
       startRow = 2;
     } else {
       startRow = lastRow + 1;
+      appendSkip = lastRow - 1;
     }
   } else {
     await batchUpdateValues({
@@ -84,8 +86,11 @@ export async function syncLarkBaseToLarkSheet({ cfg, baseId, tableId, destUrl, v
     startRow = 2;
   }
 
-  for(let i = 0; i < dataRows.length; i += cfg.sheetWriteChunk){
-    const part = dataRows.slice(i, i + cfg.sheetWriteChunk);
+  // Append mode: only the source rows beyond what the destination already holds.
+  const writeRows = isAppend ? dataRows.slice(appendSkip) : dataRows;
+
+  for(let i = 0; i < writeRows.length; i += cfg.sheetWriteChunk){
+    const part = writeRows.slice(i, i + cfg.sheetWriteChunk);
     const s = startRow + i;
     await batchUpdateValues({
       ssToken,
@@ -108,5 +113,5 @@ export async function syncLarkBaseToLarkSheet({ cfg, baseId, tableId, destUrl, v
     }
   }
 
-  return { rowCount: dataRows.length, truncated: sliced.length > dataRows.length };
+  return { rowCount: writeRows.length, truncated: sliced.length > limited.length };
 }

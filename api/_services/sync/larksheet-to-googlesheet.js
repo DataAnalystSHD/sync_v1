@@ -71,6 +71,7 @@ export async function syncLarkSheetToGoogleSheet({ accessToken, cfg, sourceUrl, 
   const isAppend = syncMode === "append";
 
   let startRow;
+  let appendSkip = 0;   // data rows the destination already holds (append only the rest)
   if(isAppend){
     const lastRow = await findLastUsedRowGoogle({ accessToken, spreadsheetId: destSheetId, tab });
     if(lastRow === 0){
@@ -78,6 +79,7 @@ export async function syncLarkSheetToGoogleSheet({ accessToken, cfg, sourceUrl, 
       startRow = 2;
     } else {
       startRow = lastRow + 1;
+      appendSkip = lastRow - 1;
     }
   } else {
     await sheetsClear({ accessToken, spreadsheetId: destSheetId, range: `${tab}A:ZZ` });
@@ -85,12 +87,15 @@ export async function syncLarkSheetToGoogleSheet({ accessToken, cfg, sourceUrl, 
     startRow = 2;
   }
 
-  for(let i = 0; i < dataRows.length; i += cfg.sheetWriteChunk){
-    const part = dataRows.slice(i, i + cfg.sheetWriteChunk);
+  // Append mode: only the source rows beyond what the destination already holds.
+  const writeRows = isAppend ? dataRows.slice(appendSkip) : dataRows;
+
+  for(let i = 0; i < writeRows.length; i += cfg.sheetWriteChunk){
+    const part = writeRows.slice(i, i + cfg.sheetWriteChunk);
     const s = startRow + i;
     const range = `${tab}A${s}:${endCol}${s + part.length - 1}`;
     await sheetsUpdate({ accessToken, spreadsheetId: destSheetId, range, values: part });
   }
 
-  return { rowCount: dataRows.length, truncated: false };
+  return { rowCount: writeRows.length, truncated: false };
 }
