@@ -83,6 +83,27 @@ function showConfirm({ iconName, title, desc, confirmText, confirmClass }) {
   });
 }
 
+// Single-button info/success popup (reuses the confirm modal, hides Cancel).
+function showAlert({ iconName, title, desc, confirmText, confirmClass }) {
+  return new Promise(resolve => {
+    $('modalIcon').innerHTML      = icon(iconName || 'checkCircle', 40);
+    $('modalTitle').textContent   = title || '';
+    $('modalDesc').innerHTML      = desc || '';
+    $('modalConfirm').textContent = confirmText || 'OK';
+    $('modalConfirm').className   = confirmClass || 'primary';
+    $('modalCancel').style.display = 'none';
+    $('confirmModal').classList.add('show');
+
+    const cleanup = () => {
+      $('confirmModal').classList.remove('show');
+      $('modalConfirm').onclick = null;
+      $('modalCancel').style.display = '';   // restore for future confirms
+      resolve(true);
+    };
+    $('modalConfirm').onclick = () => cleanup();
+  });
+}
+
 // ──────────────────────────────────────────────────
 // Auth UI
 // ──────────────────────────────────────────────────
@@ -257,11 +278,33 @@ async function syncNow() {
       }),
     });
     log('[OK] Sync result', out);
-    sendNotif('SHD Sync', 'Manual sync completed');
+    const r = (out.results || [])[0] || {};
+    if (r.status === 'error') {
+      sendNotif('SHD Sync', 'Sync failed: ' + (r.error || 'error'));
+      await showAlert({
+        iconName: 'xCircle',
+        title: 'ซิงค์ไม่สำเร็จ',
+        desc: escHtml(r.error || 'เกิดข้อผิดพลาด'),
+        confirmClass: 'danger',
+      });
+    } else {
+      sendNotif('SHD Sync', 'Manual sync completed');
+      await showAlert({
+        iconName: 'checkCircle',
+        title: 'ซิงค์เสร็จแล้ว ✓',
+        desc: `ซิงค์ข้อมูลเรียบร้อย <b style="color:var(--green)">${r.rowCount ?? 0}</b> แถว`,
+        confirmClass: 'primary',
+      });
+    }
   } catch (e) {
     log('[ERR] Sync error: ' + e.message);
     sendNotif('SHD Sync', 'Sync failed: ' + e.message);
-    alert(e.message);
+    await showAlert({
+      iconName: 'xCircle',
+      title: 'ซิงค์ไม่สำเร็จ',
+      desc: escHtml(e.message),
+      confirmClass: 'danger',
+    });
   }
 }
 
@@ -367,9 +410,21 @@ async function saveCron() {
     log('[OK] Auto-sync saved');
     sendNotif('SHD Sync', 'Auto-sync schedule saved');
     await loadPairs();
+    const label = INTERVAL_LABELS[intervalMin] || (intervalMin + ' นาที');
+    await showAlert({
+      iconName: 'clock',
+      title: 'ตั้ง Auto-sync แล้ว ✓',
+      desc: `ระบบจะซิงค์ให้อัตโนมัติ <b style="color:var(--accent)">${label}</b><br>ตลอด 24 ชม. — ดูได้ที่แท็บ Auto-sync`,
+      confirmClass: 'primary',
+    });
   } catch (e) {
     log('[ERR] Save auto-sync: ' + e.message);
-    alert(e.message);
+    await showAlert({
+      iconName: 'xCircle',
+      title: 'บันทึกไม่สำเร็จ',
+      desc: escHtml(e.message),
+      confirmClass: 'danger',
+    });
   }
 }
 
