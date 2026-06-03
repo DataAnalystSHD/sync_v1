@@ -28,9 +28,9 @@ function toPos(v){
   return Number.isFinite(n) && n >= 1 ? n : null;
 }
 
-function rowToPair(r, idx){
+function rowToPair(r, rowNum){
   return {
-    rowId:       idx + 2,
+    rowId:       rowNum,
     createdAt:   r[0]  || "",
     sheetUrl:    r[1]  || "",
     sheetId:     r[2]  || "",
@@ -58,9 +58,16 @@ export async function readAllPairs({ accessToken, cfg }){
     spreadsheetId: cfg.historySheetId,
     range: `${cfg.pairsTab}!A1:${LAST_COL}20000`,
   });
-  if(rows.length <= 1) return [];
-  // Skip soft-deleted rows (cleared = no URLs left).
-  return rows.slice(1).map(rowToPair).filter(p => p.sheetUrl && p.larkUrl);
+  // Identify real pairs by an http(s) URL in the sheetUrl column (B) — robust
+  // to a missing/extra header row, blank rows, and soft-deleted (cleared) rows.
+  // rowId is the actual sheet row number (1-based), used by the update/delete ops.
+  const out = [];
+  rows.forEach((r, idx) => {
+    if(/^https?:\/\//i.test(String(r[1] || "")) && /^https?:\/\//i.test(String(r[3] || ""))){
+      out.push(rowToPair(r, idx + 1));
+    }
+  });
+  return out;
 }
 
 export async function readActiveCronPairs({ accessToken, cfg }){
