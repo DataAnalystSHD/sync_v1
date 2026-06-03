@@ -338,17 +338,35 @@ function nextRunLabel(p) {
   return `อีก ~${Math.round(mins / 60)} ชม.`;
 }
 
+const CRON_EMPTY_DEFAULT =
+  'ยังไม่มีงาน auto-sync — กรอกลิงก์ในแท็บ Sync เลือกช่วงเวลา แล้วกด <b>Save Auto-sync</b>';
+
+function renderPairsMessage(msg) {
+  $('cronList').innerHTML = '';
+  const empty = $('cronEmpty');
+  empty.style.display = '';
+  empty.innerHTML = msg;
+}
+
 async function loadPairs() {
-  if (!state.refreshToken) return;
+  if (!state.refreshToken) {
+    renderPairsMessage('ยังไม่ได้เข้าสู่ระบบ — กดปุ่ม <b>Login</b> มุมขวาบนก่อน');
+    return;
+  }
   try {
     const out = await fetchJson('/api/pairs', {
       method: 'POST',
       body: JSON.stringify({ refreshToken: state.refreshToken }),
     });
     cronPairs = out.pairs || [];
+    log(`[OK] โหลด auto-sync ${cronPairs.length} รายการ`);
     renderPairs(cronPairs);
   } catch (e) {
     log('[ERR] Load auto-sync list: ' + e.message);
+    renderPairsMessage(
+      'โหลดรายการไม่สำเร็จ: ' + escHtml(e.message) +
+      '<br><span style="color:var(--muted)">ลอง Logout แล้ว Login ใหม่ (token อาจหมดอายุ)</span>'
+    );
   }
 }
 
@@ -358,6 +376,7 @@ function renderPairs(pairs) {
   list.innerHTML = '';
   if (!pairs || pairs.length === 0) {
     empty.style.display = '';
+    empty.innerHTML = CRON_EMPTY_DEFAULT;
     return;
   }
   empty.style.display = 'none';
