@@ -10,6 +10,22 @@ function authHeader(accessToken){
   return { authorization: `Bearer ${accessToken}` };
 }
 
+// Turn known, cryptic Google API errors into clear Thai guidance the user can
+// act on. Returns null when the raw error has no friendly mapping.
+function friendlyGoogleError(rawMsg){
+  const m = String(rawMsg || "");
+  if(/must not be an Office file|not supported for this document/i.test(m)){
+    return "ไฟล์นี้เป็น Excel (.xlsx) ที่อัปโหลดขึ้น Drive ไม่ใช่ Google Sheet จริง — เปิดไฟล์แล้วเลือก File → Save as Google Sheets (หรือเปิด Drive Settings → ติ๊ก Convert uploads) แล้วใช้ URL ของไฟล์ Google Sheet ที่แปลงแล้ว";
+  }
+  if(/The caller does not have permission|PERMISSION_DENIED/i.test(m)){
+    return "ไม่มีสิทธิ์เข้าถึง Google Sheet นี้ — ตรวจว่าได้ login ด้วยบัญชีที่มีสิทธิ์ (Viewer ขึ้นไป) และแชร์ไฟล์ให้บัญชีนั้นแล้ว";
+  }
+  if(/Requested entity was not found|Unable to parse range|NOT_FOUND/i.test(m)){
+    return "หา Google Sheet หรือแท็บ/ช่วงข้อมูลที่ระบุไม่เจอ — ตรวจ URL และชื่อแท็บอีกครั้ง";
+  }
+  return null;
+}
+
 async function googleCall(label, fn){
   try {
     return await fn();
@@ -18,7 +34,9 @@ async function googleCall(label, fn){
     const data = e?.response?.data;
     const msg = data?.error?.message || data?.error_description || data?.error || e?.message || String(e);
     const code = data?.error?.code ?? data?.error?.status ?? "?";
-    const wrapped = new Error(`[${label}] HTTP ${status ?? "?"} code=${code} msg=${msg}`);
+
+    const friendly = friendlyGoogleError(msg);
+    const wrapped = new Error(friendly || `[${label}] HTTP ${status ?? "?"} code=${code} msg=${msg}`);
     wrapped.cause = e;
     wrapped.status = status;
     throw wrapped;
