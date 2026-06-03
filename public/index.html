@@ -46,6 +46,16 @@
 <!-- ═══ MAIN ═══ -->
 <div class="container">
 
+  <!-- ═══ TAB NAV ═══ -->
+  <nav class="tabs" id="tabNav">
+    <button class="tab active" data-tab="sync"><span data-icon="sync" data-size="15"></span> Sync</button>
+    <button class="tab" data-tab="cron"><span data-icon="clock" data-size="15"></span> Auto-sync</button>
+    <button class="tab" data-tab="logs"><span data-icon="activity" data-size="15"></span> Logs</button>
+  </nav>
+
+  <!-- ═══ TAB: SYNC ═══ -->
+  <div class="tab-panel active" data-panel="sync">
+
   <!-- Project Info Row -->
   <div class="info-row">
     <div class="info-card" data-color="gray">
@@ -192,6 +202,10 @@
       </div>
     </section>
   </div>
+  </div><!-- /tab: sync -->
+
+  <!-- ═══ TAB: AUTO-SYNC ═══ -->
+  <div class="tab-panel" data-panel="cron">
 
   <!-- Cron Manager -->
   <div class="cron-section">
@@ -215,6 +229,10 @@
       </div>
     </div>
   </div>
+  </div><!-- /tab: cron -->
+
+  <!-- ═══ TAB: LOGS ═══ -->
+  <div class="tab-panel" data-panel="logs">
 
   <!-- Logs -->
   <div class="log-section">
@@ -234,6 +252,7 @@
       </div>
     </div>
   </div>
+  </div><!-- /tab: logs -->
 
 </div>
 

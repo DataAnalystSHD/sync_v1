@@ -447,6 +447,24 @@ async function deletePair(rowId) {
 }
 
 // ──────────────────────────────────────────────────
+// Tab navigation
+// ──────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p =>
+    p.classList.toggle('active', p.dataset.panel === name));
+  // Refresh the schedule list whenever the user opens the Auto-sync tab.
+  if (name === 'cron' && state.refreshToken) loadPairs();
+}
+
+function bindTabs() {
+  document.querySelectorAll('#tabNav .tab').forEach(btn => {
+    btn.onclick = () => switchTab(btn.dataset.tab);
+  });
+}
+
+// ──────────────────────────────────────────────────
 // How-to toggle
 // ──────────────────────────────────────────────────
 function toggleHowto() {
@@ -504,6 +522,7 @@ function bindEvents() {
   $('btnSyncNow').onclick  = syncNow;
   $('btnSaveCron').onclick = saveCron;
   $('btnReloadCron').onclick = loadPairs;
+  bindTabs();
   $('btnReset').onclick    = resetForm;
   $('btnClearLog').onclick   = clearLogs;
   $('btnExportLog').onclick  = exportLogs;
