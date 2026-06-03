@@ -104,10 +104,12 @@ function setAuthed(ok) {
     chip.className = 'user-badge active';
     requestNotifPermission();
     loadPairs();
+    startAutoRunner();
   } else {
     chip.innerHTML = '<div class="user-dot"></div>Not signed in';
     chip.className = 'user-badge';
     renderPairs([]);
+    stopAutoRunner();
   }
   updateInfoRow();
 }
@@ -444,6 +446,57 @@ async function deletePair(rowId) {
     log('[ERR] Delete: ' + e.message);
     alert(e.message);
   }
+}
+
+// ── In-tab auto-runner ────────────────────────────
+// While this tab stays open, check every minute for pairs whose interval has
+// elapsed and run them. This makes "leave the tab open" work without any
+// server cron. For syncing while the tab is CLOSED you still need an external
+// cron hitting GET /api/sync (see AUTO_SYNC.md).
+let autoTimer = null;
+let autoBusy = false;
+const AUTO_CHECK_MS = 60 * 1000;
+
+function pairIsDue(p) {
+  if (!p.active) return false;
+  if (!p.lastSyncAt) return true;
+  const last = new Date(p.lastSyncAt).getTime();
+  if (isNaN(last)) return true;
+  return (Date.now() - last) >= (p.intervalMin || 60) * 60000 - 30000;
+}
+
+async function autoTick() {
+  if (autoBusy || !state.refreshToken) return;
+  const due = cronPairs.filter(pairIsDue);
+  if (due.length === 0) return;
+  autoBusy = true;
+  try {
+    log(`[auto] ${due.length} schedule(s) due — running...`);
+    for (const p of due) {
+      try {
+        const out = await fetchJson('/api/sync', {
+          method: 'POST',
+          body: JSON.stringify({ runRowId: p.rowId, refreshToken: state.refreshToken }),
+        });
+        const r = (out.results || [])[0] || {};
+        log(`[auto] #${p.rowId} ${r.status || 'done'}` + (r.error ? ': ' + r.error : ` — ${r.rowCount ?? 0} rows`));
+      } catch (e) {
+        log(`[auto] #${p.rowId} error: ` + e.message);
+      }
+    }
+    await loadPairs();
+  } finally {
+    autoBusy = false;
+  }
+}
+
+function startAutoRunner() {
+  stopAutoRunner();
+  autoTimer = setInterval(autoTick, AUTO_CHECK_MS);
+}
+
+function stopAutoRunner() {
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
 }
 
 // ──────────────────────────────────────────────────
