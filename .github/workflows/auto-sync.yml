@@ -1,0 +1,45 @@
+name: Auto-sync (cron)
+
+# Central, server-side scheduler for SHD Sync.
+# Runs on GitHub's servers — no one needs to keep a browser or computer open.
+# End users only save schedules in the web UI; this job triggers due ones.
+#
+# One-time admin setup (Repo → Settings → Secrets and variables → Actions):
+#   • Secret  CRON_SECRET  → same value as the Vercel env var CRON_SECRET
+#   • (optional) Variable SYNC_URL → override the endpoint if the domain changes
+#                                    default: https://sync-v1.vercel.app/api/sync
+
+on:
+  schedule:
+    # Every 5 minutes. GitHub may delay ticks a few minutes under load — the
+    # server gates each pair by its own interval, so a small drift is harmless.
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}   # lets an admin trigger a run manually from the Actions tab
+
+# Don't pile up overlapping runs if one tick is slow.
+concurrency:
+  group: auto-sync
+  cancel-in-progress: false
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trigger /api/sync
+        env:
+          SYNC_URL: ${{ vars.SYNC_URL || 'https://sync-v1.vercel.app/api/sync' }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          echo "Calling $SYNC_URL"
+          http_code=$(curl -sS -o response.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "$SYNC_URL")
+          echo "HTTP $http_code"
+          echo "--- response ---"
+          cat response.json || true
+          echo
+          if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
+            echo "::error::Sync trigger failed with HTTP $http_code"
+            exit 1
+          fi

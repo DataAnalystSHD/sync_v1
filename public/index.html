@@ -205,26 +205,13 @@
       </div>
       <div class="card-body">
         <div class="cron-note">
-          <span data-icon="clock" data-size="13"></span>
-          เปิดแท็บนี้ค้างไว้ = ระบบจะซิงค์ให้อัตโนมัติตามรอบ · ปิดแท็บแล้วยังซิงค์ต่อ ต้องตั้ง external cron (ดู AUTO_SYNC.md)
+          <span data-icon="checkCircle" data-size="13"></span>
+          บันทึกแล้วระบบจะซิงค์ให้เองตามรอบที่ตั้ง ตลอด 24 ชม. — ไม่ต้องเปิดเว็บค้างหรือเปิดคอมไว้
         </div>
         <div class="cron-empty" id="cronEmpty">
           ยังไม่มีงาน auto-sync — กรอกลิงก์ด้านบน เลือกช่วงเวลา แล้วกด <b>Save Auto-sync</b>
         </div>
         <div class="cron-list" id="cronList"></div>
-
-        <!-- External cron setup helper -->
-        <div class="cron-setup">
-          <div class="cron-setup-hd"><span data-icon="link" data-size="14"></span> ตั้ง External Cron (ให้ซิงค์ต่อแม้ปิดเว็บ)</div>
-          <p class="cron-setup-step"><b>1.</b> ตั้ง env <code>CRON_SECRET</code> ใน Vercel แล้วพิมพ์ค่าเดียวกันที่นี่</p>
-          <input class="field-input" id="cronSecret" placeholder="วาง CRON_SECRET ที่ตั้งไว้ใน Vercel (ไม่บังคับ)" />
-          <p class="cron-setup-step"><b>2.</b> คัดลอก URL นี้ไปวางใน <a href="https://console.cron-job.org" target="_blank" rel="noopener">cron-job.org</a> → ตั้ง <i>Every 5 minutes</i></p>
-          <div class="cron-setup-row">
-            <input class="field-input mono" id="cronUrl" readonly />
-            <button class="primary" id="btnCopyCron"><span data-icon="link" data-size="13"></span> Copy</button>
-          </div>
-          <p class="cron-setup-hint" id="cronSecretWarn"></p>
-        </div>
       </div>
     </div>
   </div>

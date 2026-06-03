@@ -17,7 +17,7 @@
 ## สถาปัตยกรรม
 
 ```
-Vercel Cron (ทุก 5 นาที)
+GitHub Actions (ทุก 5 นาที)
         │  GET /api/sync   (แนบ Authorization: Bearer <CRON_SECRET>)
         ▼
    handleCron()
@@ -110,7 +110,7 @@ Authorization: Bearer <CRON_SECRET>
 |---|---|---|
 | `SYNC_OWNER_REFRESH_TOKEN` | ✅ | owner token ไว้อ่าน Pairs sheet ตอน cron / Run now |
 | `SYNC_SECRET` | ✅ | คีย์เข้ารหัส refresh token ของแต่ละคู่ |
-| `CRON_SECRET` | แนะนำ | กัน `/api/sync` ไม่ให้ถูกยิงมั่ว (Vercel Cron แนบ header ให้อัตโนมัติ) |
+| `CRON_SECRET` | แนะนำ | กัน `/api/sync` ไม่ให้ถูกยิงมั่ว — ตั้งค่านี้ทั้งใน Vercel env และ GitHub Actions secret ให้ตรงกัน |
 | `HISTORY_SHEET_ID` | ✅ | Google Sheet ที่เก็บ History + Pairs |
 | `PAIRS_TAB` | — | ชื่อแท็บ pair (ดีฟอลต์ `Pairs`) |
 | `ALLOWED_DOMAIN` | — | โดเมนอีเมลที่อนุญาต |
@@ -119,27 +119,21 @@ Authorization: Bearer <CRON_SECRET>
 
 ---
 
-## การตั้ง Scheduler
+## การตั้ง Scheduler (กลาง — ตั้งครั้งเดียวโดย admin)
 
-### ตัวเลือก A — External Cron (แนะนำ · ใช้ได้ทุกแผน · ฟรี)
-ใช้บริการอย่าง [cron-job.org](https://cron-job.org) ตั้งให้ยิงทุก 5 นาที:
-```
-GET https://sync-v1.vercel.app/api/sync?key=<CRON_SECRET>
-```
-เป็น server-side รันแม้ปิดหน้าเว็บ และไม่ติดข้อจำกัดแผน Vercel
+ผู้ใช้ทั่วไป **ไม่ต้องตั้งค่าอะไร** — แค่กรอกลิงก์ เลือกทิศทาง เลือกความถี่ แล้วกด Save Auto-sync
+ตัว scheduler กลางจะรันบน **GitHub Actions** ยิงเข้า `/api/sync` ทุก 5 นาที (ไฟล์ `.github/workflows/auto-sync.yml`)
+รันบน server ของ GitHub → ทำงานแม้ปิดเว็บ/ปิดคอม
 
-### ตัวเลือก B — Vercel Cron (ต้องใช้แผน **Pro**)
-> ⚠️ แผน **Hobby** รัน Vercel Cron ได้แค่ **วันละครั้ง** — ถ้าใส่ schedule ถี่กว่านั้น
-> (เช่น `*/5 * * * *`) **deploy จะ fail** ด้วยเหตุนี้เอง `vercel.json` จึงไม่ได้ใส่ cron ไว้
+### Setup ครั้งเดียว (admin)
+1. **Vercel** → Settings → Environment Variables → เพิ่ม `CRON_SECRET` (ค่าเดายากๆ) แล้ว Redeploy
+2. **GitHub repo** → Settings → Secrets and variables → Actions:
+   - **New repository secret** ชื่อ `CRON_SECRET` ใส่ค่า**เดียวกับใน Vercel**
+   - (ถ้าโดเมนเปลี่ยน) เพิ่ม **Variable** `SYNC_URL` = `https://<your-app>/api/sync`
+3. เปิดแท็บ **Actions** ในรีโป → กด Enable workflows (ถ้าถูกปิด) → กด **Run workflow** เพื่อทดสอบ
 
-ถ้าอัปเกรดเป็น Pro แล้ว เพิ่ม block นี้ใน `vercel.json` ได้:
-```json
-{
-  "version": 2,
-  "crons": [{ "path": "/api/sync", "schedule": "*/5 * * * *" }]
-}
-```
-ตั้ง `CRON_SECRET` ใน Vercel → ระบบจะแนบ `Authorization: Bearer` ให้เอง
+> GitHub Actions cron อาจดีเลย์ได้ 5–15 นาทีตอน GitHub โหลดสูง — ไม่เป็นไร เพราะ server กรองตาม interval ของแต่ละ pair อยู่แล้ว
+> ถ้าต้องการตรงเวลากว่านี้: ใช้ [cron-job.org](https://console.cron-job.org) ยิง `GET /api/sync` (ใส่ header `Authorization: Bearer <CRON_SECRET>`) ทุก 5 นาทีแทน หรืออัปเกรด Vercel Pro แล้วใส่ `crons` ใน `vercel.json`
 
 ---
 

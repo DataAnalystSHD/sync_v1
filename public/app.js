@@ -104,12 +104,10 @@ function setAuthed(ok) {
     chip.className = 'user-badge active';
     requestNotifPermission();
     loadPairs();
-    startAutoRunner();
   } else {
     chip.innerHTML = '<div class="user-dot"></div>Not signed in';
     chip.className = 'user-badge';
     renderPairs([]);
-    stopAutoRunner();
   }
   updateInfoRow();
 }
@@ -448,93 +446,6 @@ async function deletePair(rowId) {
   }
 }
 
-// ── External cron URL helper ──────────────────────
-function buildCronUrl() {
-  const secret = $('cronSecret').value.trim();
-  const base = window.location.origin + '/api/sync';
-  return secret ? `${base}?key=${encodeURIComponent(secret)}` : base;
-}
-
-function refreshCronUrl() {
-  $('cronUrl').value = buildCronUrl();
-  const warn = $('cronSecretWarn');
-  if (warn) {
-    warn.textContent = $('cronSecret').value.trim()
-      ? 'URL พร้อมใช้ — ต้องตั้ง CRON_SECRET ค่านี้ใน Vercel ให้ตรงกันด้วย'
-      : '⚠ ไม่ใส่ secret = endpoint เปิดให้ยิงได้อิสระ แนะนำให้ตั้ง CRON_SECRET เพื่อความปลอดภัย';
-  }
-}
-
-async function copyCronUrl() {
-  const url = buildCronUrl();
-  const btn = $('btnCopyCron');
-  try {
-    await navigator.clipboard.writeText(url);
-  } catch {
-    // Fallback for non-secure contexts / older browsers
-    const ta = document.createElement('textarea');
-    ta.value = url; document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); } catch {}
-    ta.remove();
-  }
-  const orig = btn.innerHTML;
-  btn.innerHTML = `${icon('check', 13)} Copied!`;
-  btn.classList.add('success');
-  setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('success'); }, 1500);
-  log('Copied cron URL');
-}
-
-// ── In-tab auto-runner ────────────────────────────
-// While this tab stays open, check every minute for pairs whose interval has
-// elapsed and run them. This makes "leave the tab open" work without any
-// server cron. For syncing while the tab is CLOSED you still need an external
-// cron hitting GET /api/sync (see AUTO_SYNC.md).
-let autoTimer = null;
-let autoBusy = false;
-const AUTO_CHECK_MS = 60 * 1000;
-
-function pairIsDue(p) {
-  if (!p.active) return false;
-  if (!p.lastSyncAt) return true;
-  const last = new Date(p.lastSyncAt).getTime();
-  if (isNaN(last)) return true;
-  return (Date.now() - last) >= (p.intervalMin || 60) * 60000 - 30000;
-}
-
-async function autoTick() {
-  if (autoBusy || !state.refreshToken) return;
-  const due = cronPairs.filter(pairIsDue);
-  if (due.length === 0) return;
-  autoBusy = true;
-  try {
-    log(`[auto] ${due.length} schedule(s) due — running...`);
-    for (const p of due) {
-      try {
-        const out = await fetchJson('/api/sync', {
-          method: 'POST',
-          body: JSON.stringify({ runRowId: p.rowId, refreshToken: state.refreshToken }),
-        });
-        const r = (out.results || [])[0] || {};
-        log(`[auto] #${p.rowId} ${r.status || 'done'}` + (r.error ? ': ' + r.error : ` — ${r.rowCount ?? 0} rows`));
-      } catch (e) {
-        log(`[auto] #${p.rowId} error: ` + e.message);
-      }
-    }
-    await loadPairs();
-  } finally {
-    autoBusy = false;
-  }
-}
-
-function startAutoRunner() {
-  stopAutoRunner();
-  autoTimer = setInterval(autoTick, AUTO_CHECK_MS);
-}
-
-function stopAutoRunner() {
-  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
-}
-
 // ──────────────────────────────────────────────────
 // How-to toggle
 // ──────────────────────────────────────────────────
@@ -579,8 +490,6 @@ async function bootstrap() {
     log('Config error: ' + e.message);
   }
 
-  refreshCronUrl();
-
   if (state.refreshToken && state.userEmail) {
     setAuthed(true);
   } else {
@@ -595,8 +504,6 @@ function bindEvents() {
   $('btnSyncNow').onclick  = syncNow;
   $('btnSaveCron').onclick = saveCron;
   $('btnReloadCron').onclick = loadPairs;
-  $('cronSecret').oninput  = refreshCronUrl;
-  $('btnCopyCron').onclick = copyCronUrl;
   $('btnReset').onclick    = resetForm;
   $('btnClearLog').onclick   = clearLogs;
   $('btnExportLog').onclick  = exportLogs;
