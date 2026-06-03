@@ -121,8 +121,18 @@ Authorization: Bearer <CRON_SECRET>
 
 ## การตั้ง Scheduler
 
-### ตัวเลือก A — Vercel Cron (ต้องใช้แผน **Pro**)
-ตั้งไว้ใน `vercel.json` แล้ว:
+### ตัวเลือก A — External Cron (แนะนำ · ใช้ได้ทุกแผน · ฟรี)
+ใช้บริการอย่าง [cron-job.org](https://cron-job.org) ตั้งให้ยิงทุก 5 นาที:
+```
+GET https://sync-v1.vercel.app/api/sync?key=<CRON_SECRET>
+```
+เป็น server-side รันแม้ปิดหน้าเว็บ และไม่ติดข้อจำกัดแผน Vercel
+
+### ตัวเลือก B — Vercel Cron (ต้องใช้แผน **Pro**)
+> ⚠️ แผน **Hobby** รัน Vercel Cron ได้แค่ **วันละครั้ง** — ถ้าใส่ schedule ถี่กว่านั้น
+> (เช่น `*/5 * * * *`) **deploy จะ fail** ด้วยเหตุนี้เอง `vercel.json` จึงไม่ได้ใส่ cron ไว้
+
+ถ้าอัปเกรดเป็น Pro แล้ว เพิ่ม block นี้ใน `vercel.json` ได้:
 ```json
 {
   "version": 2,
@@ -130,13 +140,6 @@ Authorization: Bearer <CRON_SECRET>
 }
 ```
 ตั้ง `CRON_SECRET` ใน Vercel → ระบบจะแนบ `Authorization: Bearer` ให้เอง
-> แผน **Hobby** รัน cron ได้แค่ **วันละครั้ง** — ถ้าต้องการถี่กว่านั้นใช้ตัวเลือก B
-
-### ตัวเลือก B — External Cron (ทุกแผน, ฟรี)
-ใช้บริการอย่าง [cron-job.org](https://cron-job.org) ตั้งให้ยิงทุก 5 นาที:
-```
-GET https://<your-app>.vercel.app/api/sync?key=<CRON_SECRET>
-```
 
 ---
 
