@@ -107,6 +107,17 @@ async function handleDebug({ res, cfg }){
   try {
     rows = await sheetsGetValues({ accessToken: ownerAccess, spreadsheetId: cfg.historySheetId, range });
   } catch(e){ readError = e.message; }
+
+  // Full-width scan: find where data actually sits (col index of non-empty cells per row).
+  let wide = [];
+  try {
+    const w = await sheetsGetValues({ accessToken: ownerAccess, spreadsheetId: cfg.historySheetId, range: `${cfg.pairsTab}!A1:AZ60` });
+    wide = w.map((r, i) => {
+      const filled = [];
+      (r || []).forEach((v, c) => { if(String(v ?? "").trim() !== "") filled.push(c); });
+      return { row: i + 1, cells: (r || []).length, filledCols: filled.slice(0, 20), first: filled.length ? String(r[filled[0]]).slice(0, 50) : "" };
+    }).filter(x => x.cells > 0);
+  } catch(e){ wide = [{ error: e.message }]; }
   const all = readError ? [] : await readAllPairs({ accessToken: ownerAccess, cfg });
   json(res, 200, {
     ok: true,
@@ -115,6 +126,7 @@ async function handleDebug({ res, cfg }){
     tabs,
     range,
     readError,
+    wide,
     rawRowCount: rows.length,
     sampleRows: rows.slice(0, 30).map((r, i) => [i + 1, ...(r || []).slice(0, 4).map(v => JSON.stringify(String(v).slice(0, 60)))]),
     parsedPairs: all.length,
