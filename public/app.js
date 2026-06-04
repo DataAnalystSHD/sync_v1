@@ -515,6 +515,15 @@ function isAdmin() {
     (CONFIG.adminEmails || []).includes(state.userEmail.toLowerCase());
 }
 
+// Slide the gradient capsule under the active tab.
+function positionTabIndicator() {
+  const ind = $('tabIndicator');
+  const active = document.querySelector('#tabNav .tab.active');
+  if (!ind || !active) return;
+  ind.style.left  = active.offsetLeft + 'px';
+  ind.style.width = active.offsetWidth + 'px';
+}
+
 function updateTabVisibility() {
   const admin = isAdmin();
   document.querySelectorAll('#tabNav .tab').forEach(btn => {
@@ -526,6 +535,7 @@ function updateTabVisibility() {
   if (!admin && activePanel && activePanel.dataset.panel !== 'sync') {
     switchTab('sync');
   }
+  requestAnimationFrame(positionTabIndicator);
 }
 
 function switchTab(name) {
@@ -534,6 +544,7 @@ function switchTab(name) {
     b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.tab-panel').forEach(p =>
     p.classList.toggle('active', p.dataset.panel === name));
+  positionTabIndicator();
   // Refresh the schedule list whenever the user opens the Auto-sync tab.
   if (name === 'cron' && state.refreshToken) loadPairs();
 }
@@ -542,6 +553,10 @@ function bindTabs() {
   document.querySelectorAll('#tabNav .tab').forEach(btn => {
     btn.onclick = () => switchTab(btn.dataset.tab);
   });
+  window.addEventListener('resize', positionTabIndicator);
+  // Re-measure once fonts/icons have finished loading (widths can shift).
+  window.addEventListener('load', positionTabIndicator);
+  requestAnimationFrame(positionTabIndicator);
 }
 
 // ──────────────────────────────────────────────────
