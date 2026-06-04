@@ -94,7 +94,7 @@ async function handleDebug({ res, cfg }){
     range,
     readError,
     rawRowCount: rows.length,
-    sampleRows: rows.slice(0, 3).map(r => (r || []).slice(0, 4).map(v => String(v).slice(0, 70))),
+    sampleRows: rows.slice(0, 30).map((r, i) => [i + 1, ...(r || []).slice(0, 4).map(v => JSON.stringify(String(v).slice(0, 60)))]),
     parsedPairs: all.length,
     rowIds: all.map(p => p.rowId),
     directions: all.map(p => p.direction),
