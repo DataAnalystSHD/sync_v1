@@ -2,7 +2,8 @@ import { json, methodNotAllowed, errorResponse } from "./_lib/http.js";
 import { getConfig, mustEnv } from "./_lib/config.js";
 import { decryptText } from "./_lib/crypto.js";
 import { refreshAccessToken } from "./_lib/google/oauth.js";
-import { readActiveCronPairs, findPairByRowId, updateLastSync } from "./_services/pairs-store.js";
+import { readAllPairs, readActiveCronPairs, findPairByRowId, updateLastSync } from "./_services/pairs-store.js";
+import { sheetsGetValues } from "./_lib/google/sheets.js";
 import { logHistory } from "./_services/history.js";
 import { runOne } from "./_services/sync/runner.js";
 import { notifyLarkBot, summarizeBatch } from "./_lib/lark/notify.js";
@@ -70,11 +71,47 @@ async function recordResult({ accessToken, cfg, pair, user, result, error }){
   });
 }
 
+// GET /api/sync?debug=pairs — admin diagnostic (CRON_SECRET required). Shows
+// what the server reads from the Pairs tab WITHOUT running any sync. Never
+// returns tokens (only columns A–D of the first rows).
+async function handleDebug({ res, cfg }){
+  const ownerRefresh = process.env.SYNC_OWNER_REFRESH_TOKEN;
+  if(!ownerRefresh){
+    json(res, 400, { ok: false, error: "Missing SYNC_OWNER_REFRESH_TOKEN env" });
+    return;
+  }
+  const ownerAccess = await refreshAccessToken(ownerRefresh);
+  const range = `${cfg.pairsTab}!A1:R20000`;
+  let rows = [], readError = null;
+  try {
+    rows = await sheetsGetValues({ accessToken: ownerAccess, spreadsheetId: cfg.historySheetId, range });
+  } catch(e){ readError = e.message; }
+  const all = readError ? [] : await readAllPairs({ accessToken: ownerAccess, cfg });
+  json(res, 200, {
+    ok: true,
+    pairsTab: cfg.pairsTab,
+    historySheetId: cfg.historySheetId,
+    range,
+    readError,
+    rawRowCount: rows.length,
+    sampleRows: rows.slice(0, 3).map(r => (r || []).slice(0, 4).map(v => String(v).slice(0, 70))),
+    parsedPairs: all.length,
+    rowIds: all.map(p => p.rowId),
+    directions: all.map(p => p.direction),
+  });
+}
+
 async function handleCron({ req, res, cfg }){
   if(!cronAuthorized(req)){
     json(res, 401, { ok: false, error: "Unauthorized cron request" });
     return;
   }
+
+  let debug = req.query?.debug;
+  if(!debug && req.url){
+    try { debug = new URL(req.url, "http://x").searchParams.get("debug"); } catch {}
+  }
+  if(debug === "pairs") return await handleDebug({ res, cfg });
 
   const ownerRefresh = process.env.SYNC_OWNER_REFRESH_TOKEN;
   if(!ownerRefresh){
