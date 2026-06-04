@@ -642,3 +642,8 @@ button [data-icon], .howto-arrow [data-icon], .hw-icon[data-icon] { line-height:
   padding: 2px 9px; border-radius: 999px;
 }
 .cron-owner [data-icon] { line-height: 0; }
+
+.cron-url-label {
+  display: inline-block; min-width: 92px;
+  font-weight: 700; color: var(--text2);
+}

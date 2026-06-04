@@ -317,6 +317,10 @@ const INTERVAL_LABELS = {
   120: 'ทุก 2 ชม.', 360: 'ทุก 6 ชม.', 720: 'ทุก 12 ชม.', 1440: 'ทุกวัน',
 };
 
+// Short labels for the URL rows in the Cron Manager, derived from what each
+// field actually holds for the pair's direction (see FIELD_KINDS).
+const KIND_SHORT = { google: 'Google Sheet', larkSheet: 'Lark Sheet', larkBase: 'Lark Base' };
+
 let cronPairs = [];
 
 function fmtTime(iso) {
@@ -401,7 +405,10 @@ function renderPairs(pairs) {
           <span class="cron-owner">${icon('user', 12)} ${escHtml(p.user || 'ไม่ระบุ')}</span>
           <span class="cron-sub">สร้างเมื่อ: ${fmtTime(p.createdAt)}</span>
         </div>
-        <div class="cron-urls">${escHtml(p.sheetUrl)}<br>${escHtml(p.larkUrl)}</div>
+        <div class="cron-urls">
+          <div><span class="cron-url-label">${KIND_SHORT[(FIELD_KINDS[p.direction] || {}).top] || 'ต้นทาง'}:</span> ${escHtml(p.sheetUrl)}</div>
+          <div><span class="cron-url-label">${KIND_SHORT[(FIELD_KINDS[p.direction] || {}).bottom] || 'ปลายทาง'}:</span> ${escHtml(p.larkUrl)}</div>
+        </div>
       </div>
       <div class="cron-actions">
         <button class="cron-run" data-act="run" data-row="${p.rowId}">${icon('play', 13)} Run now</button>
