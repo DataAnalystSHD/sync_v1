@@ -1,4 +1,4 @@
-import { sheetsGetValues, sheetsAppend, sheetsUpdate, sheetsClear } from "../_lib/google/sheets.js";
+import { sheetsGetValues, sheetsUpdate, sheetsClear } from "../_lib/google/sheets.js";
 
 const COLUMNS = {
   createdAt:   "A",
@@ -103,11 +103,20 @@ export async function appendPair({ accessToken, cfg, pair }){
     pair.rowTo   ? String(pair.rowTo)   : "", // Q
     pair.syncMode === "append" ? "append" : "replace", // R
   ];
-  await sheetsAppend({
+  // Don't use values.append: its table auto-detection has shifted new rows
+  // into the wrong columns (data ended up starting at column R) after rows
+  // were cleared. Find the next free row ourselves and write there explicitly.
+  const existing = await sheetsGetValues({
     accessToken,
     spreadsheetId: cfg.historySheetId,
-    range: `${cfg.pairsTab}!A:${LAST_COL}`,
-    values: row,
+    range: `${cfg.pairsTab}!A1:${LAST_COL}20000`,
+  });
+  const nextRow = (existing?.length || 0) + 1;
+  await sheetsUpdate({
+    accessToken,
+    spreadsheetId: cfg.historySheetId,
+    range: `${cfg.pairsTab}!A${nextRow}:${LAST_COL}${nextRow}`,
+    values: [row],
   });
 }
 

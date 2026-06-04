@@ -4,7 +4,7 @@ import { getConfig, mustEnv } from "./_lib/config.js";
 import { decryptText } from "./_lib/crypto.js";
 import { refreshAccessToken } from "./_lib/google/oauth.js";
 import { readAllPairs, readActiveCronPairs, findPairByRowId, updateLastSync } from "./_services/pairs-store.js";
-import { sheetsGetValues } from "./_lib/google/sheets.js";
+import { sheetsGetValues, sheetsClear } from "./_lib/google/sheets.js";
 import { logHistory } from "./_services/history.js";
 import { runOne } from "./_services/sync/runner.js";
 import { notifyLarkBot, summarizeBatch } from "./_lib/lark/notify.js";
@@ -146,6 +146,20 @@ async function handleCron({ req, res, cfg }){
     try { debug = new URL(req.url, "http://x").searchParams.get("debug"); } catch {}
   }
   if(debug === "pairs") return await handleDebug({ res, cfg });
+  if(debug === "cleanpairs"){
+    // One-time admin cleanup: wipe every data row in the Pairs tab (keeps the
+    // header) — used to clear rows that values.append shifted into the wrong
+    // columns. Pairs must be re-saved from the UI afterwards.
+    const ownerRefresh2 = process.env.SYNC_OWNER_REFRESH_TOKEN;
+    if(!ownerRefresh2) return json(res, 400, { ok: false, error: "Missing SYNC_OWNER_REFRESH_TOKEN env" });
+    const ownerAccess2 = await refreshAccessToken(ownerRefresh2);
+    await sheetsClear({
+      accessToken: ownerAccess2,
+      spreadsheetId: cfg.historySheetId,
+      range: `${cfg.pairsTab}!A2:AZ1024`,
+    });
+    return json(res, 200, { ok: true, cleaned: true, range: `${cfg.pairsTab}!A2:AZ1024` });
+  }
 
   const ownerRefresh = process.env.SYNC_OWNER_REFRESH_TOKEN;
   if(!ownerRefresh){
