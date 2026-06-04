@@ -7,6 +7,8 @@ export function mustEnv(name){
 export function getConfig(){
   return {
     allowedDomain: process.env.ALLOWED_DOMAIN || "shd-technology.co.th",
+    adminEmails: (process.env.ADMIN_EMAILS || "the.dataverse@shd-technology.co.th")
+      .split(",").map(s => s.trim().toLowerCase()).filter(Boolean),
     historySheetId: process.env.HISTORY_SHEET_ID || "",
     historyTab: process.env.HISTORY_TAB || "History",
     pairsTab: process.env.PAIRS_TAB || "Pairs",

@@ -8,6 +8,7 @@ export default async function handler(req, res){
       historySheetId: cfg.historySheetId,
       allowedDomain:  cfg.allowedDomain,
       maxRowsPerSync: cfg.maxRowsPerSync,
+      adminEmails:    cfg.adminEmails,
     });
   }catch(e){
     errorResponse(res, e);

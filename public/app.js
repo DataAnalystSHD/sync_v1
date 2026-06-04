@@ -7,7 +7,7 @@ const $ = id => document.getElementById(id);
 // ──────────────────────────────────────────────────
 // State
 // ──────────────────────────────────────────────────
-const CONFIG = { historySheetId: null, allowedDomain: null };
+const CONFIG = { historySheetId: null, allowedDomain: null, adminEmails: [] };
 
 const state = {
   refreshToken: localStorage.getItem('google_refresh_token') || '',
@@ -130,6 +130,7 @@ function setAuthed(ok) {
     chip.className = 'user-badge';
     renderPairs([]);
   }
+  updateTabVisibility();
   updateInfoRow();
 }
 
@@ -507,9 +508,28 @@ async function deletePair(rowId) {
 }
 
 // ──────────────────────────────────────────────────
-// Tab navigation
+// Tab navigation (Auto-sync + Logs are admin-only)
 // ──────────────────────────────────────────────────
+function isAdmin() {
+  return !!state.userEmail &&
+    (CONFIG.adminEmails || []).includes(state.userEmail.toLowerCase());
+}
+
+function updateTabVisibility() {
+  const admin = isAdmin();
+  document.querySelectorAll('#tabNav .tab').forEach(btn => {
+    if (btn.dataset.tab === 'sync') return;            // everyone sees Sync
+    btn.style.display = admin ? '' : 'none';
+  });
+  // If a non-admin is somehow on a hidden tab, send them back to Sync.
+  const activePanel = document.querySelector('.tab-panel.active');
+  if (!admin && activePanel && activePanel.dataset.panel !== 'sync') {
+    switchTab('sync');
+  }
+}
+
 function switchTab(name) {
+  if (name !== 'sync' && !isAdmin()) name = 'sync';
   document.querySelectorAll('.tab').forEach(b =>
     b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.tab-panel').forEach(p =>
@@ -562,6 +582,7 @@ async function bootstrap() {
     const cfg = await fetchJson('/api/config');
     CONFIG.historySheetId = cfg.historySheetId;
     CONFIG.allowedDomain  = cfg.allowedDomain;
+    CONFIG.adminEmails    = (cfg.adminEmails || []).map(s => String(s).toLowerCase());
     $('histLabel').textContent = cfg.historySheetId || '(missing)';
     log('Config loaded', cfg);
   } catch (e) {
@@ -573,6 +594,7 @@ async function bootstrap() {
   } else {
     updateInfoRow();
   }
+  updateTabVisibility();
 }
 
 function bindEvents() {
