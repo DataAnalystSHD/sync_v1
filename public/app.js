@@ -63,17 +63,22 @@ function sendNotif(title, body) {
 // ──────────────────────────────────────────────────
 // Confirm modal
 // ──────────────────────────────────────────────────
-function showConfirm({ iconName, title, desc, confirmText, confirmClass }) {
+// keepOpenOnConfirm: leave the modal visible after the user confirms, so a
+// follow-up busy/result state can swap its content WITHOUT replaying the
+// open animation (prevents the popup "bouncing twice").
+function showConfirm({ iconName, title, desc, confirmText, confirmClass, keepOpenOnConfirm }) {
   return new Promise(resolve => {
     $('modalIcon').innerHTML    = icon(iconName || 'alertTriangle', 40);
     $('modalTitle').textContent = title || 'Confirm';
     $('modalDesc').innerHTML    = desc || '';
     $('modalConfirm').textContent = confirmText || 'Confirm';
     $('modalConfirm').className   = confirmClass || 'danger';
+    $('modalConfirm').style.display = '';
+    $('modalCancel').style.display  = '';
     $('confirmModal').classList.add('show');
 
     const cleanup = (val) => {
-      $('confirmModal').classList.remove('show');
+      if (!(val && keepOpenOnConfirm)) $('confirmModal').classList.remove('show');
       $('modalConfirm').onclick = null;
       $('modalCancel').onclick  = null;
       resolve(val);
@@ -83,7 +88,18 @@ function showConfirm({ iconName, title, desc, confirmText, confirmClass }) {
   });
 }
 
+// Spinner state inside the same modal — no buttons, content swap only.
+function showModalBusy({ title, desc }) {
+  $('modalIcon').innerHTML      = `<span class="spin">${icon('refreshCw', 40)}</span>`;
+  $('modalTitle').textContent   = title || 'กำลังทำงาน...';
+  $('modalDesc').innerHTML      = desc || 'รอสักครู่';
+  $('modalConfirm').style.display = 'none';
+  $('modalCancel').style.display  = 'none';
+  $('confirmModal').classList.add('show');
+}
+
 // Single-button info/success popup (reuses the confirm modal, hides Cancel).
+// If the modal is already open (confirm/busy state), content swaps in place.
 function showAlert({ iconName, title, desc, confirmText, confirmClass }) {
   return new Promise(resolve => {
     $('modalIcon').innerHTML      = icon(iconName || 'checkCircle', 40);
@@ -91,7 +107,8 @@ function showAlert({ iconName, title, desc, confirmText, confirmClass }) {
     $('modalDesc').innerHTML      = desc || '';
     $('modalConfirm').textContent = confirmText || 'OK';
     $('modalConfirm').className   = confirmClass || 'primary';
-    $('modalCancel').style.display = 'none';
+    $('modalConfirm').style.display = '';
+    $('modalCancel').style.display  = 'none';
     $('confirmModal').classList.add('show');
 
     const cleanup = () => {
@@ -267,8 +284,12 @@ async function syncNow() {
       : 'ข้อมูล<b>ปลายทางจะถูกลบทั้งหมด</b>แล้ว sync ใหม่<br>ต้องการดำเนินการ?',
     confirmText: 'Sync Now',
     confirmClass: 'primary',
+    keepOpenOnConfirm: true,   // morph into busy → result without re-animating
   });
   if (!ok) return;
+  $('btnSyncNow').disabled = true;
+  $('btnSaveCron').disabled = true;
+  showModalBusy({ title: 'กำลังซิงค์...', desc: 'กำลังโอนข้อมูล รอสักครู่' });
   try {
     const { refreshToken, userEmail } = state;
     log('Manual sync...');
@@ -306,6 +327,9 @@ async function syncNow() {
       desc: escHtml(e.message),
       confirmClass: 'danger',
     });
+  } finally {
+    $('btnSyncNow').disabled = false;
+    $('btnSaveCron').disabled = false;
   }
 }
 
@@ -429,8 +453,17 @@ function renderPairs(pairs) {
 }
 
 async function saveCron() {
+  let inputs;
   try {
-    const inputs = getInputs();
+    inputs = getInputs();
+  } catch (e) {
+    await showAlert({ iconName: 'xCircle', title: 'ข้อมูลไม่ครบ', desc: escHtml(e.message), confirmClass: 'danger' });
+    return;
+  }
+  $('btnSyncNow').disabled = true;
+  $('btnSaveCron').disabled = true;
+  showModalBusy({ title: 'กำลังบันทึก Auto-sync...', desc: 'รอสักครู่' });
+  try {
     const intervalMin = parseInt($('syncInterval').value, 10) || 60;
     const { refreshToken, userEmail } = state;
     log(`Saving auto-sync (${INTERVAL_LABELS[intervalMin] || intervalMin + ' นาที'})...`);
@@ -456,6 +489,9 @@ async function saveCron() {
       desc: escHtml(e.message),
       confirmClass: 'danger',
     });
+  } finally {
+    $('btnSyncNow').disabled = false;
+    $('btnSaveCron').disabled = false;
   }
 }
 
