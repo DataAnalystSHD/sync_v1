@@ -395,7 +395,11 @@ function renderPairs(pairs) {
         <div class="cron-meta">
           <span class="cron-tag">${icon('clock', 11)} ${INTERVAL_LABELS[p.intervalMin] || (p.intervalMin + ' นาที')}</span>
           <span class="cron-tag ${p.syncMode === 'append' ? 'info' : 'warn'}">${p.syncMode === 'append' ? 'Append' : 'Replace'}</span>
-          <span class="cron-sub">last: ${fmtTime(p.lastSyncAt)} · ${nextRunLabel(p)}</span>
+          <span class="cron-sub">ล่าสุด: ${fmtTime(p.lastSyncAt)} · ${nextRunLabel(p)}</span>
+        </div>
+        <div class="cron-meta">
+          <span class="cron-owner">${icon('user', 12)} ${escHtml(p.user || 'ไม่ระบุ')}</span>
+          <span class="cron-sub">สร้างเมื่อ: ${fmtTime(p.createdAt)}</span>
         </div>
         <div class="cron-urls">${escHtml(p.sheetUrl)}<br>${escHtml(p.larkUrl)}</div>
       </div>
