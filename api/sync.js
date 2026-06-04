@@ -1,3 +1,4 @@
+import axios from "axios";
 import { json, methodNotAllowed, errorResponse } from "./_lib/http.js";
 import { getConfig, mustEnv } from "./_lib/config.js";
 import { decryptText } from "./_lib/crypto.js";
@@ -81,6 +82,26 @@ async function handleDebug({ res, cfg }){
     return;
   }
   const ownerAccess = await refreshAccessToken(ownerRefresh);
+
+  // List every tab in the spreadsheet so a renamed/duplicated Pairs tab shows up.
+  let tabs = [];
+  try {
+    const meta = await axios.get(
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(cfg.historySheetId)}`,
+      {
+        headers: { authorization: `Bearer ${ownerAccess}` },
+        params: { fields: "sheets(properties(sheetId,title,gridProperties(rowCount,columnCount)))" },
+        timeout: 30000,
+      }
+    );
+    tabs = (meta.data?.sheets || []).map(s => ({
+      title: s.properties?.title,
+      gid: s.properties?.sheetId,
+      rows: s.properties?.gridProperties?.rowCount,
+      cols: s.properties?.gridProperties?.columnCount,
+    }));
+  } catch(e){ tabs = [{ error: e.message }]; }
+
   const range = `${cfg.pairsTab}!A1:R20000`;
   let rows = [], readError = null;
   try {
@@ -91,6 +112,7 @@ async function handleDebug({ res, cfg }){
     ok: true,
     pairsTab: cfg.pairsTab,
     historySheetId: cfg.historySheetId,
+    tabs,
     range,
     readError,
     rawRowCount: rows.length,
