@@ -71,6 +71,41 @@ export async function sheetsGetValues({ accessToken, spreadsheetId, range }){
   return r.data.values || [];
 }
 
+// The /values endpoint only returns display text — any hyperlink embedded in a
+// cell (whole-cell link, rich-text link, or =HYPERLINK formula) is lost. To
+// preserve links when syncing we read grid data instead, which carries both the
+// formatted text and the link. Returns rows as arrays of raw cell objects
+// ({ formattedValue, hyperlink, textFormatRuns }); cells may be missing/sparse.
+export async function sheetsGetGrid({ accessToken, spreadsheetId, range }){
+  const url = `${API_BASE}/${encodeURIComponent(spreadsheetId)}`;
+  const r = await googleCall("googleSheetGridGet", () => axios.get(url, {
+    headers: authHeader(accessToken),
+    params: {
+      ranges: range,
+      fields: "sheets(data(rowData(values(formattedValue,hyperlink,textFormatRuns(startIndex,format(link(uri)))))))",
+    },
+    timeout: 45000,
+  }));
+  const data = r.data?.sheets?.[0]?.data?.[0]?.rowData || [];
+  return data.map(row => row?.values || []);
+}
+
+// Extract the URL a Google Sheets cell points to, if any. Prefers the
+// whole-cell hyperlink, then falls back to the first rich-text run that carries
+// a link (a link applied to part of the cell text). Returns null when none.
+export function cellLink(cell){
+  if(!cell) return null;
+  if(typeof cell.hyperlink === "string" && cell.hyperlink) return cell.hyperlink;
+  const runs = cell.textFormatRuns;
+  if(Array.isArray(runs)){
+    for(const run of runs){
+      const uri = run?.format?.link?.uri;
+      if(typeof uri === "string" && uri) return uri;
+    }
+  }
+  return null;
+}
+
 export async function sheetsClear({ accessToken, spreadsheetId, range }){
   const r = await googleCall("googleSheetClear", () => axios.post(valuesUrl(spreadsheetId, range, ":clear"), {}, {
     headers: authHeader(accessToken),

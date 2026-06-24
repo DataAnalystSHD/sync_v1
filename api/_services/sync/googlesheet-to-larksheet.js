@@ -1,4 +1,4 @@
-import { sheetsGetValues, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
+import { sheetsGetValues, sheetsGetGrid, cellLink, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
 import { getSheetMeta, getSheetValues, batchUpdateValues, deleteRows } from "../../_lib/lark/sheets.js";
 import { endColumnFor } from "../../_lib/urls.js";
 import { resolveLarkSheetTarget } from "./lark-sheet-target.js";
@@ -6,12 +6,22 @@ import { resolveLarkSheetTarget } from "./lark-sheet-target.js";
 function isEmptyCell(v){
   if(v === null || v === undefined) return true;
   if(typeof v === "string") return v.trim() === "";
-  return false;
+  return false; // hyperlink object => not empty
 }
 
 function isEmptyRow(row){
   if(!row || row.length === 0) return true;
   return row.every(isEmptyCell);
+}
+
+// Build the value written to one Lark cell. When the source cell carries a link
+// we emit Lark's hyperlink form ({type:"url", text, link}) so the link survives
+// the sync; otherwise a plain string, matching the old behaviour.
+function cellToLark(cell){
+  const text = cell?.formattedValue ?? "";
+  const link = cellLink(cell);
+  if(link) return { type: "url", text: String(text), link };
+  return String(text);
 }
 
 function cellToString(v){
@@ -59,13 +69,14 @@ export async function syncGoogleSheetToLarkSheet({ accessToken, cfg, srcSheetId,
   const dataRange = rowTo
     ? `${tab}A${dataStartSheetRow}:${endCol}${rowTo + 1}`
     : `${tab}A${dataStartSheetRow}:${endCol}`;
-  const dataValues = await sheetsGetValues({
+  // Grid data (not /values) so embedded hyperlinks in cells are preserved.
+  const grid = await sheetsGetGrid({
     accessToken, spreadsheetId: srcSheetId,
     range: dataRange,
   });
-  const dataRows = (dataValues || [])
-    .filter(r => !isEmptyRow(r))
-    .map(r => headers.map((_, i) => cellToString(r[i])));
+  const dataRows = grid
+    .map(row => headers.map((_, i) => cellToLark(row[i])))
+    .filter(r => !isEmptyRow(r));
 
   const { ssToken, sheetId } = await resolveLarkSheetTarget(destUrl);
   const isAppend = syncMode === "append";
