@@ -422,7 +422,7 @@ function renderPairs(pairs) {
         <div class="cron-title">${escHtml(dirLabel)}</div>
         <div class="cron-meta">
           <span class="cron-tag">${icon('clock', 11)} ${INTERVAL_LABELS[p.intervalMin] || (p.intervalMin + ' นาที')}</span>
-          <span class="cron-tag ${p.syncMode === 'append' ? 'info' : 'warn'}">${p.syncMode === 'append' ? 'Append' : 'Replace'}</span>
+          <button class="cron-tag cron-mode ${p.syncMode === 'append' ? 'info' : 'warn'}" data-act="mode" data-row="${p.rowId}" title="กดเพื่อสลับโหมด Replace ⇄ Append">${p.syncMode === 'append' ? 'Append' : 'Replace'}</button>
           <span class="cron-sub">ล่าสุด: ${fmtTime(p.lastSyncAt)} · ${nextRunLabel(p)}</span>
         </div>
         <div class="cron-meta">
@@ -446,6 +446,7 @@ function renderPairs(pairs) {
     const act = btn.dataset.act;
     btn.onclick = () => {
       if (act === 'toggle') togglePair(rowId);
+      else if (act === 'mode') changeSyncMode(rowId);
       else if (act === 'run') runPairNow(rowId, btn);
       else if (act === 'del') deletePair(rowId);
     };
@@ -507,6 +508,34 @@ async function togglePair(rowId) {
     await loadPairs();
   } catch (e) {
     log('[ERR] Toggle: ' + e.message);
+    alert(e.message);
+  }
+}
+
+async function changeSyncMode(rowId) {
+  const p = cronPairs.find(x => x.rowId === rowId);
+  if (!p) return;
+  const next = p.syncMode === 'append' ? 'replace' : 'append';
+  const toReplace = next === 'replace';
+  const ok = await showConfirm({
+    iconName: toReplace ? 'refreshCw' : 'download',
+    title: `สลับเป็นโหมด ${toReplace ? 'Replace' : 'Append'}`,
+    desc: toReplace
+      ? 'Replace = ลบข้อมูลปลายทางทั้งหมดแล้วเขียนใหม่ทั้งชุดทุกครั้ง — การแก้/เติมกลางตารางจะขึ้นครบ<br><b style="color:var(--red)">ระวัง:</b> ถ้าฝั่งปลายทางมีคนแก้ข้อมูลด้วยมือ จะถูกทับ'
+      : 'Append = เพิ่มเฉพาะแถวใหม่ที่ท้ายตาราง ไม่ลบของเดิม<br><b>หมายเหตุ:</b> จะไม่ตามการแก้/เติมแถวเดิม',
+    confirmText: `เปลี่ยนเป็น ${toReplace ? 'Replace' : 'Append'}`,
+    confirmClass: toReplace ? 'danger' : 'primary',
+  });
+  if (!ok) return;
+  try {
+    await fetchJson('/api/pairs', {
+      method: 'PUT',
+      body: JSON.stringify({ rowId, syncMode: next, refreshToken: state.refreshToken }),
+    });
+    log(`[OK] เปลี่ยนโหมด #${rowId} → ${next}`);
+    await loadPairs();
+  } catch (e) {
+    log('[ERR] Change mode: ' + e.message);
     alert(e.message);
   }
 }

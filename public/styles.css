@@ -515,6 +515,10 @@ button [data-icon], .howto-arrow [data-icon], .hw-icon[data-icon] { line-height:
 .cron-tag.warn { background: var(--amber-bg); border-color: var(--amber-bd); color: var(--amber); }
 .cron-tag.info { background: var(--cyan-bg); border-color: var(--cyan-bd); color: var(--cyan); }
 .cron-tag [data-icon] { line-height: 0; }
+/* Clickable mode tag (Replace ⇄ Append) — keep the pill look, hint it's a button. */
+button.cron-tag.cron-mode { cursor: pointer; line-height: normal; transform: none; box-shadow: none; }
+button.cron-tag.cron-mode:hover { filter: brightness(1.06); box-shadow: var(--sh1, 0 2px 8px rgba(0,0,0,.12)); transform: none; }
+button.cron-tag.cron-mode:active { transform: translateY(1px); }
 .cron-sub { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
 .cron-urls {
   font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace;

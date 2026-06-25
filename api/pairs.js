@@ -4,7 +4,7 @@ import { encryptText } from "./_lib/crypto.js";
 import { refreshAccessToken } from "./_lib/google/oauth.js";
 import { parseGoogleSheetId, parseLarkBase, parseLarkSheetUrl } from "./_lib/urls.js";
 import {
-  readAllPairs, appendPair, setActive, setPairInterval, deletePairRow,
+  readAllPairs, appendPair, setActive, setPairInterval, setSyncMode, deletePairRow,
 } from "./_services/pairs-store.js";
 
 // What each side of the form holds, per direction.
@@ -131,6 +131,9 @@ async function handlePut({ req, res, cfg }){
   }
   if(body.active != null){
     await setActive({ accessToken, cfg, rowId, active: body.active !== false });
+  }
+  if(body.syncMode != null){
+    await setSyncMode({ accessToken, cfg, rowId, syncMode: body.syncMode === "append" ? "append" : "replace" });
   }
   json(res, 200, { ok: true, updated: true });
 }

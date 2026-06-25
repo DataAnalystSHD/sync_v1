@@ -137,6 +137,10 @@ export function setPairInterval({ accessToken, cfg, rowId, intervalMin }){
   return updateCell({ accessToken, cfg, rowId, col: COLUMNS.intervalMin, value: String(toPos(intervalMin) || 60) });
 }
 
+export function setSyncMode({ accessToken, cfg, rowId, syncMode }){
+  return updateCell({ accessToken, cfg, rowId, col: COLUMNS.syncMode, value: syncMode === "append" ? "append" : "replace" });
+}
+
 export async function findPairByRowId({ accessToken, cfg, rowId }){
   const all = await readAllPairs({ accessToken, cfg });
   return all.find(p => p.rowId === rowId) || null;
