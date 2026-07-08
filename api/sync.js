@@ -7,7 +7,35 @@ import { readAllPairs, readActiveCronPairs, findPairByRowId, updateLastSync } fr
 import { sheetsGetValues, sheetsClear } from "./_lib/google/sheets.js";
 import { logHistory } from "./_services/history.js";
 import { runOne } from "./_services/sync/runner.js";
+import { runKolSplit } from "./_services/sync/kol-split.js";
 import { notifyLarkBot, summarizeBatch } from "./_lib/lark/notify.js";
+
+// Runs on every cron tick alongside the pairs sync. runKolSplit is a no-op
+// write when the KOL Base is unchanged (signature guard), so a 5-min poll is
+// cheap. Isolated so a failure here never breaks pairs processing. Disable by
+// setting KOL_SPLIT_ENABLED=false.
+async function runKolSplitStep(){
+  if(String(process.env.KOL_SPLIT_ENABLED || "true").toLowerCase() === "false") return null;
+  try{
+    const r = await runKolSplit({ log: (m) => console.log("[kol-split]", m) });
+    if(r.changed){
+      await notifyLarkBot({
+        title: `✅ KOL split — New ${r.newCount} / Old ${r.oldCount}`,
+        success: true,
+        lines: [
+          `New KOL: **${r.newCount}** rows`,
+          `Old KOL: **${r.oldCount}** rows`,
+          `Skipped (no Promote Method): ${r.skipped}`,
+        ],
+      });
+    }
+    return { ...r, status: "success" };
+  }catch(e){
+    console.warn("[kol-split] failed:", e?.message || e);
+    await notifyLarkBot({ title: "❌ KOL split failed", success: false, lines: [e?.message || String(e)] });
+    return { status: "error", error: e?.message || String(e) };
+  }
+}
 
 // When CRON_SECRET is set, the scheduled GET must present it (Vercel Cron sends
 // it as `Authorization: Bearer <secret>`; external crons can use `?key=<secret>`).
@@ -201,7 +229,9 @@ async function handleCron({ req, res, cfg }){
     });
   }
 
-  json(res, 200, { ok: true, mode: "cron", processed: results.length, skipped, results });
+  const kolSplit = await runKolSplitStep();
+
+  json(res, 200, { ok: true, mode: "cron", processed: results.length, skipped, results, kolSplit });
 }
 
 // "Run now" from the Cron Manager: run one saved pair immediately, ignoring its
