@@ -4,7 +4,7 @@ import { encryptText } from "./_lib/crypto.js";
 import { refreshAccessToken } from "./_lib/google/oauth.js";
 import { parseGoogleSheetId, parseLarkBase, parseLarkSheetUrl } from "./_lib/urls.js";
 import {
-  readAllPairs, appendPair, setActive, setPairInterval, setSyncMode, deletePairRow,
+  readAllPairs, appendPair, setActive, setPairInterval, setSyncMode, deletePairRow, updatePairFields,
 } from "./_services/pairs-store.js";
 
 // What each side of the form holds, per direction.
@@ -19,11 +19,17 @@ const FIELD_KINDS = {
   "googlesheet-to-larksheet": { top: "google",    bottom: "larkSheet" },
 };
 
-const ALLOWED_INTERVALS = new Set([5, 15, 30, 60, 120, 360, 720, 1440]);
-
 function toPos(v){
   const n = parseInt(v, 10);
   return Number.isFinite(n) && n >= 1 ? n : null;
+}
+
+// Any positive interval is allowed now (custom minutes), clamped to a sane
+// range: 1 minute .. 7 days. Invalid → 60.
+function normInterval(v){
+  const n = toPos(v);
+  if(!n) return 60;
+  return Math.min(Math.max(n, 1), 10080);
 }
 
 function validateSide(kind, url, label){
@@ -67,6 +73,8 @@ function publicPair(p){
     rowFrom:     p.rowFrom,
     rowTo:       p.rowTo,
     syncMode:    p.syncMode,
+    columns:     Array.isArray(p.columns) ? p.columns : [],
+    filters:     Array.isArray(p.filters) ? p.filters : [],
   };
 }
 
@@ -94,8 +102,12 @@ async function handlePost({ req, res, cfg, secret }){
 
   const { sheetId, baseId, tableId } = extractIds({ direction, sheetUrl, larkUrl });
 
-  let intervalMin = toPos(body.intervalMin) || 60;
-  if(!ALLOWED_INTERVALS.has(intervalMin)) intervalMin = 60;
+  const intervalMin = normInterval(body.intervalMin);
+
+  // Selected columns (empty/absent = all). Stored as header names.
+  const columns = Array.isArray(body.columns) ? body.columns.map(String) : [];
+  // Value filters (empty/absent = all rows).
+  const filters = Array.isArray(body.filters) ? body.filters : [];
 
   await appendPair({
     accessToken,
@@ -109,6 +121,8 @@ async function handlePost({ req, res, cfg, secret }){
       rowFrom:  toPos(body.rowFrom),
       rowTo:    toPos(body.rowTo),
       syncMode: body.syncMode === "append" ? "append" : "replace",
+      columns,
+      filters,
     },
   });
 
@@ -124,10 +138,30 @@ async function handlePut({ req, res, cfg }){
 
   const accessToken = await refreshAccessToken(refreshToken);
 
+  // Full edit from the Sync form (both URLs present) → rewrite the whole config.
+  if(body.sheetUrl && body.larkUrl){
+    const sheetUrl  = String(body.sheetUrl);
+    const larkUrl   = String(body.larkUrl);
+    const direction = FIELD_KINDS[body.direction] ? body.direction : "lark-to-sheet";
+    const kinds = FIELD_KINDS[direction];
+    validateSide(kinds.top,    sheetUrl, "source");
+    validateSide(kinds.bottom, larkUrl,  "destination");
+    const { sheetId, baseId, tableId } = extractIds({ direction, sheetUrl, larkUrl });
+    const intervalMin = normInterval(body.intervalMin);
+    await updatePairFields({
+      accessToken, cfg, rowId,
+      fields: {
+        sheetUrl, sheetId, larkUrl, baseId, tableId, direction,
+        syncMode: body.syncMode, intervalMin,
+        columns: Array.isArray(body.columns) ? body.columns.map(String) : [],
+        filters: Array.isArray(body.filters) ? body.filters : [],
+      },
+    });
+    return json(res, 200, { ok: true, updated: true });
+  }
+
   if(body.intervalMin != null){
-    let intervalMin = toPos(body.intervalMin) || 60;
-    if(!ALLOWED_INTERVALS.has(intervalMin)) intervalMin = 60;
-    await setPairInterval({ accessToken, cfg, rowId, intervalMin });
+    await setPairInterval({ accessToken, cfg, rowId, intervalMin: normInterval(body.intervalMin) });
   }
   if(body.active != null){
     await setActive({ accessToken, cfg, rowId, active: body.active !== false });

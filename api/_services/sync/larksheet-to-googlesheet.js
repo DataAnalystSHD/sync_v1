@@ -1,6 +1,7 @@
 import { getSheetValues, getSheetMeta, cellTextValue } from "../../_lib/lark/sheets.js";
 import { sheetsClear, sheetsUpdate, sheetsGetValues, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
 import { endColumnFor } from "../../_lib/urls.js";
+import { selectColumns } from "../../_lib/columns.js";
 import { resolveLarkSheetTarget } from "./lark-sheet-target.js";
 
 const READ_CHUNK = 5000;
@@ -34,7 +35,7 @@ async function findLastUsedRowGoogle({ accessToken, spreadsheetId, tab }){
   return (colA || []).length;
 }
 
-export async function syncLarkSheetToGoogleSheet({ accessToken, cfg, sourceUrl, destSheetId, destGid, rowFrom, rowTo, syncMode }){
+export async function syncLarkSheetToGoogleSheet({ accessToken, cfg, sourceUrl, destSheetId, destGid, rowFrom, rowTo, syncMode, columns }){
   const { ssToken, sheetId } = await resolveLarkSheetTarget(sourceUrl);
 
   const meta = await getSheetMeta({ ssToken, sheetId });
@@ -46,25 +47,29 @@ export async function syncLarkSheetToGoogleSheet({ accessToken, cfg, sourceUrl, 
   const headerRange = `A1:${endColumnFor(new Array(Math.max(totalCols, 1)).fill(""))}1`;
   const headerRows = await getSheetValues({ ssToken, sheetId, range: headerRange });
   const rawHeaders = (headerRows?.[0] || []).map(cellTextValue);
-  const headers = [];
+  const fullHeaders = [];
   for(let i = 0; i < rawHeaders.length; i++){
     const h = rawHeaders[i].trim();
     if(h === "") break;
-    headers.push(h);
+    fullHeaders.push(h);
   }
-  if(headers.length === 0) throw new Error("Lark Sheet has no header row (row 1 must contain headers)");
+  if(fullHeaders.length === 0) throw new Error("Lark Sheet has no header row (row 1 must contain headers)");
 
-  const endCol = endColumnFor(headers);
+  // Column selection (empty = all). Read the source at full width so cell
+  // indices line up, then project each row down to the chosen columns.
+  const { headers, indices } = selectColumns(fullHeaders, columns);
+  const readEndCol = endColumnFor(fullHeaders);   // source read width
+  const endCol = endColumnFor(headers);           // destination write width
   // Translate user-facing data rows (1-indexed, excludes header) to sheet rows
   // (header is row 1, data starts at row 2). Cap to grid extent.
   const dataStartSheetRow = (rowFrom || 1) + 1;
   const dataEndSheetRow   = Math.min(totalRows, rowTo ? (rowTo + 1) : totalRows);
   const rangeRows = dataEndSheetRow >= dataStartSheetRow
-    ? await readRowsInRange({ ssToken, sheetId, endCol, startRow: dataStartSheetRow, endRow: dataEndSheetRow })
+    ? await readRowsInRange({ ssToken, sheetId, endCol: readEndCol, startRow: dataStartSheetRow, endRow: dataEndSheetRow })
     : [];
   const dataRows = rangeRows
     .filter(r => !isEmptyRow(r))
-    .map(r => headers.map((_, i) => cellTextValue(r[i])));
+    .map(r => indices.map(i => cellTextValue(r[i])));
 
   const tabName = await getSheetNameByGid({ accessToken, spreadsheetId: destSheetId, gid: destGid });
   const tab = `${quoteSheetName(tabName)}!`;

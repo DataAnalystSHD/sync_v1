@@ -56,24 +56,29 @@ export async function runOne({ accessToken, cfg, pair }){
   const direction = DIRECTIONS.has(pair.direction) ? pair.direction : "lark-to-sheet";
   const { rowFrom, rowTo } = normRowRange(pair);
   const syncMode = normSyncMode(pair);
+  // Chosen columns (empty = all). The runner just forwards them; each service
+  // decides how to apply the filter for its header model.
+  const columns = Array.isArray(pair.columns) ? pair.columns : [];
+  // Value filters (empty = all rows). Only Lark Base source directions apply them.
+  const filters = Array.isArray(pair.filters) ? pair.filters : [];
 
   if(direction === "lark-to-sheet"){
     const { sheetId, gid } = resolveGoogleSheet(pair);
     const { baseId, tableId, viewId } = resolveBase(pair);
-    return await syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, tableId, viewId, rowFrom, rowTo, syncMode });
+    return await syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, tableId, viewId, rowFrom, rowTo, syncMode, columns, filters });
   }
 
   if(direction === "sheet-to-lark"){
     const { sheetId, gid } = resolveGoogleSheet(pair);
     const { baseId, tableId } = resolveBase(pair);
-    return await syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, tableId, pair, rowFrom, rowTo, syncMode });
+    return await syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, tableId, pair, rowFrom, rowTo, syncMode, columns });
   }
 
   if(direction === "larksheet-to-larkbase"){
     ensureLarkSheetUrl(pair.sheetUrl);
     const { baseId, tableId } = resolveBase(pair);
     return await syncLarkSheetToLarkBase({
-      accessToken, cfg, sourceUrl: pair.sheetUrl, baseId, tableId, pair, rowFrom, rowTo, syncMode,
+      accessToken, cfg, sourceUrl: pair.sheetUrl, baseId, tableId, pair, rowFrom, rowTo, syncMode, columns,
     });
   }
 
@@ -81,7 +86,7 @@ export async function runOne({ accessToken, cfg, pair }){
     ensureLarkSheetUrl(pair.sheetUrl);
     const { baseId, tableId, viewId } = resolveBase(pair);
     return await syncLarkBaseToLarkSheet({
-      cfg, baseId, tableId, viewId, destUrl: pair.sheetUrl, rowFrom, rowTo, syncMode,
+      cfg, baseId, tableId, viewId, destUrl: pair.sheetUrl, rowFrom, rowTo, syncMode, columns, filters,
     });
   }
 
@@ -97,7 +102,7 @@ export async function runOne({ accessToken, cfg, pair }){
       accessToken, cfg,
       sourceUrl: pair.sheetUrl,
       destSheetId: gSheetId, destGid: gid,
-      rowFrom, rowTo, syncMode,
+      rowFrom, rowTo, syncMode, columns,
     });
   }
 
@@ -109,7 +114,7 @@ export async function runOne({ accessToken, cfg, pair }){
       accessToken, cfg,
       srcSheetId: gSheetId, srcGid: gid,
       destUrl: pair.larkUrl,
-      rowFrom, rowTo, syncMode,
+      rowFrom, rowTo, syncMode, columns,
     });
   }
 

@@ -24,6 +24,42 @@
   </div>
 </div>
 
+<!-- ═══ COLUMN PICKER MODAL ═══ -->
+<div class="modal-overlay" id="colModal">
+  <div class="modal-box picker-box">
+    <div class="modal-title">เลือกคอลัมน์ที่จะซิงค์</div>
+    <div class="modal-desc" id="colSubtitle">ติ๊กเฉพาะคอลัมน์ที่ต้องการ — ที่เหลือจะไม่ถูกซิงค์</div>
+    <div class="picker-search">
+      <span class="picker-search-icon">🔍</span>
+      <input id="colSearch" placeholder="ค้นหาคอลัมน์..." />
+    </div>
+    <div class="picker-toolbar">
+      <button class="picker-chip" id="colAll">เลือกทั้งหมด</button>
+      <button class="picker-chip" id="colNone">ล้างทั้งหมด</button>
+      <span class="picker-count" id="colCount"></span>
+    </div>
+    <div class="picker-list" id="colList"></div>
+    <div class="modal-btns" style="margin-top:16px">
+      <button id="colCancel">ยกเลิก</button>
+      <button class="primary" id="colApply">ใช้คอลัมน์ที่เลือก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ VALUE FILTER MODAL ═══ -->
+<div class="modal-overlay" id="filterModal">
+  <div class="modal-box picker-box" style="max-width:600px">
+    <div class="modal-title">ตัวกรองข้อมูล</div>
+    <div class="modal-desc">ติ๊กค่าที่ต้องการในแต่ละฟิลด์ — เอาเฉพาะแถวที่ตรง · หลายฟิลด์ = ต้องตรงทุกฟิลด์ (AND) · เว้นว่าง = เอาทุกแถว</div>
+    <div id="filterFields" style="max-height:54vh;overflow:auto;margin-top:6px"></div>
+    <div class="modal-btns" style="margin-top:16px">
+      <button id="filterClear" style="margin-right:auto">ล้างตัวกรอง</button>
+      <button id="filterCancel">ยกเลิก</button>
+      <button class="primary" id="filterApply">ใช้ตัวกรอง</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ TOPBAR ═══ -->
 <header class="topbar">
   <div class="topbar-inner">
@@ -39,7 +75,7 @@
       <span class="tab-indicator" id="tabIndicator"></span>
       <button class="tab active" data-tab="sync"><span data-icon="sync" data-size="15"></span> Sync</button>
       <button class="tab" data-tab="cron" style="display:none"><span data-icon="clock" data-size="15"></span> Auto-sync</button>
-      <button class="tab" data-tab="logs" style="display:none"><span data-icon="activity" data-size="15"></span> Logs</button>
+      <button class="tab" data-tab="history" style="display:none"><span data-icon="activity" data-size="15"></span> ประวัติการซิงค์</button>
     </nav>
 
     <div class="topbar-right">
@@ -61,38 +97,6 @@
   <!-- ═══ TAB: SYNC ═══ -->
   <div class="tab-panel active" data-panel="sync">
 
-  <!-- How-to -->
-  <div class="howto" id="howtoSection">
-    <div class="howto-hd">
-      <span class="howto-title-icon" data-icon="bookOpen" data-size="16"></span>
-      <h2>วิธีการใช้งาน</h2>
-      <button class="howto-arrow" id="howtoToggleBtn"><span data-icon="chevronUp" data-size="14"></span> ย่อ</button>
-    </div>
-    <div class="howto-body" id="howtoBody">
-      <div class="howto-grid">
-        <div class="howto-col" data-color="purple">
-          <h3>ขั้นตอน</h3>
-          <div class="hw-step"><div class="hw-num">1</div><div class="hw-txt"><strong>Login ด้วย Google</strong><br>ใช้บัญชีองค์กรที่เปิดไฟล์นั้นได้</div></div>
-          <div class="hw-step"><div class="hw-num">2</div><div class="hw-txt"><strong>วางลิงก์ + เลือกทิศทาง</strong><br>วางลิงก์ต้นทางและปลายทาง แล้วเลือกว่าจะซิงค์ไปทางไหน</div></div>
-          <div class="hw-step"><div class="hw-num">3</div><div class="hw-txt"><strong>เลือกโหมด</strong><br><code>Replace</code> = เขียนทับทั้งหมด · <code>Append</code> = เพิ่มเฉพาะแถวใหม่ ไม่ซ้ำ</div></div>
-          <div class="hw-step"><div class="hw-num">4</div><div class="hw-txt"><strong>กดซิงค์</strong><br><code>Sync Now</code> = ซิงค์เดี๋ยวนี้ · <code>Save Auto-sync</code> = ระบบซิงค์ให้เองตามเวลาที่เลือก ไม่ต้องเปิดเว็บไว้</div></div>
-        </div>
-        <div class="howto-col" data-color="cyan">
-          <h3>ตั้งค่า Lark App</h3>
-          <div class="hw-step"><div class="hw-num">1</div><div class="hw-txt"><strong>Add app เข้า Bitable / Sheet (ครั้งเดียวต่อไฟล์)</strong><br>เปิด Bitable / Sheet ที่ต้องการ → กดเมนู <code>⋯</code> (3 จุด) มุมขวาบน → <code>More</code> → <code>Add Applications</code> → พิมพ์ค้น <b>sync hub</b> → กด Add</div></div>
-          <div class="hw-note"><span class="hw-icon" data-icon="lock" data-size="16"></span><div><b>ไม่เห็นเมนู Add Applications?</b> <span class="hw-tag warn">สิทธิ์ไม่พอ</span><br>เมนูนี้เห็นเฉพาะคนที่มีสิทธิ์ <b>Can manage</b> หรือเจ้าของไฟล์ — ถ้ามีแค่สิทธิ์ Edit ให้ส่งลิงก์ไฟล์ให้เจ้าของกด Add ให้<b>ครั้งเดียว</b> จากนั้นทุกคนตั้ง sync กับไฟล์นั้นได้เลย ไม่ต้องขอสิทธิ์เพิ่ม</div></div>
-        </div>
-        <div class="howto-col" data-color="amber">
-          <h3>สิ่งที่ควรรู้</h3>
-          <div class="hw-note"><span class="hw-icon" data-icon="alertTriangle" data-size="16"></span><div><b>Replace ลบข้อมูลปลายทางทั้งหมด</b> <span class="hw-tag warn">ระวัง</span><br>ไม่อยากให้ของเดิมหาย ให้ใช้ <code>Append</code></div></div>
-          <div class="hw-note"><span class="hw-icon" data-icon="xCircle" data-size="16"></span><div><b>ต้องเป็น Google Sheet แท้</b><br>ไฟล์ <code>.xlsx</code> ที่อัปขึ้น Drive ใช้ไม่ได้ — เปิดไฟล์แล้ว <code>File → Save as Google Sheets</code> ก่อน</div></div>
-          <div class="hw-note"><span class="hw-icon" data-icon="lock" data-size="16"></span><div><b>สิทธิ์การเข้าถึง</b><br>ใช้บัญชีโดเมนองค์กร และเปิดไฟล์ที่จะซิงค์ได้</div></div>
-          <div class="hw-note"><span class="hw-icon" data-icon="wrench" data-size="16"></span><div><b>เจอ permission error?</b><br>เช็คว่า Add app เข้าไฟล์ Lark นั้นแล้ว (ดูคอลัมน์ซ้าย)</div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Main Grid -->
   <div class="main-grid">
 
@@ -106,57 +110,66 @@
         <span id="histLabel" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">loading...</span>
       </div>
       <div class="card-body">
-        <div class="field">
-          <label class="field-label" id="sheetUrlLabel">Google Sheet URL</label>
-          <input class="field-input" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/..." disabled />
-        </div>
-        <div class="field">
-          <label class="field-label" id="larkUrlLabel">Lark / Feishu Base URL</label>
-          <input class="field-input" id="larkUrl" placeholder="https://...larksuite.com/base/<baseId>?table=<tableId>" disabled />
-        </div>
-
-        <div class="field">
-          <label class="field-label">Sync Direction</label>
-          <select class="field-input" id="syncDirection">
-            <option value="lark-to-sheet">Lark Base → Google Sheet</option>
-            <option value="sheet-to-lark">Google Sheet → Lark Base</option>
-            <option value="larksheet-to-larkbase">Lark Sheet → Lark Base</option>
-            <option value="larkbase-to-larksheet">Lark Base → Lark Sheet</option>
-            <option value="larksheet-to-googlesheet">Lark Sheet → Google Sheet</option>
-            <option value="googlesheet-to-larksheet">Google Sheet → Lark Sheet</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label class="field-label">Row Range <span style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted)">(optional)</span></label>
-          <div class="row-range">
-            <input class="field-input" id="rowFrom" type="number" min="1" placeholder="From (e.g. 1)" disabled />
-            <span class="row-range-sep">→</span>
-            <input class="field-input" id="rowTo" type="number" min="1" placeholder="To (e.g. 500)" disabled />
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" id="sheetUrlLabel">Google Sheet URL</label>
+            <input class="field-input" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/..." disabled />
           </div>
-          <div class="hint-sub">เว้นว่าง = sync ทั้งหมด · Row 1 = ข้อมูลแถวแรก (ไม่นับ header)</div>
+          <div class="field">
+            <label class="field-label" id="larkUrlLabel">Lark / Feishu Base URL</label>
+            <input class="field-input" id="larkUrl" placeholder="https://...larksuite.com/base/<baseId>?table=<tableId>" disabled />
+          </div>
         </div>
 
-        <div class="field">
-          <label class="field-label">Sync Mode</label>
-          <select class="field-input" id="syncMode" disabled>
-            <option value="replace">Replace — ลบข้อมูลปลายทางทิ้งทั้งหมด แล้ว sync ใหม่</option>
-            <option value="append">Append — เพิ่มต่อท้ายข้อมูลเดิม (ไม่ลบ)</option>
-          </select>
+        <div class="field-row field-row-3">
+          <div class="field">
+            <label class="field-label">Sync Direction</label>
+            <select class="field-input" id="syncDirection">
+              <option value="lark-to-sheet">Lark Base → Google Sheet</option>
+              <option value="sheet-to-lark">Google Sheet → Lark Base</option>
+              <option value="larksheet-to-larkbase">Lark Sheet → Lark Base</option>
+              <option value="larkbase-to-larksheet">Lark Base → Lark Sheet</option>
+              <option value="larksheet-to-googlesheet">Lark Sheet → Google Sheet</option>
+              <option value="googlesheet-to-larksheet">Google Sheet → Lark Sheet</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Columns <span style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted)">(optional)</span></label>
+            <button id="btnPickColumns" style="width:100%;justify-content:center" disabled><span data-icon="link" data-size="14"></span> สแกน &amp; เลือกคอลัมน์</button>
+            <div class="hint-sub" id="columnsHint">ยังไม่ได้เลือก = ซิงค์ทุกคอลัมน์</div>
+          </div>
+          <div class="field">
+            <label class="field-label">Filter <span style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted)">(optional · Lark Base)</span></label>
+            <button id="btnFilter" style="width:100%;justify-content:center" disabled><span data-icon="shuffle" data-size="14"></span> ตั้งตัวกรองข้อมูล</button>
+            <div class="hint-sub" id="filterHint">สแกนก่อน แล้วเลือกค่าที่ต้องการ · ไม่กรอง = เอาทุกแถว</div>
+          </div>
         </div>
 
-        <div class="field">
-          <label class="field-label">Auto-sync ทุก ๆ <span style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted)">(ใช้ตอนกด Save Auto-sync)</span></label>
-          <select class="field-input" id="syncInterval" disabled>
-            <option value="5">ทุก 5 นาที</option>
-            <option value="15">ทุก 15 นาที</option>
-            <option value="30">ทุก 30 นาที</option>
-            <option value="60" selected>ทุก 1 ชั่วโมง</option>
-            <option value="120">ทุก 2 ชั่วโมง</option>
-            <option value="360">ทุก 6 ชั่วโมง</option>
-            <option value="720">ทุก 12 ชั่วโมง</option>
-            <option value="1440">ทุกวัน (24 ชม.)</option>
-          </select>
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Sync Mode</label>
+            <select class="field-input" id="syncMode" disabled>
+              <option value="replace">Replace — ลบข้อมูลปลายทางทิ้งทั้งหมด แล้ว sync ใหม่</option>
+              <option value="append">Append — เพิ่มต่อท้ายข้อมูลเดิม (ไม่ลบ)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Auto-sync ทุก ๆ <span style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted)">(ใช้ตอนกด Save Auto-sync)</span></label>
+            <select class="field-input" id="syncInterval" disabled>
+              <option value="1">ทุก 1 นาที</option>
+              <option value="3">ทุก 3 นาที</option>
+              <option value="5">ทุก 5 นาที</option>
+              <option value="15">ทุก 15 นาที</option>
+              <option value="30">ทุก 30 นาที</option>
+              <option value="60" selected>ทุก 1 ชั่วโมง</option>
+              <option value="120">ทุก 2 ชั่วโมง</option>
+              <option value="360">ทุก 6 ชั่วโมง</option>
+              <option value="720">ทุก 12 ชั่วโมง</option>
+              <option value="1440">ทุกวัน (24 ชม.)</option>
+              <option value="custom">กำหนดเอง (พิมพ์นาที)…</option>
+            </select>
+            <input class="field-input" id="syncIntervalCustom" type="number" min="1" max="10080" placeholder="พิมพ์จำนวนนาที เช่น 2" style="display:none;margin-top:8px" disabled />
+          </div>
         </div>
 
         <div class="btn-group">
@@ -196,28 +209,25 @@
   </div>
   </div><!-- /tab: cron -->
 
-  <!-- ═══ TAB: LOGS ═══ -->
-  <div class="tab-panel" data-panel="logs">
-
-  <!-- Logs -->
-  <div class="log-section">
-    <div class="card">
-      <div class="card-header">
-        <div class="card-header-left">
-          <div class="card-step" data-color="amber" style="background:var(--amber-bg);border-color:var(--amber-bd);color:var(--amber)"><span data-icon="activity" data-size="12"></span></div>
-          <h2>Logs</h2>
-        </div>
-        <div style="display:flex;gap:8px">
-          <button id="btnExportLog" style="padding:5px 12px;font-size:11px"><span data-icon="download" data-size="13"></span> Export</button>
-          <button id="btnClearLog" style="padding:5px 12px;font-size:11px"><span data-icon="trash" data-size="13"></span> Clear</button>
-        </div>
+  <!-- ═══ TAB: HISTORY ═══ -->
+  <div class="tab-panel" data-panel="history">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-left">
+        <div class="card-step" data-color="amber" style="background:var(--amber-bg);border-color:var(--amber-bd);color:var(--amber)"><span data-icon="activity" data-size="12"></span></div>
+        <h2>ประวัติการซิงค์ทั้งหมด</h2>
       </div>
-      <div class="card-body">
-        <div class="log-box" id="log">— ready —</div>
-      </div>
+      <button id="btnReloadHistory" style="padding:5px 12px;font-size:11px"><span data-icon="refreshCw" data-size="13"></span> Refresh</button>
+    </div>
+    <div class="card-body">
+      <div class="cron-empty" id="historyEmpty">กำลังโหลดประวัติ…</div>
+      <div id="historyList"></div>
     </div>
   </div>
-  </div><!-- /tab: logs -->
+  </div><!-- /tab: history -->
+
+  <!-- Hidden log sink (log() writes here; kept off-screen after removing Logs tab) -->
+  <div id="log" style="display:none">— ready —</div>
 
 </div>
 

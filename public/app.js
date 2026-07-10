@@ -7,12 +7,17 @@ const $ = id => document.getElementById(id);
 // ──────────────────────────────────────────────────
 // State
 // ──────────────────────────────────────────────────
-const CONFIG = { historySheetId: null, allowedDomain: null, adminEmails: [] };
+const CONFIG = { historySheetId: null, allowedDomain: null, adminEmails: [], localTest: false };
 
 const state = {
   refreshToken: localStorage.getItem('google_refresh_token') || '',
   userEmail:    localStorage.getItem('google_user_email')    || '',
   masterMode:   'lark-to-sheet',
+  sourceColumns:   [],   // last scanned header names for the current source
+  selectedColumns: [],   // chosen subset; empty = all columns
+  filterFields:    [],   // scanned dropdown fields: [{name, multi, options[]}]
+  filters:         [],   // chosen value filters: [{field, values[]}]; empty = all rows
+  editingRowId:    null, // when set, Save Auto-sync updates this pair instead of creating one
 };
 
 // ──────────────────────────────────────────────────
@@ -129,12 +134,11 @@ function setAuthed(ok) {
   $('sheetUrl').disabled        = !ok;
   $('larkUrl').disabled         = !ok;
   $('syncDirection').disabled   = !ok;
-  $('rowFrom').disabled         = !ok;
-  $('rowTo').disabled           = !ok;
   $('syncMode').disabled        = !ok;
   $('syncInterval').disabled    = !ok;
   $('btnSyncNow').disabled      = !ok;
   $('btnSaveCron').disabled     = !ok;
+  $('btnPickColumns').disabled  = !ok;
 
   const chip = $('authChip');
   if (ok) {
@@ -192,7 +196,242 @@ function setMode(m) {
   $('sheetUrl').placeholder      = top.placeholder;
   $('larkUrlLabel').textContent  = bot.label;
   $('larkUrl').placeholder       = bot.placeholder;
+  // The expected URL kind changed — clear any red validation marks.
+  markInvalid('sheetUrl', false);
+  markInvalid('larkUrl', false);
+  // Columns depend on the source, which changes with the direction — clear any
+  // prior selection so a stale pick can't leak into a different source.
+  clearColumnSelection();
   updateInfoRow();
+}
+
+// ──────────────────────────────────────────────────
+// Column picker
+// ──────────────────────────────────────────────────
+function clearColumnSelection() {
+  state.sourceColumns = [];
+  state.selectedColumns = [];
+  state.filterFields = [];
+  state.filters = [];
+  const fb = $('btnFilter'); if (fb) fb.disabled = true;
+  updateColumnsHint();
+  updateFilterHint();
+}
+
+function updateColumnsHint() {
+  const hint = $('columnsHint');
+  const btn = $('btnPickColumns');
+  if (!hint || !btn) return;
+  const n = state.selectedColumns.length;
+  if (n === 0) {
+    hint.textContent = 'ยังไม่ได้เลือก = ซิงค์ทุกคอลัมน์';
+    btn.innerHTML = `${icon('link', 14)} สแกน & เลือกคอลัมน์`;
+  } else {
+    const total = state.sourceColumns.length || n;
+    hint.innerHTML = `ซิงค์ <b style="color:var(--accent)">${n}</b> จาก ${total} คอลัมน์`;
+    btn.innerHTML = `${icon('link', 14)} เลือกคอลัมน์ (${n}/${total})`;
+  }
+}
+
+// Scan the source columns for the current inputs, then open the picker.
+async function scanColumns() {
+  let inputs;
+  try {
+    inputs = getInputs();   // needs both URLs; also gives direction
+  } catch (e) {
+    await showAlert({ iconName: 'xCircle', title: 'ใส่ลิงก์ก่อน', desc: escHtml(e.message), confirmClass: 'danger' });
+    return;
+  }
+  const btn = $('btnPickColumns');
+  btn.disabled = true;
+  const prev = btn.innerHTML;
+  btn.innerHTML = `<span class="spin">${icon('refreshCw', 14)}</span> กำลังสแกน...`;
+  try {
+    log('Scanning source columns...');
+    const out = await fetchJson('/api/columns', {
+      method: 'POST',
+      body: JSON.stringify({
+        refreshToken: state.refreshToken,
+        direction: inputs.direction,
+        sheetUrl: inputs.sheetUrl,
+        larkUrl: inputs.larkUrl,
+      }),
+    });
+    const headers = out.headers || [];
+    if (headers.length === 0) throw new Error('ไม่พบคอลัมน์ในต้นทาง');
+    state.sourceColumns = headers;
+    // Dropdown fields available for value filtering (Lark Base sources only).
+    state.filterFields = out.filterFields || [];
+    const fb = $('btnFilter');
+    if (fb) fb.disabled = state.filterFields.length === 0;
+    log(`[OK] สแกนเจอ ${headers.length} คอลัมน์` + (state.filterFields.length ? ` · กรองได้ ${state.filterFields.length} ฟิลด์` : ''));
+    updateFilterHint();
+    openColModal();
+  } catch (e) {
+    log('[ERR] Scan columns: ' + e.message);
+    await showAlert({
+      iconName: 'xCircle',
+      title: 'สแกนคอลัมน์ไม่สำเร็จ',
+      desc: escHtml(e.message) + '<br><span style="color:var(--muted)">ถ้าเป็น Lark: เช็คว่า Add app เข้าไฟล์แล้ว</span>',
+      confirmClass: 'danger',
+    });
+  } finally {
+    btn.disabled = false;
+    if (btn.innerHTML.includes('spin')) btn.innerHTML = prev;
+    updateColumnsHint();
+  }
+}
+
+// While the modal is open, `_colWorking` (a Set) is the source of truth for what
+// is ticked. It survives search filtering, and is collapsed to selectedColumns
+// (or [] when everything is ticked) only on Apply.
+let _colWorking = new Set();
+
+function renderColList(filter = '') {
+  const list = $('colList');
+  const f = filter.trim().toLowerCase();
+  list.innerHTML = '';
+  let shown = 0;
+  state.sourceColumns.forEach((name, idx) => {
+    if (f && !name.toLowerCase().includes(f)) return;
+    shown++;
+    const on = _colWorking.has(name);
+    const row = document.createElement('label');
+    row.className = 'opt' + (on ? ' on' : '');
+    row.innerHTML = `<input type="checkbox" ${on ? 'checked' : ''}>
+      <span class="opt-idx">${idx + 1}</span>
+      <span class="opt-name">${escHtml(name)}</span>`;
+    const cb = row.querySelector('input');
+    cb.addEventListener('change', () => {
+      if (cb.checked) _colWorking.add(name); else _colWorking.delete(name);
+      row.classList.toggle('on', cb.checked);
+      updateColCount();
+    });
+    list.appendChild(row);
+  });
+  if (shown === 0) list.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:13px;text-align:center">ไม่พบคอลัมน์ที่ค้นหา</div>';
+  updateColCount();
+}
+
+function updateColCount() {
+  $('colCount').textContent = `เลือก ${_colWorking.size} / ${state.sourceColumns.length}`;
+}
+
+function openColModal() {
+  // Empty selection means "all" — start with everything ticked.
+  _colWorking = new Set(state.selectedColumns.length ? state.selectedColumns : state.sourceColumns);
+  $('colSubtitle').textContent = `พบ ${state.sourceColumns.length} คอลัมน์ในต้นทาง — ติ๊กเฉพาะที่ต้องการซิงค์`;
+  $('colSearch').value = '';
+  renderColList('');
+  $('colModal').classList.add('show');
+}
+
+function closeColModal() {
+  $('colModal').classList.remove('show');
+}
+
+function applyColSelection() {
+  // Keep source order; store [] (= all) when everything is ticked.
+  const picked = state.sourceColumns.filter(n => _colWorking.has(n));
+  state.selectedColumns = picked.length === state.sourceColumns.length ? [] : picked;
+  closeColModal();
+  updateColumnsHint();
+  log(state.selectedColumns.length
+    ? `เลือก ${state.selectedColumns.length} คอลัมน์`
+    : 'เลือกทุกคอลัมน์');
+}
+
+// ──────────────────────────────────────────────────
+// Value filter (row filter by dropdown value)
+// ──────────────────────────────────────────────────
+// While the modal is open, `_filterWorking` maps fieldName → Set(values).
+let _filterWorking = new Map();
+
+function updateFilterHint() {
+  const hint = $('filterHint');
+  const btn = $('btnFilter');
+  if (!hint) return;
+  const n = state.filters.length;
+  if (n === 0) {
+    hint.textContent = state.filterFields.length
+      ? 'ไม่กรอง = เอาทุกแถว (กดเพื่อเลือกค่า)'
+      : 'สแกนก่อน แล้วเลือกค่าที่ต้องการ · ไม่กรอง = เอาทุกแถว';
+    if (btn) btn.innerHTML = `${icon('shuffle', 14)} ตั้งตัวกรองข้อมูล`;
+  } else {
+    const parts = state.filters.map(f => `${f.field} (${f.values.length})`);
+    hint.innerHTML = `กรอง: <b style="color:var(--accent)">${escHtml(parts.join(' · '))}</b>`;
+    if (btn) btn.innerHTML = `${icon('shuffle', 14)} ตัวกรอง (${n} ฟิลด์)`;
+  }
+}
+
+function openFilterModal() {
+  _filterWorking = new Map();
+  for (const f of state.filters) _filterWorking.set(f.field, new Set(f.values));
+  renderFilterFields();
+  $('filterModal').classList.add('show');
+}
+
+function closeFilterModal() {
+  $('filterModal').classList.remove('show');
+}
+
+function renderFilterFields() {
+  const wrap = $('filterFields');
+  wrap.innerHTML = '';
+  if (state.filterFields.length === 0) {
+    wrap.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:13px">ต้นทางนี้ไม่มีฟิลด์แบบ Dropdown ให้กรอง</div>';
+    return;
+  }
+  state.filterFields.forEach((f) => {
+    const picked = _filterWorking.get(f.name) || new Set();
+    const field = document.createElement('div');
+    field.className = 'filter-field';
+    const head = document.createElement('button');
+    head.type = 'button';
+    head.className = 'filter-field-head';
+    head.innerHTML = `<span class="filter-caret">${icon('chevronDown', 14)}</span>
+      <span>${escHtml(f.name)}</span>${f.multi ? '<span style="font-size:10px;color:var(--muted);font-weight:500">(หลายค่า)</span>' : ''}
+      <span class="filter-badge ${picked.size ? 'on' : ''}">${picked.size ? picked.size + ' เลือก' : f.options.length + ' ค่า'}</span>`;
+    const opts = document.createElement('div');
+    opts.className = 'filter-opts';
+    opts.style.display = 'none';
+    f.options.forEach(val => {
+      const on = picked.has(val);
+      const label = document.createElement('label');
+      label.className = 'opt' + (on ? ' on' : '');
+      label.innerHTML = `<input type="checkbox" ${on ? 'checked' : ''}><span class="opt-name">${escHtml(val)}</span>`;
+      const cb = label.querySelector('input');
+      cb.addEventListener('change', () => {
+        let set = _filterWorking.get(f.name);
+        if (!set) { set = new Set(); _filterWorking.set(f.name, set); }
+        if (cb.checked) set.add(val); else set.delete(val);
+        if (set.size === 0) _filterWorking.delete(f.name);
+        label.classList.toggle('on', cb.checked);
+        const s2 = _filterWorking.get(f.name) || new Set();
+        const badge = head.querySelector('.filter-badge');
+        badge.textContent = s2.size ? s2.size + ' เลือก' : f.options.length + ' ค่า';
+        badge.classList.toggle('on', s2.size > 0);
+      });
+      opts.appendChild(label);
+    });
+    head.onclick = () => {
+      const open = field.classList.toggle('open');
+      opts.style.display = open ? 'block' : 'none';
+    };
+    field.appendChild(head);
+    field.appendChild(opts);
+    wrap.appendChild(field);
+  });
+}
+
+function applyFilters() {
+  state.filters = [];
+  for (const [field, set] of _filterWorking.entries()) {
+    if (set.size) state.filters.push({ field, values: [...set] });
+  }
+  closeFilterModal();
+  updateFilterHint();
+  log(state.filters.length ? `ตั้งตัวกรอง ${state.filters.length} ฟิลด์` : 'ไม่กรอง (ทุกแถว)');
 }
 
 // ──────────────────────────────────────────────────
@@ -240,41 +479,58 @@ function logout() {
 // ──────────────────────────────────────────────────
 // Sync
 // ──────────────────────────────────────────────────
-function parseRow(v){
-  const s = String(v ?? '').trim();
-  if (s === '') return null;
-  const n = parseInt(s, 10);
-  if (!Number.isFinite(n) || n < 1) return null;
-  return n;
+// URL parsers (mirror api/_lib/urls.js) for client-side validation.
+function _gSheetId(u) { return (String(u).match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/) || [])[1] || ''; }
+function _larkSheetTok(u) { const s = String(u); return (s.match(/\/wiki\/([a-zA-Z0-9]+)/) || [])[1] || (s.match(/\/sheets\/([a-zA-Z0-9]+)/) || [])[1] || ''; }
+function _larkBase(u) { const s = String(u); return { baseId: (s.match(/\/base\/([a-zA-Z0-9]+)/) || [])[1] || '', tableId: (s.match(/[?&]table=([a-zA-Z0-9]+)/) || [])[1] || '' }; }
+function validateSideClient(kind, url) {
+  if (kind === 'google'    && !_gSheetId(url))     return 'ต้องเป็นลิงก์ Google Sheet (docs.google.com/spreadsheets/…)';
+  if (kind === 'larkSheet' && !_larkSheetTok(url)) return 'ต้องเป็นลิงก์ Lark Sheet (/wiki/… หรือ /sheets/…)';
+  if (kind === 'larkBase') { const { baseId, tableId } = _larkBase(url); if (!baseId || !tableId) return 'ต้องเป็นลิงก์ Lark Base (/base/<id>?table=<id>)'; }
+  return null;
 }
+function markInvalid(id, on) { $(id).classList.toggle('invalid', !!on); }
 
 function getInputs() {
   const s = $('sheetUrl').value.trim();
   const l = $('larkUrl').value.trim();
-  if (!s || !l) throw new Error('กรุณาใส่ลิงก์ให้ครบ');
-  const rowFrom = parseRow($('rowFrom').value);
-  const rowTo   = parseRow($('rowTo').value);
-  if (rowFrom && rowTo && rowTo < rowFrom) {
-    throw new Error('Row Range: "To" ต้อง ≥ "From"');
-  }
+  const kinds = FIELD_KINDS[state.masterMode];
+  markInvalid('sheetUrl', false);
+  markInvalid('larkUrl', false);
+  if (!s) { markInvalid('sheetUrl', true); throw new Error(`กรุณาใส่ลิงก์ช่องบน (${URL_KIND[kinds.top].label})`); }
+  if (!l) { markInvalid('larkUrl', true); throw new Error(`กรุณาใส่ลิงก์ช่องล่าง (${URL_KIND[kinds.bottom].label})`); }
+  const e1 = validateSideClient(kinds.top, s);
+  if (e1) { markInvalid('sheetUrl', true); throw new Error('ช่องบน — ' + e1); }
+  const e2 = validateSideClient(kinds.bottom, l);
+  if (e2) { markInvalid('larkUrl', true); throw new Error('ช่องล่าง — ' + e2); }
   const syncMode = $('syncMode').value === 'append' ? 'append' : 'replace';
   return {
     sheetUrl: s, larkUrl: l, direction: state.masterMode,
-    rowFrom, rowTo, syncMode,
+    syncMode,
+    columns: state.selectedColumns,   // [] = all columns
+    filters: state.filters,           // [] = all rows
   };
 }
 
 function resetForm() {
   $('sheetUrl').value = '';
   $('larkUrl').value  = '';
-  $('rowFrom').value  = '';
-  $('rowTo').value    = '';
   $('syncMode').value = 'replace';
-  setMode('lark-to-sheet');
+  setIntervalControl(60);
+  setMode('lark-to-sheet');   // also clears the column selection
+  state.editingRowId = null;  // cancel any in-progress edit
+  updateEditUI();
   log('Form reset');
 }
 
 async function syncNow() {
+  let inputs;
+  try {
+    inputs = getInputs();
+  } catch (e) {
+    await showAlert({ iconName: 'xCircle', title: 'ข้อมูลไม่ถูกต้อง', desc: escHtml(e.message), confirmClass: 'danger' });
+    return;
+  }
   const isAppend = $('syncMode').value === 'append';
   const ok = await showConfirm({
     iconName: 'alertTriangle',
@@ -296,7 +552,7 @@ async function syncNow() {
     const out = await fetchJson('/api/sync', {
       method: 'POST',
       body: JSON.stringify({
-        pairs: [{ ...getInputs(), refreshToken, userEmail, source: 'manual', forceNew: true }],
+        pairs: [{ ...inputs, refreshToken, userEmail, source: 'manual', forceNew: true }],
       }),
     });
     log('[OK] Sync result', out);
@@ -337,9 +593,34 @@ async function syncNow() {
 // Cron Manager (auto-sync schedules)
 // ──────────────────────────────────────────────────
 const INTERVAL_LABELS = {
-  5: 'ทุก 5 นาที', 15: 'ทุก 15 นาที', 30: 'ทุก 30 นาที', 60: 'ทุก 1 ชม.',
+  1: 'ทุก 1 นาที', 3: 'ทุก 3 นาที', 5: 'ทุก 5 นาที', 15: 'ทุก 15 นาที', 30: 'ทุก 30 นาที', 60: 'ทุก 1 ชม.',
   120: 'ทุก 2 ชม.', 360: 'ทุก 6 ชม.', 720: 'ทุก 12 ชม.', 1440: 'ทุกวัน',
 };
+
+// Effective interval from the control (dropdown preset, or "custom" typed value).
+function getIntervalMin() {
+  const sel = $('syncInterval');
+  if (sel.value === 'custom') {
+    const n = parseInt($('syncIntervalCustom').value, 10);
+    return Number.isFinite(n) && n >= 1 ? Math.min(n, 10080) : 60;
+  }
+  return parseInt(sel.value, 10) || 60;
+}
+function onIntervalChange() {
+  const custom = $('syncInterval').value === 'custom';
+  const box = $('syncIntervalCustom');
+  box.style.display = custom ? '' : 'none';
+  box.disabled = !custom;
+  if (custom) box.focus();
+}
+// Set the control to a value: pick a matching preset, else switch to "custom".
+function setIntervalControl(min) {
+  const sel = $('syncInterval');
+  const box = $('syncIntervalCustom');
+  const opt = [...sel.options].find(o => o.value === String(min));
+  if (opt) { sel.value = String(min); box.style.display = 'none'; box.disabled = true; }
+  else { sel.value = 'custom'; box.value = String(min); box.style.display = ''; box.disabled = false; }
+}
 
 // Short labels for the URL rows in the Cron Manager, derived from what each
 // field actually holds for the pair's direction (see FIELD_KINDS).
@@ -347,11 +628,32 @@ const KIND_SHORT = { google: 'Google Sheet', larkSheet: 'Lark Sheet', larkBase: 
 
 let cronPairs = [];
 
+const TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 function fmtTime(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
   if (isNaN(d)) return '—';
-  return d.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+  const p = n => String(n).padStart(2, '0');
+  // e.g. "10 ก.ค. 2026, 18:20" — full Gregorian year, 24h, no confusing 2-digit BE.
+  return `${d.getDate()} ${TH_MONTHS[d.getMonth()]} ${d.getFullYear()}, ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+// Relative time, e.g. "เมื่อ 5 นาทีที่แล้ว".
+function relTime(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  const diff = Date.now() - d.getTime();
+  if (diff < 0) return 'อีกสักครู่';
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return 'เมื่อสักครู่';
+  if (min < 60) return `เมื่อ ${min} นาทีที่แล้ว`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `เมื่อ ${hr} ชม.ที่แล้ว`;
+  const day = Math.floor(hr / 24);
+  if (day < 30) return `เมื่อ ${day} วันที่แล้ว`;
+  const mon = Math.floor(day / 30);
+  if (mon < 12) return `เมื่อ ${mon} เดือนที่แล้ว`;
+  return `เมื่อ ${Math.floor(mon / 12)} ปีที่แล้ว`;
 }
 
 function nextRunLabel(p) {
@@ -423,7 +725,9 @@ function renderPairs(pairs) {
         <div class="cron-meta">
           <span class="cron-tag">${icon('clock', 11)} ${INTERVAL_LABELS[p.intervalMin] || (p.intervalMin + ' นาที')}</span>
           <button class="cron-tag cron-mode ${p.syncMode === 'append' ? 'info' : 'warn'}" data-act="mode" data-row="${p.rowId}" title="กดเพื่อสลับโหมด Replace ⇄ Append">${p.syncMode === 'append' ? 'Append' : 'Replace'}</button>
-          <span class="cron-sub">ล่าสุด: ${fmtTime(p.lastSyncAt)} · ${nextRunLabel(p)}</span>
+          ${(p.columns && p.columns.length) ? `<span class="cron-tag" title="${escHtml(p.columns.join(', '))}">${icon('link', 11)} ${p.columns.length} คอลัมน์</span>` : ''}
+          ${(p.filters && p.filters.length) ? `<span class="cron-tag" title="${escHtml(p.filters.map(f => f.field + '=' + f.values.join('/')).join(' · '))}">${icon('shuffle', 11)} กรอง ${p.filters.length}</span>` : ''}
+          <span class="cron-sub">ซิงค์ล่าสุด: ${p.lastSyncAt ? escHtml(fmtTime(p.lastSyncAt)) + ' <span style="opacity:.65">(' + escHtml(relTime(p.lastSyncAt)) + ')</span>' : '<span style="opacity:.7">ยังไม่เคยซิงค์</span>'} · ${escHtml(nextRunLabel(p))}</span>
         </div>
         <div class="cron-meta">
           <span class="cron-owner">${icon('user', 12)} ${escHtml(p.user || 'ไม่ระบุ')}</span>
@@ -433,8 +737,13 @@ function renderPairs(pairs) {
           <div><span class="cron-url-label">${KIND_SHORT[(FIELD_KINDS[p.direction] || {}).top] || 'ต้นทาง'}:</span> ${escHtml(p.sheetUrl)}</div>
           <div><span class="cron-url-label">${KIND_SHORT[(FIELD_KINDS[p.direction] || {}).bottom] || 'ปลายทาง'}:</span> ${escHtml(p.larkUrl)}</div>
         </div>
+        <div class="cron-cf">
+          <div><span class="cron-cf-label">${icon('link', 11)} คอลัมน์:</span> ${(p.columns && p.columns.length) ? `<b>${escHtml(p.columns.length)}</b> — ${escHtml(p.columns.join(' · '))}` : 'ทุกคอลัมน์'}</div>
+          <div><span class="cron-cf-label">${icon('shuffle', 11)} ตัวกรอง:</span> ${(p.filters && p.filters.length) ? p.filters.map(f => `${escHtml(f.field)} = <b>${escHtml(f.values.join(', '))}</b>`).join('  ·  ') : 'ไม่กรอง (ทุกแถว)'}</div>
+        </div>
       </div>
       <div class="cron-actions">
+        <button class="cron-run" data-act="edit" data-row="${p.rowId}" title="แก้ไขงานนี้">${icon('pencil', 13)} แก้ไข</button>
         <button class="cron-run" data-act="run" data-row="${p.rowId}">${icon('play', 13)} Run now</button>
         <button class="cron-del" data-act="del" data-row="${p.rowId}" title="ลบงานนี้">${icon('trash', 13)}</button>
       </div>`;
@@ -447,10 +756,41 @@ function renderPairs(pairs) {
     btn.onclick = () => {
       if (act === 'toggle') togglePair(rowId);
       else if (act === 'mode') changeSyncMode(rowId);
+      else if (act === 'edit') editPair(rowId);
       else if (act === 'run') runPairNow(rowId, btn);
       else if (act === 'del') deletePair(rowId);
     };
   });
+}
+
+// Reflect edit mode in the Save button + show a cancel hint.
+function updateEditUI() {
+  const btn = $('btnSaveCron');
+  if (state.editingRowId) {
+    btn.innerHTML = `${icon('save', 14)} อัปเดต Auto-sync`;
+  } else {
+    btn.innerHTML = `${icon('clock', 14)} Save Auto-sync`;
+  }
+}
+
+// Load a saved pair back into the Sync form for editing.
+function editPair(rowId) {
+  const p = cronPairs.find(x => x.rowId === rowId);
+  if (!p) return;
+  setMode(p.direction);                 // relabels + clears column/filter selection first
+  $('sheetUrl').value = p.sheetUrl || '';
+  $('larkUrl').value  = p.larkUrl || '';
+  $('syncMode').value = p.syncMode === 'append' ? 'append' : 'replace';
+  setIntervalControl(p.intervalMin || 60);
+  // Preserve the saved column/filter choices (source list needs a re-scan to change them).
+  state.selectedColumns = Array.isArray(p.columns) ? p.columns.slice() : [];
+  state.filters = Array.isArray(p.filters) ? p.filters.map(f => ({ field: f.field, values: f.values.slice() })) : [];
+  updateColumnsHint();
+  updateFilterHint();
+  state.editingRowId = rowId;
+  updateEditUI();
+  switchTab('sync');
+  log(`แก้ไข auto-sync #${rowId} — ปรับค่าแล้วกด "อัปเดต Auto-sync"`);
 }
 
 async function saveCron() {
@@ -461,24 +801,34 @@ async function saveCron() {
     await showAlert({ iconName: 'xCircle', title: 'ข้อมูลไม่ครบ', desc: escHtml(e.message), confirmClass: 'danger' });
     return;
   }
+  const editing = state.editingRowId;
   $('btnSyncNow').disabled = true;
   $('btnSaveCron').disabled = true;
-  showModalBusy({ title: 'กำลังบันทึก Auto-sync...', desc: 'รอสักครู่' });
+  showModalBusy({ title: editing ? 'กำลังอัปเดต Auto-sync...' : 'กำลังบันทึก Auto-sync...', desc: 'รอสักครู่' });
   try {
-    const intervalMin = parseInt($('syncInterval').value, 10) || 60;
+    const intervalMin = getIntervalMin();
     const { refreshToken, userEmail } = state;
-    log(`Saving auto-sync (${INTERVAL_LABELS[intervalMin] || intervalMin + ' นาที'})...`);
-    await fetchJson('/api/pairs', {
-      method: 'POST',
-      body: JSON.stringify({ ...inputs, intervalMin, refreshToken, userEmail }),
-    });
-    log('[OK] Auto-sync saved');
-    sendNotif('SHD Sync', 'Auto-sync schedule saved');
+    if (editing) {
+      await fetchJson('/api/pairs', {
+        method: 'PUT',
+        body: JSON.stringify({ rowId: editing, ...inputs, intervalMin, refreshToken, userEmail }),
+      });
+      state.editingRowId = null;
+      updateEditUI();
+      log(`[OK] อัปเดต auto-sync #${editing}`);
+    } else {
+      await fetchJson('/api/pairs', {
+        method: 'POST',
+        body: JSON.stringify({ ...inputs, intervalMin, refreshToken, userEmail }),
+      });
+      log('[OK] Auto-sync saved');
+    }
+    sendNotif('SHD Sync', editing ? 'Auto-sync updated' : 'Auto-sync schedule saved');
     await loadPairs();
     const label = INTERVAL_LABELS[intervalMin] || (intervalMin + ' นาที');
     await showAlert({
-      iconName: 'clock',
-      title: 'ตั้ง Auto-sync แล้ว ✓',
+      iconName: editing ? 'checkCircle' : 'clock',
+      title: editing ? 'อัปเดตแล้ว ✓' : 'ตั้ง Auto-sync แล้ว ✓',
       desc: `ระบบจะซิงค์ให้อัตโนมัติ <b style="color:var(--accent)">${label}</b><br>ตลอด 24 ชม. — ดูได้ที่แท็บ Auto-sync`,
       confirmClass: 'primary',
     });
@@ -623,6 +973,7 @@ function switchTab(name) {
   positionTabIndicator();
   // Refresh the schedule list whenever the user opens the Auto-sync tab.
   if (name === 'cron' && state.refreshToken) loadPairs();
+  if (name === 'history') loadHistory();
 }
 
 function bindTabs() {
@@ -638,31 +989,96 @@ function bindTabs() {
 // ──────────────────────────────────────────────────
 // How-to toggle
 // ──────────────────────────────────────────────────
-function toggleHowto() {
-  const body = $('howtoBody');
-  const btn  = $('howtoToggleBtn');
-  const collapsed = body.classList.toggle('collapsed');
-  btn.innerHTML = collapsed
-    ? `${icon('chevronDown', 14)} ขยาย`
-    : `${icon('chevronUp', 14)} ย่อ`;
-}
-
 // ──────────────────────────────────────────────────
 // Logs export/clear
 // ──────────────────────────────────────────────────
-function exportLogs() {
-  const text = $('log').textContent;
-  const blob = new Blob([text], { type: 'text/plain' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `shd-sync-log-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-  log('Exported logs');
+// ──────────────────────────────────────────────────
+// Sync history (reads the shared History sheet)
+// ──────────────────────────────────────────────────
+async function loadHistory() {
+  const empty = $('historyEmpty');
+  const list = $('historyList');
+  list.innerHTML = '';
+  empty.style.display = '';
+  empty.textContent = 'กำลังโหลดประวัติ…';
+  try {
+    const out = await fetchJson('/api/history');
+    renderHistory(out.items || []);
+  } catch (e) {
+    list.innerHTML = '';
+    empty.style.display = '';
+    empty.textContent = 'โหลดประวัติไม่สำเร็จ: ' + e.message;
+  }
 }
 
-function clearLogs() {
-  $('log').textContent = '— ready —';
+// Destination URL of a sync (the file the data landed in), by direction.
+function destUrlOf(it) {
+  return (it.direction === 'lark-to-sheet' || it.direction === 'larkbase-to-larksheet') ? it.sheetUrl : it.larkUrl;
+}
+function acctColor(u) {
+  const s = String(u || '?');
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return `hsl(${h % 360} 55% 48%)`;
+}
+
+function renderHistory(items) {
+  const empty = $('historyEmpty');
+  const list = $('historyList');
+  list.innerHTML = '';
+  if (!items.length) {
+    empty.style.display = '';
+    empty.textContent = 'ยังไม่มีประวัติการซิงค์';
+    return;
+  }
+  empty.style.display = 'none';
+
+  const head = `<div class="hist-row hist-head">
+    <span></span><span>Account</span><span>เวลา</span><span>ทิศทาง</span><span class="hist-rows">แถว</span><span>สถานะ</span></div>`;
+
+  const body = items.map(it => {
+    const ok = String(it.status).toLowerCase() === 'success';
+    const acct = it.user || '—';
+    const dir = DIRECTION_LABELS[it.direction] || it.direction || '—';
+    const badge = `<span class="badge ${ok ? 'ok' : 'no'}">${ok ? 'สำเร็จ' : 'ผิดพลาด'}</span>`;
+    const isEmail = String(acct).includes('@');
+    const acctCell = isEmail
+      ? `<a class="hist-acct-email" href="mailto:${escHtml(acct)}" onclick="event.stopPropagation()" title="ส่งอีเมลถึง ${escHtml(acct)}">${escHtml(acct)}</a>`
+      : `<span class="hist-acct-email" title="${escHtml(acct)}">${escHtml(acct)}</span>`;
+    const dst = destUrlOf(it);
+    const dirCell = dst
+      ? `<a class="hist-dir" href="${escHtml(dst)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="เปิดปลายทาง: ${escHtml(dst)}">${escHtml(dir)} ↗</a>`
+      : `<span class="hist-dir">${escHtml(dir)}</span>`;
+    return `<div class="hist-item">
+      <div class="hist-row hist-toggle">
+        <span class="hist-caret2">${icon('chevronDown', 13)}</span>
+        <span class="hist-acct">
+          <span class="hist-avatar" style="background:${acctColor(acct)}">${escHtml(String(acct).charAt(0).toUpperCase())}</span>
+          ${acctCell}
+        </span>
+        <span>${escHtml(fmtTime(it.time))}<div class="hist-rel">${escHtml(relTime(it.time))}</div></span>
+        <span>${dirCell}</span>
+        <span class="hist-rows">${escHtml(Number(it.rowCount || 0).toLocaleString())}</span>
+        <span>${badge}</span>
+      </div>
+      <div class="hist-detail">
+        <div class="hist-detail-grid">
+          <div class="hd-full"><span class="hd-label">ต้นทาง</span> <a class="hd-link" href="${escHtml(it.sheetUrl)}" target="_blank" rel="noopener">${escHtml(it.sheetUrl || '—')}</a></div>
+          <div class="hd-full"><span class="hd-label">ปลายทาง</span> <a class="hd-link" href="${escHtml(it.larkUrl)}" target="_blank" rel="noopener">${escHtml(it.larkUrl || '—')}</a></div>
+          <div><span class="hd-label">ทิศทาง</span> ${escHtml(dir)}</div>
+          <div><span class="hd-label">สถานะ</span> ${badge}</div>
+          ${it.error ? `<div class="hd-full"><span class="hd-label">ข้อความผิดพลาด</span> <span class="hd-err">${escHtml(it.error)}</span></div>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  list.innerHTML = `<div class="hist-table">${head}<div class="hist-body">${body}</div></div>`;
+
+  // Click a row to expand/collapse its detail.
+  list.querySelectorAll('.hist-toggle').forEach(row => {
+    row.addEventListener('click', () => row.closest('.hist-item').classList.toggle('open'));
+  });
 }
 
 // ──────────────────────────────────────────────────
@@ -674,13 +1090,21 @@ async function bootstrap() {
     CONFIG.historySheetId = cfg.historySheetId;
     CONFIG.allowedDomain  = cfg.allowedDomain;
     CONFIG.adminEmails    = (cfg.adminEmails || []).map(s => String(s).toLowerCase());
+    CONFIG.localTest      = !!cfg.localTest;
     $('histLabel').textContent = cfg.historySheetId || '(missing)';
     log('Config loaded', cfg);
   } catch (e) {
     log('Config error: ' + e.message);
   }
 
-  if (state.refreshToken && state.userEmail) {
+  // Local test server sets localTest — enable the form without any login/email.
+  // Production's /api/config never returns this flag, so prod is unaffected.
+  if (CONFIG.localTest) {
+    state.refreshToken = state.refreshToken || 'local';
+    state.userEmail    = state.userEmail    || 'local-test';
+    setAuthed(true);
+    log('Local test mode — ไม่ต้อง login');
+  } else if (state.refreshToken && state.userEmail) {
     setAuthed(true);
   } else {
     updateInfoRow();
@@ -692,16 +1116,25 @@ function bindEvents() {
   $('btnLogin').onclick    = startLogin;
   $('btnLogout').onclick   = logout;
   $('syncDirection').onchange = (ev) => setMode(ev.target.value);
+  $('syncInterval').onchange = onIntervalChange;
+  $('sheetUrl').oninput = () => markInvalid('sheetUrl', false);
+  $('larkUrl').oninput  = () => markInvalid('larkUrl', false);
   $('btnSyncNow').onclick  = syncNow;
   $('btnSaveCron').onclick = saveCron;
   $('btnReloadCron').onclick = loadPairs;
   bindTabs();
   $('btnReset').onclick    = resetForm;
-  $('btnClearLog').onclick   = clearLogs;
-  $('btnExportLog').onclick  = exportLogs;
-  $('howtoSection').querySelector('.howto-hd').onclick = toggleHowto;
-  $('howtoToggleBtn').onclick = (ev) => { ev.stopPropagation(); toggleHowto(); };
-
+  $('btnReloadHistory').onclick = loadHistory;
+  $('btnPickColumns').onclick = scanColumns;
+  $('colApply').onclick    = applyColSelection;
+  $('colCancel').onclick   = closeColModal;
+  $('colAll').onclick      = () => { _colWorking = new Set(state.sourceColumns); renderColList($('colSearch').value); };
+  $('colNone').onclick     = () => { _colWorking = new Set(); renderColList($('colSearch').value); };
+  $('colSearch').oninput   = (ev) => renderColList(ev.target.value);
+  $('btnFilter').onclick   = openFilterModal;
+  $('filterApply').onclick = applyFilters;
+  $('filterCancel').onclick = closeFilterModal;
+  $('filterClear').onclick = () => { _filterWorking = new Map(); renderFilterFields(); };
   window.addEventListener('message', onOauthMessage);
 }
 

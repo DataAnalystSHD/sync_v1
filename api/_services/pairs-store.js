@@ -1,4 +1,6 @@
 import { sheetsGetValues, sheetsUpdate, sheetsClear } from "../_lib/google/sheets.js";
+import { parseColumns } from "../_lib/columns.js";
+import { parseFilters } from "../_lib/filters.js";
 
 const COLUMNS = {
   createdAt:   "A",
@@ -19,9 +21,12 @@ const COLUMNS = {
   rowFrom:     "P",
   rowTo:       "Q",
   syncMode:    "R",
+  team:        "S",
+  columns:     "T",
+  filters:     "U",
 };
 
-const LAST_COL = "R";
+const LAST_COL = "U";
 
 function toPos(v){
   const n = parseInt(v, 10);
@@ -49,6 +54,9 @@ function rowToPair(r, rowNum){
     rowFrom:     toPos(r[15]),
     rowTo:       toPos(r[16]),
     syncMode:    (r[17] === "append" ? "append" : "replace"),
+    team:        String(r[18] || "").trim().toLowerCase(),
+    columns:     parseColumns(r[19]),
+    filters:     parseFilters(r[20]),
   };
 }
 
@@ -68,6 +76,14 @@ export async function readAllPairs({ accessToken, cfg }){
     }
   });
   return out;
+}
+
+// Pairs tagged for a given team (case-insensitive). Empty team = ungrouped,
+// only returned when `team` itself is empty.
+export async function readPairsForTeam({ accessToken, cfg, team }){
+  const want = String(team || "").trim().toLowerCase();
+  const all = await readAllPairs({ accessToken, cfg });
+  return all.filter(p => p.team === want);
 }
 
 export async function readActiveCronPairs({ accessToken, cfg }){
@@ -102,6 +118,9 @@ export async function appendPair({ accessToken, cfg, pair }){
     pair.rowFrom ? String(pair.rowFrom) : "", // P
     pair.rowTo   ? String(pair.rowTo)   : "", // Q
     pair.syncMode === "append" ? "append" : "replace", // R
+    String(pair.team || "").trim().toLowerCase(),      // S team
+    Array.isArray(pair.columns) && pair.columns.length ? JSON.stringify(pair.columns) : "", // T columns
+    Array.isArray(pair.filters) && pair.filters.length ? JSON.stringify(pair.filters) : "", // U filters
   ];
   // Don't use values.append: its table auto-detection has shifted new rows
   // into the wrong columns (data ended up starting at column R) after rows
@@ -131,6 +150,23 @@ async function updateCell({ accessToken, cfg, rowId, col, value }){
 
 export function setActive({ accessToken, cfg, rowId, active }){
   return updateCell({ accessToken, cfg, rowId, col: COLUMNS.active, value: active ? "TRUE" : "FALSE" });
+}
+
+// Edit an existing pair's config in place (only the fields provided are written).
+export async function updatePairFields({ accessToken, cfg, rowId, fields }){
+  const jobs = [];
+  const set = (col, value) => jobs.push(updateCell({ accessToken, cfg, rowId, col, value }));
+  if(fields.sheetUrl    != null) set(COLUMNS.sheetUrl,   fields.sheetUrl);
+  if(fields.sheetId     != null) set(COLUMNS.sheetId,    fields.sheetId);
+  if(fields.larkUrl     != null) set(COLUMNS.larkUrl,    fields.larkUrl);
+  if(fields.baseId      != null) set(COLUMNS.baseId,     fields.baseId);
+  if(fields.tableId     != null) set(COLUMNS.tableId,    fields.tableId);
+  if(fields.direction   != null) set(COLUMNS.direction,  fields.direction);
+  if(fields.syncMode    != null) set(COLUMNS.syncMode,   fields.syncMode === "append" ? "append" : "replace");
+  if(fields.intervalMin != null) set(COLUMNS.intervalMin, String(toPos(fields.intervalMin) || 60));
+  if(fields.columns     != null) set(COLUMNS.columns, Array.isArray(fields.columns) && fields.columns.length ? JSON.stringify(fields.columns) : "");
+  if(fields.filters     != null) set(COLUMNS.filters, Array.isArray(fields.filters) && fields.filters.length ? JSON.stringify(fields.filters) : "");
+  await Promise.all(jobs);
 }
 
 export function setPairInterval({ accessToken, cfg, rowId, intervalMin }){

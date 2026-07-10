@@ -1,8 +1,10 @@
 import { larkListAllRecords } from "../../_lib/lark/records.js";
 import { larkListFields } from "../../_lib/lark/fields.js";
-import { formatBitableValue, buildFieldTypeMap } from "../../_lib/lark/field-types.js";
-import { getSheetMeta, getSheetValues, batchUpdateValues, deleteRows } from "../../_lib/lark/sheets.js";
+import { buildFieldTypeMap, bitableCellToLarkSheet } from "../../_lib/lark/field-types.js";
+import { getSheetMeta, getSheetValues, batchUpdateValues, deleteRows, deleteColumns } from "../../_lib/lark/sheets.js";
 import { endColumnFor } from "../../_lib/urls.js";
+import { selectColumns } from "../../_lib/columns.js";
+import { applyRecordFilters } from "../../_lib/filters.js";
 import { resolveLarkSheetTarget } from "./lark-sheet-target.js";
 
 function collectHeadersFromRecords(items){
@@ -42,15 +44,22 @@ async function findLastUsedRowLark({ ssToken, sheetId, totalRows }){
   return 0;
 }
 
-export async function syncLarkBaseToLarkSheet({ cfg, baseId, tableId, destUrl, viewId, rowFrom, rowTo, syncMode }){
-  const items = await larkListAllRecords({ baseId, tableId, viewId });
+export async function syncLarkBaseToLarkSheet({ cfg, baseId, tableId, destUrl, viewId, rowFrom, rowTo, syncMode, columns, filters }){
+  let items = await larkListAllRecords({ baseId, tableId, viewId });
+  // Value filter (empty = all rows) — applied before Row Range slicing.
+  if(Array.isArray(filters) && filters.length){
+    const fmap = buildFieldTypeMap(await larkListFields({ baseId, tableId }));
+    items = applyRecordFilters(items, filters, fmap);
+  }
   const sliced = items.slice((rowFrom || 1) - 1, rowTo || items.length);
   const limited = sliced.slice(0, cfg.maxRowsPerSync);
-  const { headers, typeMap } = await resolveSchema({ baseId, tableId, items: limited });
+  let { headers, typeMap } = await resolveSchema({ baseId, tableId, items: limited });
 
   if(headers.length === 0){
     return { rowCount: 0, truncated: sliced.length > limited.length };
   }
+  // Column selection (empty = all). Row map below is header-name-keyed.
+  headers = selectColumns(headers, columns).headers;
 
   const { ssToken, sheetId } = await resolveLarkSheetTarget(destUrl);
   const endCol = endColumnFor(headers);
@@ -58,10 +67,12 @@ export async function syncLarkBaseToLarkSheet({ cfg, baseId, tableId, destUrl, v
 
   const meta = await getSheetMeta({ ssToken, sheetId });
   const oldRowCount = readRowCount(meta);
+  const oldColCount = Number(meta?.grid_properties?.column_count || 0);
 
   const dataRows = limited.map(it => {
     const fields = it.fields || {};
-    return headers.map(h => formatBitableValue(fields[h], typeMap.get(h)));
+    // Preserve attached hyperlinks (URL fields / linked text) into the Lark Sheet.
+    return headers.map(h => bitableCellToLarkSheet(fields[h], typeMap.get(h)));
   });
 
   let startRow;
@@ -109,6 +120,16 @@ export async function syncLarkBaseToLarkSheet({ cfg, baseId, tableId, destUrl, v
         await deleteRows({ ssToken, sheetId, startIndex: newTotalRows + 1, endIndex: oldRowCount });
       } catch(e){
         console.warn("[larkbase-to-larksheet] failed to trim excess rows:", e.message);
+      }
+    }
+    // Trim stale columns too — e.g. after column selection narrows 47 → 3, the
+    // old columns to the right must be removed (Replace should leave ONLY the
+    // written columns).
+    if(oldColCount > headers.length){
+      try {
+        await deleteColumns({ ssToken, sheetId, startIndex: headers.length + 1, endIndex: oldColCount });
+      } catch(e){
+        console.warn("[larkbase-to-larksheet] failed to trim excess columns:", e.message);
       }
     }
   }

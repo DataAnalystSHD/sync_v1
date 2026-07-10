@@ -15,6 +15,10 @@ async function* iterateRecordPages({ baseId, tableId, viewId, fields = true }){
         page_size: PAGE_SIZE,
         page_token: pageToken || undefined,
         view_id: viewId || undefined,
+        // Return text fields as rich-text segments so an embedded hyperlink
+        // (e.g. a linked KOL name) survives instead of being flattened to plain
+        // text. formatBitableValue / bitableCellToLarkSheet handle the arrays.
+        text_field_as_array: true,
       },
       timeout: 30000,
     }), fields ? "larkListRecords" : "larkListIds");

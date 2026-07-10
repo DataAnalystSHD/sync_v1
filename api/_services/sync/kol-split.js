@@ -94,6 +94,48 @@ async function tabMatches({ ssToken, sheetId, headers, dataRows }){
   return true;
 }
 
+// Read + classify the Base and compare both tabs, WITHOUT writing. Returns the
+// counts plus whether each tab currently matches the Base (for a status panel).
+export async function kolSplitStatus(){
+  const { baseId, tableId, viewId, wikiToken, newSheet, oldSheet } = CONF;
+
+  const items = await larkListAllRecords({ baseId, tableId, viewId });
+  const fields = await larkListFields({ baseId, tableId });
+  const headers = fields.map((f) => f.field_name).filter(Boolean);
+  if(headers.length === 0) throw new Error("Source table has no fields");
+  const typeMap = buildFieldTypeMap(fields);
+
+  const promoteKey = headers.find((h) => /promote/i.test(h));
+  if(!promoteKey) throw new Error("No Promote Method column found on source table");
+
+  const mapRow = (f) => headers.map((h) => formatBitableValue(f[h], typeMap.get(h)));
+  const newRows = [];
+  const oldRows = [];
+  let skipped = 0;
+  for(const it of items){
+    const f = it.fields || {};
+    const pm = norm(formatBitableValue(f[promoteKey], typeMap.get(promoteKey)));
+    if(pm === "new kol") newRows.push(mapRow(f));
+    else if(pm === "old kol") oldRows.push(mapRow(f));
+    else skipped++;
+  }
+
+  const ssToken = await resolveSpreadsheetToken(wikiToken);
+  const newInSync = await tabMatches({ ssToken, sheetId: newSheet, headers, dataRows: newRows });
+  const oldInSync = await tabMatches({ ssToken, sheetId: oldSheet, headers, dataRows: oldRows });
+
+  return {
+    records: items.length,
+    columns: headers.length,
+    newCount: newRows.length,
+    oldCount: oldRows.length,
+    skipped,
+    newInSync,
+    oldInSync,
+    inSync: newInSync && oldInSync,
+  };
+}
+
 /**
  * Run the KOL split. Returns { newCount, oldCount, skipped, columns, changed }.
  *   dryRun: read + classify, never write.

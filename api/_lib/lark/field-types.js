@@ -32,6 +32,13 @@ function joinTextArr(arr){
   return arr.map(x => (typeof x === "object" ? (x?.text || x?.name || "") : String(x ?? ""))).filter(Boolean).join(", ");
 }
 
+// Rich-text segments of ONE cell (text_field_as_array) — concatenate with NO
+// separator so "Ceemeagain" + " CES" stays "Ceemeagain CES".
+function joinRichText(arr){
+  if(!Array.isArray(arr)) return "";
+  return arr.map(x => (typeof x === "object" ? (x?.text ?? "") : String(x ?? ""))).join("");
+}
+
 function formatTimestamp(v){
   const ms = Number(v);
   if(!Number.isFinite(ms) || ms <= 0) return "";
@@ -107,8 +114,36 @@ export function formatBitableValue(value, type){
   }
 
   // Generic fallback for Text, Phone, AutoNumber, and unknown types.
+  // Rich text (text_field_as_array) arrives as an array of segments — flatten
+  // to its display text instead of dumping JSON.
+  if(Array.isArray(value)) return joinRichText(value);
   if(typeof value === "object") return JSON.stringify(value);
   return String(value);
+}
+
+/**
+ * Like formatBitableValue, but preserves an attached hyperlink when writing to a
+ * Lark Sheet: a cell that carries a link (URL field, or rich text with a link
+ * segment) becomes Lark's hyperlink form { type:"url", text, link } so the link
+ * survives the sync and stays clickable. Cells without a link fall back to the
+ * plain formatted string.
+ */
+export function bitableCellToLarkSheet(value, type){
+  if(value === null || value === undefined) return "";
+
+  // Rich-text array (e.g. a text field with an embedded link): keep the full
+  // display text, attach the first link found.
+  if(Array.isArray(value)){
+    const linkSeg = value.find(s => s && typeof s === "object" && s.link);
+    if(linkSeg){
+      const text = value.map(s => (typeof s === "object" ? (s?.text ?? "") : String(s ?? ""))).join("");
+      return { type: "url", text: String(text || linkSeg.link), link: linkSeg.link };
+    }
+  } else if(value && typeof value === "object" && value.link){
+    return { type: "url", text: String(value.text ?? value.link), link: value.link };
+  }
+
+  return formatBitableValue(value, type);
 }
 
 export function buildFieldTypeMap(fields){

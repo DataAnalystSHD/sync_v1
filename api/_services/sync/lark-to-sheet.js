@@ -3,6 +3,8 @@ import { larkListAllRecords } from "../../_lib/lark/records.js";
 import { larkListFields } from "../../_lib/lark/fields.js";
 import { formatBitableValue, buildFieldTypeMap } from "../../_lib/lark/field-types.js";
 import { endColumnFor } from "../../_lib/urls.js";
+import { selectColumns } from "../../_lib/columns.js";
+import { applyRecordFilters } from "../../_lib/filters.js";
 
 function collectHeadersFromRecords(items){
   const set = new Set();
@@ -29,15 +31,24 @@ async function findLastUsedRowGoogle({ accessToken, spreadsheetId, tab }){
   return (colA || []).length;
 }
 
-export async function syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, tableId, viewId, rowFrom, rowTo, syncMode }){
-  const items = await larkListAllRecords({ baseId, tableId, viewId });
+export async function syncLarkToSheet({ accessToken, cfg, sheetId, gid, baseId, tableId, viewId, rowFrom, rowTo, syncMode, columns, filters }){
+  let items = await larkListAllRecords({ baseId, tableId, viewId });
+  // Value filter (empty = all rows) — applied to the full record set first, so
+  // Row Range then counts within the filtered rows.
+  if(Array.isArray(filters) && filters.length){
+    const fmap = buildFieldTypeMap(await larkListFields({ baseId, tableId }));
+    items = applyRecordFilters(items, filters, fmap);
+  }
   const sliced = items.slice((rowFrom || 1) - 1, rowTo || items.length);
   const limited = sliced.slice(0, cfg.maxRowsPerSync);
-  const { headers, typeMap } = await resolveSchema({ baseId, tableId, items: limited });
+  let { headers, typeMap } = await resolveSchema({ baseId, tableId, items: limited });
 
   if(headers.length === 0){
     return { rowCount: 0, truncated: sliced.length > limited.length };
   }
+  // Column selection (empty = all). Row map below is header-name-keyed, so
+  // narrowing `headers` is all that's needed.
+  headers = selectColumns(headers, columns).headers;
 
   const tabName = await getSheetNameByGid({ accessToken, spreadsheetId: sheetId, gid });
   const tab = `${quoteSheetName(tabName)}!`;

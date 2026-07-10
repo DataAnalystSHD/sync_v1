@@ -3,6 +3,7 @@ import { withBackoff } from "../retry.js";
 import { getConfig } from "../config.js";
 import { getTenantAccessToken, authHeader, assertOk } from "./auth.js";
 
+
 /**
  * Normalize a Lark Sheet cell value to a plain display string.
  *
@@ -95,5 +96,18 @@ export async function deleteRows({ ssToken, sheetId, startIndex, endIndex }){
     timeout: 30000,
   }), "larkSheetDeleteRows");
   assertOk(r.data, "Lark sheet dimension_range delete");
+  return r.data;
+}
+
+// Delete columns [startIndex, endIndex] (1-based, inclusive) — used to trim
+// stale columns when a Replace sync writes fewer columns than the sheet held.
+export async function deleteColumns({ ssToken, sheetId, startIndex, endIndex }){
+  const token = await getTenantAccessToken();
+  const r = await withBackoff(() => axios.delete(v2(ssToken, "/dimension_range"), {
+    headers: authHeader(token),
+    data: { dimension: { sheetId, majorDimension: "COLUMNS", startIndex, endIndex } },
+    timeout: 30000,
+  }), "larkSheetDeleteColumns");
+  assertOk(r.data, "Lark sheet dimension_range delete (columns)");
   return r.data;
 }

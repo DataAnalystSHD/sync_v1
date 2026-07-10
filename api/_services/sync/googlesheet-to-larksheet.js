@@ -1,6 +1,7 @@
 import { sheetsGetValues, sheetsGetGrid, cellLink, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
-import { getSheetMeta, getSheetValues, batchUpdateValues, deleteRows } from "../../_lib/lark/sheets.js";
+import { getSheetMeta, getSheetValues, batchUpdateValues, deleteRows, deleteColumns } from "../../_lib/lark/sheets.js";
 import { endColumnFor } from "../../_lib/urls.js";
+import { selectColumns } from "../../_lib/columns.js";
 import { resolveLarkSheetTarget } from "./lark-sheet-target.js";
 
 function isEmptyCell(v){
@@ -49,33 +50,37 @@ async function findLastUsedRowLark({ ssToken, sheetId, totalRows }){
   return 0;
 }
 
-export async function syncGoogleSheetToLarkSheet({ accessToken, cfg, srcSheetId, srcGid, destUrl, rowFrom, rowTo, syncMode }){
+export async function syncGoogleSheetToLarkSheet({ accessToken, cfg, srcSheetId, srcGid, destUrl, rowFrom, rowTo, syncMode, columns }){
   const tabName = await getSheetNameByGid({ accessToken, spreadsheetId: srcSheetId, gid: srcGid });
   const tab = `${quoteSheetName(tabName)}!`;
 
   const headerRow = await sheetsGetValues({ accessToken, spreadsheetId: srcSheetId, range: `${tab}A1:1` });
   const rawHeaders = (headerRow?.[0] || []).map(cellToString);
-  const headers = [];
+  const fullHeaders = [];
   for(let i = 0; i < rawHeaders.length; i++){
     const h = rawHeaders[i].trim();
     if(h === "") break;
-    headers.push(h);
+    fullHeaders.push(h);
   }
-  if(headers.length === 0) throw new Error("Google Sheet has no header row (row 1 must contain headers)");
+  if(fullHeaders.length === 0) throw new Error("Google Sheet has no header row (row 1 must contain headers)");
 
-  const endCol = endColumnFor(headers);
+  // Column selection (empty = all). Read the source at full width, then project
+  // each row down to the chosen columns.
+  const { headers, indices } = selectColumns(fullHeaders, columns);
+  const readEndCol = endColumnFor(fullHeaders);   // source read width
+  const endCol = endColumnFor(headers);           // destination write width
   // Data rows (1-indexed, excludes header) → sheet rows (header at 1, data 2+).
   const dataStartSheetRow = (rowFrom || 1) + 1;
   const dataRange = rowTo
-    ? `${tab}A${dataStartSheetRow}:${endCol}${rowTo + 1}`
-    : `${tab}A${dataStartSheetRow}:${endCol}`;
+    ? `${tab}A${dataStartSheetRow}:${readEndCol}${rowTo + 1}`
+    : `${tab}A${dataStartSheetRow}:${readEndCol}`;
   // Grid data (not /values) so embedded hyperlinks in cells are preserved.
   const grid = await sheetsGetGrid({
     accessToken, spreadsheetId: srcSheetId,
     range: dataRange,
   });
   const dataRows = grid
-    .map(row => headers.map((_, i) => cellToLark(row[i])))
+    .map(row => indices.map(i => cellToLark(row[i])))
     .filter(r => !isEmptyRow(r));
 
   const { ssToken, sheetId } = await resolveLarkSheetTarget(destUrl);
@@ -83,6 +88,7 @@ export async function syncGoogleSheetToLarkSheet({ accessToken, cfg, srcSheetId,
 
   const meta = await getSheetMeta({ ssToken, sheetId });
   const oldRowCount = readRowCount(meta);
+  const oldColCount = Number(meta?.grid_properties?.column_count || 0);
 
   let startRow;
   let appendSkip = 0;   // data rows the destination already holds (append only the rest)
@@ -128,6 +134,13 @@ export async function syncGoogleSheetToLarkSheet({ accessToken, cfg, srcSheetId,
         await deleteRows({ ssToken, sheetId, startIndex: newTotalRows + 1, endIndex: oldRowCount });
       } catch(e){
         console.warn("[googlesheet-to-larksheet] failed to trim excess rows:", e.message);
+      }
+    }
+    if(oldColCount > headers.length){
+      try {
+        await deleteColumns({ ssToken, sheetId, startIndex: headers.length + 1, endIndex: oldColCount });
+      } catch(e){
+        console.warn("[googlesheet-to-larksheet] failed to trim excess columns:", e.message);
       }
     }
   }

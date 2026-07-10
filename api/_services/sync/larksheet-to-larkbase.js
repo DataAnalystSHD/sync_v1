@@ -3,6 +3,7 @@ import { larkBatchDeleteAll, larkCreateRecordsBatched, larkCountRecords } from "
 import { larkEnsureFields, larkListFields } from "../../_lib/lark/fields.js";
 import { inferType, inferProperty, convertForLark } from "../../_lib/lark/infer-types.js";
 import { endColumnFor } from "../../_lib/urls.js";
+import { selectColumns } from "../../_lib/columns.js";
 import { updateCursor, updatePhase } from "../pairs-store.js";
 import { resolveLarkSheetTarget } from "./lark-sheet-target.js";
 
@@ -38,12 +39,14 @@ async function inferFieldsFromLarkSheet({ ssToken, sheetId, headers, endCol }){
   });
 }
 
-async function beginNewRun({ accessToken, cfg, ssToken, srcSheetId, baseId, tableId, headers, endCol, rowId, syncMode }){
+async function beginNewRun({ accessToken, cfg, ssToken, srcSheetId, baseId, tableId, headers, endCol, rowId, syncMode, selectedSet }){
   if(rowId){
     await updatePhase({ accessToken, cfg, rowId, phase: PHASE_RUNNING });
     await updateCursor({ accessToken, cfg, rowId, cursorRow: 2 });
   }
-  const fields = await inferFieldsFromLarkSheet({ ssToken, sheetId: srcSheetId, headers, endCol });
+  // Infer at full source width, then keep only the selected columns' fields.
+  let fields = await inferFieldsFromLarkSheet({ ssToken, sheetId: srcSheetId, headers, endCol });
+  if(selectedSet) fields = fields.filter(f => selectedSet.has(f.name));
   const { typeMap, nameMap } = await larkEnsureFields({ baseId, tableId, fields });
   if(syncMode !== "append"){
     await larkBatchDeleteAll({ baseId, tableId });
@@ -94,10 +97,15 @@ function rowsToRecords(rows, headers, typeMap, nameMap){
   });
 }
 
-export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, baseId, tableId, pair, rowFrom, rowTo, syncMode }){
+export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, baseId, tableId, pair, rowFrom, rowTo, syncMode, columns }){
   const { ssToken, sheetId } = await resolveLarkSheetTarget(sourceUrl);
-  const headers = await readHeaders({ ssToken, sheetId });
-  const endCol  = endColumnFor(headers);
+  const fullHeaders = await readHeaders({ ssToken, sheetId });
+  // Column selection (empty = all). Read at full width so cell indices line up,
+  // then project each read down to the selected columns before writing.
+  const { headers, indices } = selectColumns(fullHeaders, columns);
+  const selectedSet = new Set(headers);
+  const endCol  = endColumnFor(fullHeaders);          // full source read width
+  const pick = (rows) => (rows || []).map(r => indices.map(i => r[i]));
   const pageSize = cfg.pageSize;
   const rowId = pair?.rowId;
   const isAppend = syncMode === "append";
@@ -110,7 +118,8 @@ export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, bas
     const existing = await larkCountRecords({ baseId, tableId });
     let typeMap, nameMap;
     if(existing === 0){
-      const fields = await inferFieldsFromLarkSheet({ ssToken, sheetId, headers, endCol });
+      let fields = await inferFieldsFromLarkSheet({ ssToken, sheetId, headers: fullHeaders, endCol });
+      fields = fields.filter(f => selectedSet.has(f.name));
       ({ typeMap, nameMap } = await larkEnsureFields({ baseId, tableId, fields }));
     } else {
       ({ typeMap, nameMap } = await readTypeMap({ baseId, tableId }));
@@ -122,7 +131,7 @@ export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, bas
     if(nonEmpty.length === 0){
       return { rowCount: 0, truncated: false, done: true };
     }
-    const records = rowsToRecords(nonEmpty, headers, typeMap, nameMap);
+    const records = rowsToRecords(pick(nonEmpty), headers, typeMap, nameMap);
     await larkCreateRecordsBatched({ baseId, tableId, records });
     return {
       rowCount: records.length,
@@ -140,7 +149,7 @@ export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, bas
     ({ typeMap, nameMap } = await beginNewRun({
       accessToken, cfg,
       ssToken, srcSheetId: sheetId,
-      baseId, tableId, headers, endCol, rowId, syncMode,
+      baseId, tableId, headers: fullHeaders, endCol, rowId, syncMode, selectedSet,
     }));
     cursorRow = 2;
   } else {
@@ -162,7 +171,7 @@ export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, bas
     return { rowCount: 0, truncated: false, done: true };
   }
 
-  const records = rowsToRecords(nonEmpty, headers, typeMap, nameMap);
+  const records = rowsToRecords(pick(nonEmpty), headers, typeMap, nameMap);
   await larkCreateRecordsBatched({ baseId, tableId, records });
 
   if(hasRange){
