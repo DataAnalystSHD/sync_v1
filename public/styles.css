@@ -376,6 +376,13 @@ body {
 .hd-link { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent, #6b5cf0); word-break: break-all; text-decoration: none; }
 .hd-link:hover { text-decoration: underline; }
 .hd-err { color: #e0392b; word-break: break-word; }
+.hist-detail-actions { margin-top: 12px; }
+.hist-del-btn {
+  font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 8px;
+  border: 1px solid rgba(224,57,43,.35); background: rgba(224,57,43,.06); color: #e0392b; cursor: pointer;
+}
+.hist-del-btn:hover { background: rgba(224,57,43,.14); }
+.hist-del-btn svg { vertical-align: -1px; margin-right: 3px; }
 .hist-head {
   font-weight: 700; color: var(--muted); font-size: 10.5px;
   text-transform: uppercase; letter-spacing: .05em;

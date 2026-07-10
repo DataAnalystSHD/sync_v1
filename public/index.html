@@ -75,7 +75,7 @@
       <span class="tab-indicator" id="tabIndicator"></span>
       <button class="tab active" data-tab="sync"><span data-icon="sync" data-size="15"></span> Sync</button>
       <button class="tab" data-tab="cron" style="display:none"><span data-icon="clock" data-size="15"></span> Auto-sync</button>
-      <button class="tab" data-tab="history" style="display:none"><span data-icon="activity" data-size="15"></span> ประวัติการซิงค์</button>
+      <button class="tab" data-tab="history" style="display:none"><span data-icon="activity" data-size="15"></span> History</button>
     </nav>
 
     <div class="topbar-right">
@@ -215,9 +215,12 @@
     <div class="card-header">
       <div class="card-header-left">
         <div class="card-step" data-color="amber" style="background:var(--amber-bg);border-color:var(--amber-bd);color:var(--amber)"><span data-icon="activity" data-size="12"></span></div>
-        <h2>ประวัติการซิงค์ทั้งหมด</h2>
+        <h2>History</h2>
       </div>
-      <button id="btnReloadHistory" style="padding:5px 12px;font-size:11px"><span data-icon="refreshCw" data-size="13"></span> Refresh</button>
+      <div style="display:flex;gap:8px">
+        <button id="btnClearHistory" class="danger" style="padding:5px 12px;font-size:11px"><span data-icon="trash" data-size="13"></span> ล้างทั้งหมด</button>
+        <button id="btnReloadHistory" style="padding:5px 12px;font-size:11px"><span data-icon="refreshCw" data-size="13"></span> Refresh</button>
+      </div>
     </div>
     <div class="card-body">
       <div class="cron-empty" id="historyEmpty">กำลังโหลดประวัติ…</div>

@@ -64,6 +64,13 @@ const LARK_ONLY = new Set(["larkbase-to-larksheet", "larksheet-to-larkbase"]);
 // In-memory Auto-sync store so save → appears works locally (resets on restart).
 let localPairs = [];
 let pairSeq = 1;
+
+// In-memory history sample so delete/clear can be tested locally.
+let localHistory = [
+  { row: 1, time: "2026-07-10T11:20:00.000Z", sheetUrl: "https://j1zplfh5yg.feishu.cn/wiki/Xktdw7CNYiuEnVk2VdGcuo6Bn2d", larkUrl: "https://j1zplfh5yg.feishu.cn/base/JGnFb0rMbaLyJssz1A7co9GQnKf?table=tblkt1z4KjBuhvMl", direction: "larkbase-to-larksheet", user: "the.dataverse@shd-technology.co.th", rowCount: 1639, status: "Success", error: "" },
+  { row: 2, time: "2026-07-10T11:05:00.000Z", sheetUrl: "https://j1zplfh5yg.feishu.cn/base/F8pGb3xbhahlQvsnGwZcRVfanzh?table=tblYcRghvSyxx8ik", larkUrl: "https://j1zplfh5yg.feishu.cn/wiki/B0thw6Lo9i8PMnkPlgoci3lOnre", direction: "larkbase-to-larksheet", user: "nun.rungwikrai@shd-technology.co.th", rowCount: 476, status: "Success", error: "" },
+  { row: 3, time: "2026-07-10T10:40:00.000Z", sheetUrl: "https://docs.google.com/spreadsheets/d/1Acpk4aGp5JCAWztvkYN2Ooe5GwdXj5yeAs4Ozv_PARc", larkUrl: "https://j1zplfh5yg.feishu.cn/base/JGnFb0rMbaLyJssz1A7co9GQnKf?table=tblkt1z4KjBuhvMl", direction: "lark-to-sheet", user: "the.dataverse@shd-technology.co.th", rowCount: 0, status: "Error", error: "HTTP 403 code=91403 msg=Forbidden (app not added to file)" },
+];
 const normInterval = (v) => { const n = parseInt(v, 10); return Number.isFinite(n) && n >= 1 ? Math.min(n, 10080) : 60; };
 
 const PUBLIC = path.join(ROOT, "public");
@@ -217,15 +224,14 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (p === "/api/history") {
-      // Local has no real History sheet — return a few sample rows so the page layout is visible.
-      return sendJson(res, 200, {
-        ok: true, simulated: true,
-        items: [
-          { time: "2026-07-10T11:20:00.000Z", sheetUrl: "https://j1zplfh5yg.feishu.cn/wiki/Xktdw7CNYiuEnVk2VdGcuo6Bn2d", larkUrl: "https://j1zplfh5yg.feishu.cn/base/JGnFb0rMbaLyJssz1A7co9GQnKf?table=tblkt1z4KjBuhvMl", direction: "larkbase-to-larksheet", user: "the.dataverse@shd-technology.co.th", rowCount: 1639, status: "Success", error: "" },
-          { time: "2026-07-10T11:05:00.000Z", sheetUrl: "https://j1zplfh5yg.feishu.cn/base/F8pGb3xbhahlQvsnGwZcRVfanzh?table=tblYcRghvSyxx8ik", larkUrl: "https://j1zplfh5yg.feishu.cn/wiki/B0thw6Lo9i8PMnkPlgoci3lOnre", direction: "larkbase-to-larksheet", user: "nun.rungwikrai@shd-technology.co.th", rowCount: 476, status: "Success", error: "" },
-          { time: "2026-07-10T10:40:00.000Z", sheetUrl: "https://docs.google.com/spreadsheets/d/1Acpk4aGp5JCAWztvkYN2Ooe5GwdXj5yeAs4Ozv_PARc", larkUrl: "https://j1zplfh5yg.feishu.cn/base/JGnFb0rMbaLyJssz1A7co9GQnKf?table=tblkt1z4KjBuhvMl", direction: "lark-to-sheet", user: "the.dataverse@shd-technology.co.th", rowCount: 0, status: "Error", error: "HTTP 403 code=91403 msg=Forbidden (app not added to file)" },
-        ],
-      });
+      if (req.method === "DELETE") {
+        if (url.searchParams.get("all")) { localHistory = []; return sendJson(res, 200, { ok: true, cleared: "all" }); }
+        const row = parseInt(url.searchParams.get("row"), 10);
+        localHistory = localHistory.filter(h => h.row !== row);
+        return sendJson(res, 200, { ok: true, cleared: row });
+      }
+      // Local has no real History sheet — return the in-memory sample.
+      return sendJson(res, 200, { ok: true, simulated: true, items: localHistory });
     }
 
     if (p.startsWith("/api/")) return sendJson(res, 404, { ok: false, error: "not found (local stub)" });

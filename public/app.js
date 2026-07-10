@@ -1069,6 +1069,7 @@ function renderHistory(items) {
           <div><span class="hd-label">สถานะ</span> ${badge}</div>
           ${it.error ? `<div class="hd-full"><span class="hd-label">ข้อความผิดพลาด</span> <span class="hd-err">${escHtml(it.error)}</span></div>` : ''}
         </div>
+        <div class="hist-detail-actions"><button class="hist-del-btn" data-hrow="${it.row}">${icon('trash', 12)} ลบรายการนี้</button></div>
       </div>
     </div>`;
   }).join('');
@@ -1079,6 +1080,43 @@ function renderHistory(items) {
   list.querySelectorAll('.hist-toggle').forEach(row => {
     row.addEventListener('click', () => row.closest('.hist-item').classList.toggle('open'));
   });
+  // Delete a single history entry.
+  list.querySelectorAll('.hist-del-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.stopPropagation(); deleteHistoryRow(parseInt(btn.dataset.hrow, 10)); });
+  });
+}
+
+async function deleteHistoryRow(row) {
+  if (!row) return;
+  const ok = await showConfirm({
+    iconName: 'trash', title: 'ลบรายการประวัตินี้?',
+    desc: 'ลบออกจากประวัติถาวร (ไม่กระทบข้อมูลที่ซิงค์ไปแล้ว)',
+    confirmText: 'ลบ', confirmClass: 'danger',
+  });
+  if (!ok) return;
+  try {
+    await fetchJson('/api/history?row=' + row, { method: 'DELETE' });
+    log('ลบประวัติแล้ว');
+    await loadHistory();
+  } catch (e) {
+    await showAlert({ iconName: 'xCircle', title: 'ลบไม่สำเร็จ', desc: escHtml(e.message), confirmClass: 'danger' });
+  }
+}
+
+async function clearAllHistory() {
+  const ok = await showConfirm({
+    iconName: 'trash', title: 'ล้างประวัติทั้งหมด?',
+    desc: 'จะลบประวัติการซิงค์<b>ทั้งหมด</b>ออกถาวร (ไม่กระทบข้อมูลที่ซิงค์ไปแล้ว)<br>ต้องการดำเนินการ?',
+    confirmText: 'ล้างทั้งหมด', confirmClass: 'danger',
+  });
+  if (!ok) return;
+  try {
+    await fetchJson('/api/history?all=1', { method: 'DELETE' });
+    log('ล้างประวัติทั้งหมดแล้ว');
+    await loadHistory();
+  } catch (e) {
+    await showAlert({ iconName: 'xCircle', title: 'ล้างไม่สำเร็จ', desc: escHtml(e.message), confirmClass: 'danger' });
+  }
 }
 
 // ──────────────────────────────────────────────────
@@ -1125,6 +1163,7 @@ function bindEvents() {
   bindTabs();
   $('btnReset').onclick    = resetForm;
   $('btnReloadHistory').onclick = loadHistory;
+  $('btnClearHistory').onclick = clearAllHistory;
   $('btnPickColumns').onclick = scanColumns;
   $('colApply').onclick    = applyColSelection;
   $('colCancel').onclick   = closeColModal;
