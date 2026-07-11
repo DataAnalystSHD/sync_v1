@@ -61,7 +61,17 @@ export async function syncGoogleSheetToLarkSheet({ accessToken, cfg, srcSheetId,
     const startSheetRow = rowFrom || 1;
     const range = rowTo ? `${tab}A${startSheetRow}:CZ${rowTo}` : `${tab}A${startSheetRow}:CZ`;
     const grid = await sheetsGetGrid({ accessToken, spreadsheetId: srcSheetId, range });
-    const width = (grid || []).reduce((m, row) => Math.max(m, (row || []).length), 0);
+    // Width = last column that holds real DATA (text or a link). Cells that only
+    // carry formatting (e.g. a black/red title bar) are ignored so the write
+    // range doesn't balloon past the destination sheet (Lark RangeVal fail).
+    let width = 0;
+    for(const row of (grid || [])){
+      const r = row || [];
+      for(let i = r.length - 1; i >= 0; i--){
+        const c = r[i];
+        if((c?.formattedValue ?? "") !== "" || cellLink(c)){ if(i + 1 > width) width = i + 1; break; }
+      }
+    }
     if(width === 0) return { rowCount: 0, truncated: false };
     headers = Array.from({ length: width }, (_, i) => `Column ${i + 1}`);
     endCol = endColumnFor(headers);
