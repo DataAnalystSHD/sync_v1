@@ -244,8 +244,14 @@
   <!-- ═══ TAB: HOW TO USE ═══ -->
   <div class="tab-panel" data-panel="howto">
     <div class="howto-hero">
+      <div class="howto-hero-icon"><span data-icon="sync" data-size="24"></span></div>
       <h1>วิธีใช้งาน SHD Sync</h1>
       <p>ซิงค์ข้อมูลระหว่าง Google Sheet กับ Lark / Feishu (Base &amp; Sheet) แบบอัตโนมัติ</p>
+      <div class="howto-flow">
+        <span class="fp"><span data-icon="inbox" data-size="14"></span> Google Sheet</span>
+        <span class="fa" data-icon="arrowLeftRight" data-size="16"></span>
+        <span class="fp"><span data-icon="square" data-size="14"></span> Lark Base / Sheet</span>
+      </div>
     </div>
 
     <div class="howto-grid">
@@ -257,7 +263,7 @@
       </div>
 
       <!-- เริ่มต้น: Login -->
-      <div class="howto-card">
+      <div class="howto-card" data-color="green">
         <h3><span class="howto-badge"><span data-icon="key" data-size="13"></span></span> เริ่มต้นใช้งาน</h3>
         <ol class="howto-steps">
           <li>กดปุ่ม <b>Login</b> มุมขวาบน แล้วเข้าสู่ระบบด้วยบัญชี Google ที่มีสิทธิ์เข้าถึงชีต</li>
@@ -279,7 +285,7 @@
       </div>
 
       <!-- ทิศทาง -->
-      <div class="howto-card">
+      <div class="howto-card" data-color="cyan">
         <h3><span class="howto-badge"><span data-icon="arrowLeftRight" data-size="13"></span></span> ทิศทางการซิงค์ (Direction)</h3>
         <div class="howto-defs">
           <div class="howto-def"><span class="t">Google Sheet → Lark Base</span> เอาข้อมูลจากชีต ไปลงตาราง Lark Base (ลิงก์ที่ฝังในข้อความจะกลายเป็นลิงก์คลิกได้)</div>
@@ -290,7 +296,7 @@
       </div>
 
       <!-- โหมด -->
-      <div class="howto-card">
+      <div class="howto-card" data-color="amber">
         <h3><span class="howto-badge"><span data-icon="shuffle" data-size="13"></span></span> โหมดซิงค์ (Sync Mode)</h3>
         <div class="howto-defs">
           <div class="howto-def"><span class="t"><span class="howto-chip">Replace</span> ลบข้อมูลปลายทางทิ้งทั้งหมด แล้วซิงค์ใหม่</span> ใช้เมื่ออยากให้ปลายทาง<b>เหมือนต้นทางเป๊ะ</b> ทุกครั้ง · จำเป็นถ้าต้องการให้คอลัมน์ที่มีลิงก์กลายเป็นลิงก์คลิกได้</div>
@@ -299,7 +305,7 @@
       </div>
 
       <!-- ฟีเจอร์เสริม -->
-      <div class="howto-card">
+      <div class="howto-card" data-color="green">
         <h3><span class="howto-badge"><span data-icon="wrench" data-size="13"></span></span> ตัวเลือกเสริม</h3>
         <div class="howto-defs">
           <div class="howto-def"><span class="t">เลือกคอลัมน์</span> สแกนต้นทางแล้วติ๊กเฉพาะคอลัมน์ที่ต้องการ — ไม่เลือก = ซิงค์ทุกคอลัมน์</div>
@@ -309,7 +315,7 @@
       </div>
 
       <!-- Auto-sync -->
-      <div class="howto-card">
+      <div class="howto-card" data-color="cyan">
         <h3><span class="howto-badge"><span data-icon="clock" data-size="13"></span></span> ตั้งซิงค์อัตโนมัติ (Auto-sync)</h3>
         <ol class="howto-steps">
           <li>กรอกลิงก์ + ตั้งค่าเหมือนการซิงค์ปกติ</li>
@@ -320,7 +326,7 @@
       </div>
 
       <!-- History -->
-      <div class="howto-card">
+      <div class="howto-card" data-color="amber">
         <h3><span class="howto-badge"><span data-icon="activity" data-size="13"></span></span> ประวัติการซิงค์ (History)</h3>
         <p>แท็บ <b>History</b> แสดงว่าซิงค์อะไร เมื่อไหร่ กี่แถว สำเร็จหรือไม่ — คลิกแต่ละรายการเพื่อดูรายละเอียด และลบประวัติได้</p>
       </div>
