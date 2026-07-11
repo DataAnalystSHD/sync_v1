@@ -985,8 +985,14 @@ function switchTab(name) {
 }
 
 function bindHowto() {
-  document.querySelectorAll('.howto-head').forEach(head => {
-    head.onclick = () => head.closest('.howto-item').classList.toggle('open');
+  const btns   = document.querySelectorAll('.howto-tab-btn');
+  const panels = document.querySelectorAll('.howto-tp');
+  btns.forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.dataset.tp;
+      btns.forEach(b => b.classList.toggle('active', b === btn));
+      panels.forEach(p => p.classList.toggle('active', p.dataset.tp === id));
+    };
   });
 }
 
