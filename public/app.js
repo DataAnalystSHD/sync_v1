@@ -597,7 +597,8 @@ async function syncNow() {
 // ──────────────────────────────────────────────────
 const INTERVAL_LABELS = {
   1: 'ทุก 1 นาที', 3: 'ทุก 3 นาที', 5: 'ทุก 5 นาที', 15: 'ทุก 15 นาที', 30: 'ทุก 30 นาที', 60: 'ทุก 1 ชม.',
-  120: 'ทุก 2 ชม.', 360: 'ทุก 6 ชม.', 720: 'ทุก 12 ชม.', 1440: 'ทุกวัน',
+  120: 'ทุก 2 ชม.', 360: 'ทุก 6 ชม.', 720: 'ทุก 12 ชม.',
+  1440: 'ทุก 1 วัน', 4320: 'ทุก 3 วัน', 10080: 'ทุก 7 วัน', 21600: 'ทุก 15 วัน', 43200: 'ทุก 30 วัน',
 };
 
 // Effective interval from the control (dropdown preset, or "custom" typed value).
@@ -605,7 +606,7 @@ function getIntervalMin() {
   const sel = $('syncInterval');
   if (sel.value === 'custom') {
     const n = parseInt($('syncIntervalCustom').value, 10);
-    return Number.isFinite(n) && n >= 1 ? Math.min(n, 10080) : 60;
+    return Number.isFinite(n) && n >= 1 ? Math.min(n, 525600) : 60;
   }
   return parseInt(sel.value, 10) || 60;
 }

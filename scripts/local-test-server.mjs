@@ -71,7 +71,7 @@ let localHistory = [
   { row: 2, time: "2026-07-10T11:05:00.000Z", sheetUrl: "https://j1zplfh5yg.feishu.cn/base/F8pGb3xbhahlQvsnGwZcRVfanzh?table=tblYcRghvSyxx8ik", larkUrl: "https://j1zplfh5yg.feishu.cn/wiki/B0thw6Lo9i8PMnkPlgoci3lOnre", direction: "larkbase-to-larksheet", user: "nun.rungwikrai@shd-technology.co.th", rowCount: 476, status: "Success", error: "" },
   { row: 3, time: "2026-07-10T10:40:00.000Z", sheetUrl: "https://docs.google.com/spreadsheets/d/1Acpk4aGp5JCAWztvkYN2Ooe5GwdXj5yeAs4Ozv_PARc", larkUrl: "https://j1zplfh5yg.feishu.cn/base/JGnFb0rMbaLyJssz1A7co9GQnKf?table=tblkt1z4KjBuhvMl", direction: "lark-to-sheet", user: "the.dataverse@shd-technology.co.th", rowCount: 0, status: "Error", error: "HTTP 403 code=91403 msg=Forbidden (app not added to file)" },
 ];
-const normInterval = (v) => { const n = parseInt(v, 10); return Number.isFinite(n) && n >= 1 ? Math.min(n, 10080) : 60; };
+const normInterval = (v) => { const n = parseInt(v, 10); return Number.isFinite(n) && n >= 1 ? Math.min(n, 525600) : 60; };
 
 const PUBLIC = path.join(ROOT, "public");
 const PORT = 3000;

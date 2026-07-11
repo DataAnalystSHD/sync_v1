@@ -29,7 +29,7 @@ function toPos(v){
 function normInterval(v){
   const n = toPos(v);
   if(!n) return 60;
-  return Math.min(Math.max(n, 1), 10080);
+  return Math.min(Math.max(n, 1), 525600);   // 1 minute .. 1 year
 }
 
 function validateSide(kind, url, label){
