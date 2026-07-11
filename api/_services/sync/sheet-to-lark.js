@@ -67,9 +67,16 @@ async function inferFieldsFromSheet({ accessToken, sheetId, tab, headers, endCol
   }
   return headers.map((name, i) => {
     const cells = (grid || []).map(r => r[i]);
-    // A column with any linked cell becomes a Lark URL field (the only field type
-    // that can store a clickable link, incl. links embedded inside the text).
-    if(cells.some(c => linkOf(c) !== "")) return { name, type: URL_TYPE };
+    // Decide URL vs plain from how many cells actually carry a link. A Lark URL
+    // field CANNOT hold plain text — Lark fabricates a bogus "http://<text>" link
+    // for any link-less cell. So only make a column URL when links dominate
+    // (≥50% of its non-empty cells, and at least 2). A column with just the odd
+    // stray link stays plain text so its other cells don't turn into fake links.
+    const nonEmpty = cells.filter(c => cellText(c) !== "").length;
+    const linked   = cells.filter(c => linkOf(c) !== "").length;
+    if(linked >= 2 && nonEmpty > 0 && linked / nonEmpty >= 0.5){
+      return { name, type: URL_TYPE };
+    }
     const samples = cells.map(cellText);
     const type = inferType(samples);
     return { name, type, property: inferProperty(samples, type) };
@@ -130,7 +137,9 @@ function rowsToRecords(rows, headers, typeMap, nameMap){
       if(type === URL_TYPE){
         const text = cellText(cell);
         if(text === "") return;                       // skip blanks (no empty URL cells)
-        obj[key] = { text, link: linkOf(cell) || "" };  // empty link = plain text, accepted by Lark
+        // Real link when present. For a link-less cell Lark still forces a link;
+        // a single space yields a harmless "http://" rather than "http://<name>".
+        obj[key] = { text, link: linkOf(cell) || " " };
         return;
       }
       const v = convertForLark(cellText(cell), type);
