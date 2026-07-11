@@ -348,6 +348,39 @@
         </ol>
       </div>
 
+      <div class="howto-tp" data-color="cyan" data-tp="9">
+        <div class="howto-tp-head"><span class="howto-badge"><span data-icon="square" data-size="15"></span></span><h3>เพิ่ม App ใน Lark (ให้ระบบเข้าถึง Base)</h3></div>
+        <svg class="howto-art" viewBox="0 0 300 108" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="max-width:300px">
+          <defs>
+            <marker id="ma_add" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="#0891a8"/></marker>
+          </defs>
+          <rect x="34" y="14" width="232" height="80" rx="13" fill="#fff" stroke="#e6e9f2"/>
+          <path d="M34 27 a13 13 0 0 1 13 -13 h206 a13 13 0 0 1 13 13 v6 h-232 z" fill="#5b4cdb"/>
+          <circle cx="48" cy="24" r="2.6" fill="#fff" opacity=".9"/><circle cx="57" cy="24" r="2.6" fill="#fff" opacity=".6"/><circle cx="66" cy="24" r="2.6" fill="#fff" opacity=".4"/>
+          <!-- app tile (the SHD Sync app) -->
+          <rect x="182" y="48" width="60" height="36" rx="9" fill="#ede9fb" stroke="#d9d2fb"/>
+          <circle cx="212" cy="66" r="11" fill="#5b4cdb"/>
+          <g stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <path d="M205 63 h11 m-3 -3 l3 3 -3 3"/><path d="M219 69 h-11 m3 -3 l-3 3 3 3"/>
+          </g>
+          <!-- add arrow -->
+          <path d="M176 66 h-30" stroke="#0891a8" stroke-width="2.4" stroke-linecap="round" marker-end="url(#ma_add)"/>
+          <!-- empty slot in the base -->
+          <rect x="60" y="48" width="60" height="36" rx="9" fill="#fff" stroke="#bfe6ee" stroke-width="2" stroke-dasharray="5 4"/>
+          <path d="M90 58 v16 M82 66 h16" stroke="#0891a8" stroke-width="2.6" stroke-linecap="round"/>
+        </svg>
+        <ol class="howto-steps">
+          <li>เปิด <b>Lark Base</b> ที่จะซิงค์</li>
+          <li>กดปุ่ม <b>···</b> (More) มุมขวาบนของ Base แล้วเลือก <b>เพิ่มแอป / Add-ons</b></li>
+          <li>ค้นหาและเพิ่มแอป <b>SHD Sync</b> เข้ากับ Base นี้</li>
+          <li>ให้สิทธิ์ <b>แก้ไข (Can edit)</b> เพื่อให้ระบบเขียนข้อมูลกลับได้</li>
+          <li>ทำ <b>ครั้งเดียวต่อ 1 Base</b> — จากนั้นซิงค์ได้เลย</li>
+        </ol>
+        <div class="howto-defs" style="margin-top:12px">
+          <div class="howto-tip"><span class="howto-ti" data-icon="alertTriangle" data-size="14"></span><span>ถ้ายังไม่เพิ่มแอปเข้า Base ระบบจะเข้าถึงไม่ได้ และซิงค์จะขึ้น error เรื่องสิทธิ์ (permission)</span></div>
+        </div>
+      </div>
+
       <div class="howto-tp" data-tp="2">
         <div class="howto-tp-head"><span class="howto-badge"><span data-icon="zap" data-size="15"></span></span><h3>ซิงค์ข้อมูล (Sync Now)</h3></div>
         <svg class="howto-art" viewBox="0 0 300 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -526,6 +559,10 @@
         <button class="howto-tab-btn" type="button" data-color="green" data-tp="1">
           <span class="howto-badge"><span data-icon="key" data-size="14"></span></span>
           <span class="howto-tab-label">เริ่มต้นใช้งาน</span>
+        </button>
+        <button class="howto-tab-btn" type="button" data-color="cyan" data-tp="9">
+          <span class="howto-badge"><span data-icon="square" data-size="14"></span></span>
+          <span class="howto-tab-label">เพิ่ม App ใน Lark</span>
         </button>
         <button class="howto-tab-btn" type="button" data-tp="2">
           <span class="howto-badge"><span data-icon="zap" data-size="14"></span></span>
