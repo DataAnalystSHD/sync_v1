@@ -87,8 +87,16 @@ function pickResultFields(r){
 }
 
 async function recordResult({ accessToken, cfg, pair, user, result, error }){
+  // Write history with the OWNER token so any user's sync can log a row
+  // regardless of their own access to the history sheet (falls back to the
+  // caller token if no owner token is configured).
+  let historyAccess = accessToken;
+  const ownerRefresh = process.env.SYNC_OWNER_REFRESH_TOKEN;
+  if(ownerRefresh){
+    try { historyAccess = await refreshAccessToken(ownerRefresh); } catch {}
+  }
   await logHistory({
-    accessToken,
+    accessToken: historyAccess,
     cfg,
     sheetUrl:  pair.sheetUrl,
     larkUrl:   pair.larkUrl,
