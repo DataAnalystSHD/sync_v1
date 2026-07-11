@@ -732,10 +732,11 @@ button.cron-tag.cron-mode:active { transform: translateY(1px); }
 /* small inline spot illustration inside a card */
 .howto-art{ display:block; width:100%; max-width:340px; height:auto; margin:2px auto 4px; }
 
-/* two-pane: content on the left, topic tabs on the right */
+/* two-pane: topic tabs on the left, content on the right */
 .howto-tabs{
-  display:grid; grid-template-columns:1fr 264px; gap:16px; align-items:start;
+  display:grid; grid-template-columns:264px 1fr; gap:16px; align-items:start;
 }
+.howto-tab-nav{ order:-1; }   /* nav goes into the left column */
 .howto-tab-content{
   --c:var(--accent); --cbg:var(--accent-bg); --cbd:var(--accent-bd);
   min-width:0;
