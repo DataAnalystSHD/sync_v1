@@ -47,7 +47,10 @@ export async function larkDeleteField({ baseId, tableId, fieldId }){
   return r.data;
 }
 
-const normName = s => String(s || "").trim().toLowerCase();
+// Match field names whitespace-insensitively: a header wrapped across lines
+// ("Person\nIn\nCharge") and its plain form ("Person In Charge") are the same
+// field. Collapse every run of whitespace (incl. newlines) to one space.
+const normName = s => String(s || "").replace(/\s+/g, " ").trim().toLowerCase();
 
 /**
  * Make sure every requested field exists in the table.

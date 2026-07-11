@@ -118,13 +118,6 @@ async function finishRun({ accessToken, cfg, rowId }){
   await updateCursor({ accessToken, cfg, rowId, cursorRow: 2 });
 }
 
-async function readTypeMap({ baseId, tableId }){
-  const fields = await larkListFields({ baseId, tableId });
-  const typeMap = new Map(fields.map(f => [f.field_name, f.type]));
-  const nameMap = new Map(fields.map(f => [f.field_name, f.field_name]));
-  return { typeMap, nameMap };
-}
-
 // rows may be grid cell objects (link-aware) or plain strings (fallback); the
 // cellText/linkOf helpers tolerate both.
 function rowsToRecords(rows, headers, typeMap, nameMap){
@@ -177,14 +170,14 @@ export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, 
   // Replace→Append switch. Row Range is intentionally ignored for append.
   if(isAppend){
     const existing = await larkCountRecords({ baseId, tableId });
-    let typeMap, nameMap;
-    if(existing === 0){
-      let fields = await inferFieldsFromSheet({ accessToken, sheetId, tab, headers: fullHeaders, endCol });
-      fields = fields.filter(f => selectedSet.has(f.name));
-      ({ typeMap, nameMap } = await larkEnsureFields({ baseId, tableId, fields }));
-    } else {
-      ({ typeMap, nameMap } = await readTypeMap({ baseId, tableId }));
-    }
+    // Always resolve fields through larkEnsureFields (even when the table already
+    // has rows) so each source header maps to its real Bitable field name —
+    // matching is whitespace-insensitive, so a header wrapped across lines still
+    // finds its field instead of failing with FieldNameNotFound. Existing fields
+    // keep their type; genuinely-new columns are created.
+    let fields = await inferFieldsFromSheet({ accessToken, sheetId, tab, headers: fullHeaders, endCol });
+    fields = fields.filter(f => selectedSet.has(f.name));
+    const { typeMap, nameMap } = await larkEnsureFields({ baseId, tableId, fields });
     const startSheetRow = 2 + existing;   // header is row 1; skip rows already appended
     // Open-ended read (all remaining rows) — see readGridRows.
     const values = await readGridRows({
@@ -232,7 +225,11 @@ export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, 
     ({ typeMap, nameMap } = await beginNewRun({ accessToken, cfg, sheetId, tab, baseId, tableId, headers: fullHeaders, endCol, rowId, syncMode, selectedSet }));
     cursorRow = 2;
   } else {
-    ({ typeMap, nameMap } = await readTypeMap({ baseId, tableId }));
+    // Resume page: map source headers → real field names (whitespace-insensitive)
+    // via larkEnsureFields, not identity — same reason as the append path.
+    let fields = await inferFieldsFromSheet({ accessToken, sheetId, tab, headers: fullHeaders, endCol });
+    fields = fields.filter(f => selectedSet.has(f.name));
+    ({ typeMap, nameMap } = await larkEnsureFields({ baseId, tableId, fields }));
   }
 
   const records = rowsToRecords(pick(values), headers, typeMap, nameMap);
