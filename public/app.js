@@ -136,6 +136,7 @@ function setAuthed(ok) {
   $('syncDirection').disabled   = !ok;
   $('syncMode').disabled        = !ok;
   $('syncInterval').disabled    = !ok;
+  $('noHeader').disabled        = !ok;
   $('btnSyncNow').disabled      = !ok;
   $('btnSaveCron').disabled     = !ok;
   $('btnPickColumns').disabled  = !ok;
@@ -509,6 +510,7 @@ function getInputs() {
     syncMode,
     columns: state.selectedColumns,   // [] = all columns
     filters: state.filters,           // [] = all rows
+    noHeader: $('noHeader').checked,  // treat row 1 as data (sheet sources)
   };
 }
 
@@ -516,6 +518,7 @@ function resetForm() {
   $('sheetUrl').value = '';
   $('larkUrl').value  = '';
   $('syncMode').value = 'replace';
+  $('noHeader').checked = false;
   setIntervalControl(60);
   setMode('lark-to-sheet');   // also clears the column selection
   state.editingRowId = null;  // cancel any in-progress edit
@@ -781,6 +784,7 @@ function editPair(rowId) {
   $('sheetUrl').value = p.sheetUrl || '';
   $('larkUrl').value  = p.larkUrl || '';
   $('syncMode').value = p.syncMode === 'append' ? 'append' : 'replace';
+  $('noHeader').checked = !!p.noHeader;
   setIntervalControl(p.intervalMin || 60);
   // Preserve the saved column/filter choices (source list needs a re-scan to change them).
   state.selectedColumns = Array.isArray(p.columns) ? p.columns.slice() : [];

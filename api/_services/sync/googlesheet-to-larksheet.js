@@ -50,38 +50,52 @@ async function findLastUsedRowLark({ ssToken, sheetId, totalRows }){
   return 0;
 }
 
-export async function syncGoogleSheetToLarkSheet({ accessToken, cfg, srcSheetId, srcGid, destUrl, rowFrom, rowTo, syncMode, columns }){
+export async function syncGoogleSheetToLarkSheet({ accessToken, cfg, srcSheetId, srcGid, destUrl, rowFrom, rowTo, syncMode, columns, noHeader }){
   const tabName = await getSheetNameByGid({ accessToken, spreadsheetId: srcSheetId, gid: srcGid });
   const tab = `${quoteSheetName(tabName)}!`;
 
-  const headerRow = await sheetsGetValues({ accessToken, spreadsheetId: srcSheetId, range: `${tab}A1:1` });
-  const rawHeaders = (headerRow?.[0] || []).map(cellToString);
-  const fullHeaders = [];
-  for(let i = 0; i < rawHeaders.length; i++){
-    const h = rawHeaders[i].trim();
-    if(h === "") break;
-    fullHeaders.push(h);
-  }
-  if(fullHeaders.length === 0) throw new Error("Google Sheet has no header row (row 1 must contain headers)");
+  let headers, endCol, dataRows;
 
-  // Column selection (empty = all). Read the source at full width, then project
-  // each row down to the chosen columns.
-  const { headers, indices } = selectColumns(fullHeaders, columns);
-  const readEndCol = endColumnFor(fullHeaders);   // source read width
-  const endCol = endColumnFor(headers);           // destination write width
-  // Data rows (1-indexed, excludes header) → sheet rows (header at 1, data 2+).
-  const dataStartSheetRow = (rowFrom || 1) + 1;
-  const dataRange = rowTo
-    ? `${tab}A${dataStartSheetRow}:${readEndCol}${rowTo + 1}`
-    : `${tab}A${dataStartSheetRow}:${readEndCol}`;
-  // Grid data (not /values) so embedded hyperlinks in cells are preserved.
-  const grid = await sheetsGetGrid({
-    accessToken, spreadsheetId: srcSheetId,
-    range: dataRange,
-  });
-  const dataRows = grid
-    .map(row => indices.map(i => cellToLark(row[i])))
-    .filter(r => !isEmptyRow(r));
+  if(noHeader){
+    // No header row: read EVERY row (row 1 = data) and label columns Column 1..N.
+    const startSheetRow = rowFrom || 1;
+    const range = rowTo ? `${tab}A${startSheetRow}:CZ${rowTo}` : `${tab}A${startSheetRow}:CZ`;
+    const grid = await sheetsGetGrid({ accessToken, spreadsheetId: srcSheetId, range });
+    const width = (grid || []).reduce((m, row) => Math.max(m, (row || []).length), 0);
+    if(width === 0) return { rowCount: 0, truncated: false };
+    headers = Array.from({ length: width }, (_, i) => `Column ${i + 1}`);
+    endCol = endColumnFor(headers);
+    dataRows = grid
+      .map(row => headers.map((_, i) => cellToLark(row[i])))
+      .filter(r => !isEmptyRow(r));
+  } else {
+    const headerRow = await sheetsGetValues({ accessToken, spreadsheetId: srcSheetId, range: `${tab}A1:1` });
+    const rawHeaders = (headerRow?.[0] || []).map(cellToString);
+    const fullHeaders = [];
+    for(let i = 0; i < rawHeaders.length; i++){
+      const h = rawHeaders[i].trim();
+      if(h === "") break;
+      fullHeaders.push(h);
+    }
+    if(fullHeaders.length === 0) throw new Error('Google Sheet has no header row (row 1 must contain headers). ถ้าแถวแรกไม่ใช่หัวคอลัมน์ ให้ติ๊ก "แถวแรกไม่มีหัวคอลัมน์"');
+
+    // Column selection (empty = all). Read the source at full width, then project
+    // each row down to the chosen columns.
+    let indices;
+    ({ headers, indices } = selectColumns(fullHeaders, columns));
+    const readEndCol = endColumnFor(fullHeaders);   // source read width
+    endCol = endColumnFor(headers);                 // destination write width
+    // Data rows (1-indexed, excludes header) → sheet rows (header at 1, data 2+).
+    const dataStartSheetRow = (rowFrom || 1) + 1;
+    const dataRange = rowTo
+      ? `${tab}A${dataStartSheetRow}:${readEndCol}${rowTo + 1}`
+      : `${tab}A${dataStartSheetRow}:${readEndCol}`;
+    // Grid data (not /values) so embedded hyperlinks in cells are preserved.
+    const grid = await sheetsGetGrid({ accessToken, spreadsheetId: srcSheetId, range: dataRange });
+    dataRows = grid
+      .map(row => indices.map(i => cellToLark(row[i])))
+      .filter(r => !isEmptyRow(r));
+  }
 
   const { ssToken, sheetId } = await resolveLarkSheetTarget(destUrl);
   const isAppend = syncMode === "append";

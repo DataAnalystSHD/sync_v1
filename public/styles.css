@@ -337,6 +337,9 @@ body {
 .field-input:disabled { opacity: .4; cursor: not-allowed; }
 .field-input.invalid { border-color: #e0392b; box-shadow: 0 0 0 4px rgba(224, 57, 43, 0.12); }
 
+.nohdr-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 12.5px; color: var(--muted); line-height: 1.5; padding: 12px 14px; border: 1px solid var(--border, #e6e6ee); border-radius: 12px; }
+.nohdr-check input { width: 17px; height: 17px; flex: none; margin-top: 1px; accent-color: var(--accent, #6b5cf0); cursor: pointer; }
+.nohdr-check b { color: var(--text2); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
 .field-row-3 { grid-template-columns: 1fr 1fr 1fr; }
 @media (max-width: 860px) { .field-row-3 { grid-template-columns: 1fr; } }

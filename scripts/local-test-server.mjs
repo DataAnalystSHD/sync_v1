@@ -148,6 +148,7 @@ const server = http.createServer(async (req, res) => {
           rowFrom: null, rowTo: null,
           syncMode: body.syncMode === "append" ? "append" : "replace",
           columns: body.columns || [], filters: body.filters || [],
+          noHeader: body.noHeader === true,
         };
         localPairs.push(pair);
         return sendJson(res, 200, { ok: true, saved: true, simulated: true });
@@ -167,6 +168,7 @@ const server = http.createServer(async (req, res) => {
           if (body.direction != null) pr.direction = body.direction;
           if (body.columns != null) pr.columns = body.columns;
           if (body.filters != null) pr.filters = body.filters;
+          if (body.noHeader != null) pr.noHeader = body.noHeader === true;
         }
         return sendJson(res, 200, { ok: true });
       }

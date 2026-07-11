@@ -24,9 +24,10 @@ const COLUMNS = {
   team:        "S",
   columns:     "T",
   filters:     "U",
+  noHeader:    "V",
 };
 
-const LAST_COL = "U";
+const LAST_COL = "V";
 
 function toPos(v){
   const n = parseInt(v, 10);
@@ -57,6 +58,7 @@ function rowToPair(r, rowNum){
     team:        String(r[18] || "").trim().toLowerCase(),
     columns:     parseColumns(r[19]),
     filters:     parseFilters(r[20]),
+    noHeader:    String(r[21] || "").trim().toUpperCase() === "TRUE",
   };
 }
 
@@ -121,6 +123,7 @@ export async function appendPair({ accessToken, cfg, pair }){
     String(pair.team || "").trim().toLowerCase(),      // S team
     Array.isArray(pair.columns) && pair.columns.length ? JSON.stringify(pair.columns) : "", // T columns
     Array.isArray(pair.filters) && pair.filters.length ? JSON.stringify(pair.filters) : "", // U filters
+    pair.noHeader ? "TRUE" : "",                                                            // V noHeader
   ];
   // Don't use values.append: its table auto-detection has shifted new rows
   // into the wrong columns (data ended up starting at column R) after rows
@@ -166,6 +169,7 @@ export async function updatePairFields({ accessToken, cfg, rowId, fields }){
   if(fields.intervalMin != null) set(COLUMNS.intervalMin, String(toPos(fields.intervalMin) || 60));
   if(fields.columns     != null) set(COLUMNS.columns, Array.isArray(fields.columns) && fields.columns.length ? JSON.stringify(fields.columns) : "");
   if(fields.filters     != null) set(COLUMNS.filters, Array.isArray(fields.filters) && fields.filters.length ? JSON.stringify(fields.filters) : "");
+  if(fields.noHeader    != null) set(COLUMNS.noHeader, fields.noHeader ? "TRUE" : "");
   await Promise.all(jobs);
 }
 

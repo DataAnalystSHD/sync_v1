@@ -61,6 +61,13 @@ export async function runOne({ accessToken, cfg, pair }){
   const columns = Array.isArray(pair.columns) ? pair.columns : [];
   // Value filters (empty = all rows). Only Lark Base source directions apply them.
   const filters = Array.isArray(pair.filters) ? pair.filters : [];
+  // "Row 1 is not a header" — every row is synced with synthetic column names.
+  // Supported when the DESTINATION is a Sheet (Google/Lark). Writing to a Lark
+  // Base needs real field names, so it isn't supported there yet.
+  const noHeader = pair.noHeader === true;
+  if(noHeader && (direction === "sheet-to-lark" || direction === "larksheet-to-larkbase")){
+    throw new Error('โหมด "แถวแรกไม่มีหัวคอลัมน์" รองรับเฉพาะปลายทางที่เป็น Sheet (Google Sheet / Lark Sheet) — ไม่รองรับปลายทาง Lark Base');
+  }
 
   if(direction === "lark-to-sheet"){
     const { sheetId, gid } = resolveGoogleSheet(pair);
@@ -71,14 +78,14 @@ export async function runOne({ accessToken, cfg, pair }){
   if(direction === "sheet-to-lark"){
     const { sheetId, gid } = resolveGoogleSheet(pair);
     const { baseId, tableId } = resolveBase(pair);
-    return await syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, tableId, pair, rowFrom, rowTo, syncMode, columns });
+    return await syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, tableId, pair, rowFrom, rowTo, syncMode, columns, noHeader });
   }
 
   if(direction === "larksheet-to-larkbase"){
     ensureLarkSheetUrl(pair.sheetUrl);
     const { baseId, tableId } = resolveBase(pair);
     return await syncLarkSheetToLarkBase({
-      accessToken, cfg, sourceUrl: pair.sheetUrl, baseId, tableId, pair, rowFrom, rowTo, syncMode, columns,
+      accessToken, cfg, sourceUrl: pair.sheetUrl, baseId, tableId, pair, rowFrom, rowTo, syncMode, columns, noHeader,
     });
   }
 
@@ -102,7 +109,7 @@ export async function runOne({ accessToken, cfg, pair }){
       accessToken, cfg,
       sourceUrl: pair.sheetUrl,
       destSheetId: gSheetId, destGid: gid,
-      rowFrom, rowTo, syncMode, columns,
+      rowFrom, rowTo, syncMode, columns, noHeader,
     });
   }
 
@@ -114,7 +121,7 @@ export async function runOne({ accessToken, cfg, pair }){
       accessToken, cfg,
       srcSheetId: gSheetId, srcGid: gid,
       destUrl: pair.larkUrl,
-      rowFrom, rowTo, syncMode, columns,
+      rowFrom, rowTo, syncMode, columns, noHeader,
     });
   }
 

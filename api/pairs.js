@@ -75,6 +75,7 @@ function publicPair(p){
     syncMode:    p.syncMode,
     columns:     Array.isArray(p.columns) ? p.columns : [],
     filters:     Array.isArray(p.filters) ? p.filters : [],
+    noHeader:    !!p.noHeader,
   };
 }
 
@@ -123,6 +124,7 @@ async function handlePost({ req, res, cfg, secret }){
       syncMode: body.syncMode === "append" ? "append" : "replace",
       columns,
       filters,
+      noHeader: body.noHeader === true,
     },
   });
 
@@ -155,6 +157,7 @@ async function handlePut({ req, res, cfg }){
         syncMode: body.syncMode, intervalMin,
         columns: Array.isArray(body.columns) ? body.columns.map(String) : [],
         filters: Array.isArray(body.filters) ? body.filters : [],
+        noHeader: body.noHeader === true,
       },
     });
     return json(res, 200, { ok: true, updated: true });
