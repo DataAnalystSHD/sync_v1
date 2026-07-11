@@ -1168,6 +1168,7 @@ function bindEvents() {
   $('btnReloadCron').onclick = loadPairs;
   bindTabs();
   $('btnReset').onclick    = resetForm;
+  $('btnDiagLinks').onclick = diagLinks;
   $('btnReloadHistory').onclick = loadHistory;
   $('btnClearHistory').onclick = clearAllHistory;
   $('btnPickColumns').onclick = scanColumns;
@@ -1181,6 +1182,37 @@ function bindEvents() {
   $('filterCancel').onclick = closeFilterModal;
   $('filterClear').onclick = () => { _filterWorking = new Map(); renderFilterFields(); };
   window.addEventListener('message', onOauthMessage);
+}
+
+// TEMP diagnostic — inspect how the source sheet stores links in each column.
+async function diagLinks(){
+  const out = $('diagOut');
+  const sheetUrl = $('sheetUrl').value.trim();
+  out.style.display = 'block';
+  if(!state.refreshToken){ out.textContent = 'ยังไม่ได้ login (ไม่มี refreshToken)'; return; }
+  if(!sheetUrl){ out.textContent = 'ใส่ Google Sheet URL ในช่องด้านบนก่อน'; return; }
+  out.textContent = 'กำลังตรวจ...';
+  try {
+    const r = await fetch('/api/diag-links', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ refreshToken: state.refreshToken, sheetUrl }),
+    });
+    const d = await r.json();
+    if(!d.ok){ out.textContent = 'ERROR: ' + (d.error || JSON.stringify(d)); return; }
+    // Show only columns that carry any link, plus their samples.
+    const linky = (d.cols || []).filter(c => c.nHyperlink || c.nFormula || c.nRunLink);
+    const lines = [`แท็บ: ${d.tab}`, `คอลัมน์ทั้งหมด: ${(d.headers||[]).length}`, `คอลัมน์ที่มีลิงก์: ${linky.length}`, ''];
+    (linky.length ? linky : d.cols.slice(0, 8)).forEach(c => {
+      lines.push(`▸ [${c.header}] cells=${c.nCells} hyperlink=${c.nHyperlink} formula=${c.nFormula} runLink=${c.nRunLink}`);
+      (c.samples || []).forEach(s => {
+        lines.push(`    row${s.row}: "${s.text}"`);
+        if(s.hyperlink) lines.push(`        hyperlink: ${s.hyperlink}`);
+        if(s.formula)   lines.push(`        formula:   ${s.formula}`);
+        if(s.runLink)   lines.push(`        runLink:   ${s.runLink}`);
+      });
+    });
+    out.textContent = lines.join('\n');
+  } catch(e){ out.textContent = 'ERROR: ' + e.message; }
 }
 
 bindEvents();
