@@ -1,6 +1,6 @@
-import { sheetsGetValues, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
+import { sheetsGetValues, sheetsGetGrid, cellLink, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
 import { larkBatchDeleteAll, larkCreateRecordsBatched, larkCountRecords } from "../../_lib/lark/records.js";
-import { larkEnsureFields, larkListFields } from "../../_lib/lark/fields.js";
+import { larkEnsureFields, larkListFields, larkDeleteField } from "../../_lib/lark/fields.js";
 import { inferType, inferProperty, convertForLark } from "../../_lib/lark/infer-types.js";
 import { endColumnFor } from "../../_lib/urls.js";
 import { selectColumns } from "../../_lib/columns.js";
@@ -9,6 +9,37 @@ import { updateCursor, updatePhase } from "../pairs-store.js";
 const PHASE_RUNNING = "sheet2lark_running";
 const PHASE_IDLE    = "idle";
 const INFER_SAMPLE_ROWS = 100;
+const URL_TYPE  = 15;    // Lark Bitable URL field — the only field that stores a hyperlink
+const GRID_CHUNK = 2000; // read grid metadata in small chunks (a huge single grid read times out)
+
+// Grid cells are objects ({formattedValue, hyperlink, ...}); tolerate plain strings too.
+const cellText = (c) => (c && typeof c === "object") ? (c.formattedValue ?? "") : String(c ?? "");
+const linkOf   = (c) => (c && typeof c === "object") ? (cellLink(c) || "") : "";
+
+// Read a row range as GRID (cell objects, so hyperlinks are visible), chunked to
+// avoid oversized responses. If a grid chunk fails, fall back to plain values for
+// that chunk (data is preserved; only its links are lost).
+async function readGridRows({ accessToken, sheetId, tab, startRow, endRow, endCol }){
+  const out = [];
+  for(let s = startRow; s <= endRow; s += GRID_CHUNK){
+    const e = Math.min(s + GRID_CHUNK - 1, endRow);
+    const range = `${tab}A${s}:${endCol}${e}`;
+    let chunk;
+    try { chunk = await sheetsGetGrid({ accessToken, spreadsheetId: sheetId, range }); }
+    catch { chunk = null; }
+    if(chunk == null){
+      const plain = await sheetsGetValues({ accessToken, spreadsheetId: sheetId, range });
+      if(!plain || plain.length === 0) break;
+      out.push(...plain);
+      if(plain.length < (e - s + 1)) break;
+      continue;
+    }
+    if(chunk.length === 0) break;
+    out.push(...chunk);
+    if(chunk.length < (e - s + 1)) break;
+  }
+  return out;
+}
 
 async function readHeaders({ accessToken, sheetId, tab }){
   const header = await sheetsGetValues({ accessToken, spreadsheetId: sheetId, range: `${tab}A1:1` });
@@ -27,9 +58,26 @@ function shouldStartFresh(pair){
 
 async function inferFieldsFromSheet({ accessToken, sheetId, tab, headers, endCol }){
   const range = `${tab}A2:${endCol}${1 + INFER_SAMPLE_ROWS}`;
-  const rows  = await sheetsGetValues({ accessToken, spreadsheetId: sheetId, range });
+  // Sample as GRID so we can see which columns carry hyperlinks; that sample is
+  // small (≤100 rows) so a single grid read is safe. Fall back to plain values
+  // (no link detection) if the grid read fails.
+  let grid = null;
+  try { grid = await sheetsGetGrid({ accessToken, spreadsheetId: sheetId, range }); }
+  catch { grid = null; }
+  if(grid == null){
+    const rows = await sheetsGetValues({ accessToken, spreadsheetId: sheetId, range });
+    return headers.map((name, i) => {
+      const samples = (rows || []).map(r => r[i]);
+      const type = inferType(samples);
+      return { name, type, property: inferProperty(samples, type) };
+    });
+  }
   return headers.map((name, i) => {
-    const samples = (rows || []).map(r => r[i]);
+    const cells = (grid || []).map(r => r[i]);
+    // A column with any linked cell becomes a Lark URL field (the only field type
+    // that can store a clickable link, incl. links embedded inside the text).
+    if(cells.some(c => linkOf(c) !== "")) return { name, type: URL_TYPE };
+    const samples = cells.map(cellText);
     const type = inferType(samples);
     return { name, type, property: inferProperty(samples, type) };
   });
@@ -43,6 +91,20 @@ async function beginNewRun({ accessToken, cfg, sheetId, tab, baseId, tableId, he
   // Infer at full source width, then keep only the selected columns' fields.
   let fields = await inferFieldsFromSheet({ accessToken, sheetId, tab, headers, endCol });
   if(selectedSet) fields = fields.filter(f => selectedSet.has(f.name));
+  // A link-bearing column must be a URL field (type 15). If one already exists as
+  // another type it can't hold links — on Replace (rows get wiped anyway) drop it
+  // so larkEnsureFields recreates it as URL. Never touch fields on Append.
+  if(syncMode !== "append"){
+    const existing = await larkListFields({ baseId, tableId });
+    const byNorm = new Map(existing.map(f => [String(f.field_name || "").trim().toLowerCase(), f]));
+    for(const f of fields){
+      if(f.type !== URL_TYPE) continue;
+      const hit = byNorm.get(String(f.name).trim().toLowerCase());
+      if(hit && hit.type !== URL_TYPE && hit.field_id){
+        await larkDeleteField({ baseId, tableId, fieldId: hit.field_id });
+      }
+    }
+  }
   const { typeMap, nameMap } = await larkEnsureFields({ baseId, tableId, fields });
   if(syncMode !== "append"){
     await larkBatchDeleteAll({ baseId, tableId });
@@ -63,15 +125,23 @@ async function readTypeMap({ baseId, tableId }){
   return { typeMap, nameMap };
 }
 
+// rows may be grid cell objects (link-aware) or plain strings (fallback); the
+// cellText/linkOf helpers tolerate both.
 function rowsToRecords(rows, headers, typeMap, nameMap){
   return rows.map(row => {
     const obj = {};
     headers.forEach((h, idx) => {
-      const v = convertForLark(row[idx], typeMap.get(h) || 1);
-      if(v !== undefined){
-        const key = nameMap?.get(h) || h;
-        obj[key] = v;
+      const cell = row[idx];
+      const type = typeMap.get(h) || 1;
+      const key  = nameMap?.get(h) || h;
+      if(type === URL_TYPE){
+        const text = cellText(cell);
+        if(text === "") return;                       // skip blanks (no empty URL cells)
+        obj[key] = { text, link: linkOf(cell) || "" };  // empty link = plain text, accepted by Lark
+        return;
       }
+      const v = convertForLark(cellText(cell), type);
+      if(v !== undefined) obj[key] = v;
     });
     return obj;
   });
@@ -115,9 +185,9 @@ export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, 
     }
     const startSheetRow = 2 + existing;   // header is row 1; skip rows already appended
     const endSheetRow   = startSheetRow + pageSize - 1;
-    const values = await sheetsGetValues({
-      accessToken, spreadsheetId: sheetId,
-      range: `${tab}A${startSheetRow}:${endCol}${endSheetRow}`,
+    const values = await readGridRows({
+      accessToken, sheetId, tab,
+      startRow: startSheetRow, endRow: endSheetRow, endCol,
     });
     if(!values || values.length === 0){
       return { rowCount: 0, truncated: false, done: true };
@@ -144,9 +214,10 @@ export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, 
   const endSheetRow   = hasRange
     ? (rowTo ? (rowTo + 1) : startSheetRow + pageSize - 1)
     : (startSheetRow + pageSize - 1);
-  const range = `${tab}A${startSheetRow}:${endCol}${endSheetRow}`;
-
-  const values = await sheetsGetValues({ accessToken, spreadsheetId: sheetId, range });
+  const values = await readGridRows({
+    accessToken, sheetId, tab,
+    startRow: startSheetRow, endRow: endSheetRow, endCol,
+  });
 
   if(!values || values.length === 0){
     // No source rows → do NOT delete anything; leave the destination intact.
