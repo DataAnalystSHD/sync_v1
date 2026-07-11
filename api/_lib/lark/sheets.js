@@ -1,6 +1,7 @@
 import axios from "axios";
 import { withBackoff } from "../retry.js";
 import { getConfig } from "../config.js";
+import { colIndexToA1 } from "../urls.js";
 import { getTenantAccessToken, authHeader, assertOk } from "./auth.js";
 
 
@@ -86,6 +87,28 @@ export async function batchUpdateValues({ ssToken, ranges }){
   ), "larkSheetValuesBatchUpdate");
   assertOk(r.data, "Lark sheet values_batch_update");
   return r.data;
+}
+
+// Write `rows` (array of arrays) starting at 1-based `startRow`. Lark caps a
+// single values write at 100 COLUMNS, so wide data is split into column bands
+// (and large data into row chunks). Safe for narrow data too (one band).
+export async function batchUpdateBanded({ ssToken, sheetId, startRow, rows, rowChunk = 1000, maxCols = 100 }){
+  if(!rows || rows.length === 0) return;
+  const width = rows.reduce((m, r) => Math.max(m, (r || []).length), 0);
+  if(width === 0) return;
+  for(let c = 0; c < width; c += maxCols){
+    const cEnd = Math.min(c + maxCols, width);
+    const colStart = colIndexToA1(c);
+    const colEnd   = colIndexToA1(cEnd - 1);
+    for(let i = 0; i < rows.length; i += rowChunk){
+      const part = rows.slice(i, i + rowChunk).map(r => (r || []).slice(c, cEnd));
+      const s = startRow + i;
+      await batchUpdateValues({
+        ssToken,
+        ranges: [{ range: `${sheetId}!${colStart}${s}:${colEnd}${s + part.length - 1}`, values: part }],
+      });
+    }
+  }
 }
 
 export async function deleteRows({ ssToken, sheetId, startIndex, endIndex }){

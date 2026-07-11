@@ -1,5 +1,5 @@
 import { sheetsGetValues, sheetsGetGrid, cellLink, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
-import { getSheetMeta, getSheetValues, batchUpdateValues, deleteRows, deleteColumns } from "../../_lib/lark/sheets.js";
+import { getSheetMeta, getSheetValues, batchUpdateBanded, deleteRows, deleteColumns } from "../../_lib/lark/sheets.js";
 import { endColumnFor } from "../../_lib/urls.js";
 import { selectColumns } from "../../_lib/columns.js";
 import { resolveLarkSheetTarget } from "./lark-sheet-target.js";
@@ -119,37 +119,22 @@ export async function syncGoogleSheetToLarkSheet({ accessToken, cfg, srcSheetId,
   if(isAppend){
     const lastRow = await findLastUsedRowLark({ ssToken, sheetId, totalRows: oldRowCount });
     if(lastRow === 0){
-      await batchUpdateValues({
-        ssToken,
-        ranges: [{ range: `${sheetId}!A1:${endCol}1`, values: [headers] }],
-      });
+      await batchUpdateBanded({ ssToken, sheetId, startRow: 1, rows: [headers] });
       startRow = 2;
     } else {
       startRow = lastRow + 1;
       appendSkip = lastRow - 1;
     }
   } else {
-    await batchUpdateValues({
-      ssToken,
-      ranges: [{ range: `${sheetId}!A1:${endCol}1`, values: [headers] }],
-    });
+    await batchUpdateBanded({ ssToken, sheetId, startRow: 1, rows: [headers] });
     startRow = 2;
   }
 
   // Append mode: only the source rows beyond what the destination already holds.
   const writeRows = isAppend ? dataRows.slice(appendSkip) : dataRows;
 
-  for(let i = 0; i < writeRows.length; i += cfg.sheetWriteChunk){
-    const part = writeRows.slice(i, i + cfg.sheetWriteChunk);
-    const s = startRow + i;
-    await batchUpdateValues({
-      ssToken,
-      ranges: [{
-        range: `${sheetId}!A${s}:${endCol}${s + part.length - 1}`,
-        values: part,
-      }],
-    });
-  }
+  // Lark caps a write at 100 columns — batchUpdateBanded splits wide data.
+  await batchUpdateBanded({ ssToken, sheetId, startRow, rows: writeRows, rowChunk: cfg.sheetWriteChunk });
 
   if(!isAppend){
     const newTotalRows = 1 + dataRows.length;
