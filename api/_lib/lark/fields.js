@@ -24,6 +24,15 @@ export async function larkCreateField({ baseId, tableId, fieldName, fieldType = 
   return r.data?.data?.field;
 }
 
+export async function larkDeleteField({ baseId, tableId, fieldId }){
+  const token = await getTenantAccessToken();
+  const r = await withBackoff(() => axios.delete(tableUrl(baseId, tableId, `/fields/${fieldId}`), {
+    headers: authHeader(token), timeout: 30000,
+  }), "larkDeleteField");
+  assertOk(r.data, "Lark delete field");
+  return r.data;
+}
+
 const normName = s => String(s || "").trim().toLowerCase();
 
 /**
