@@ -743,6 +743,7 @@ function renderPairs(pairs) {
         <div class="cron-cf">
           <div><span class="cron-cf-label">${icon('link', 11)} คอลัมน์:</span> ${(p.columns && p.columns.length) ? `<b>${escHtml(p.columns.length)}</b> — ${escHtml(p.columns.join(' · '))}` : 'ทุกคอลัมน์'}</div>
           <div><span class="cron-cf-label">${icon('shuffle', 11)} ตัวกรอง:</span> ${(p.filters && p.filters.length) ? p.filters.map(f => `${escHtml(f.field)} = <b>${escHtml(f.values.join(', '))}</b>`).join('  ·  ') : 'ไม่กรอง (ทุกแถว)'}</div>
+          ${p.noHeader ? `<div><span class="cron-cf-label">${icon('bookOpen', 11)} หัวคอลัมน์:</span> <b>แถวแรกไม่มีหัวคอลัมน์</b> — ซิงค์ทุกแถว (ตั้งชื่อ Column 1..N)</div>` : ''}
         </div>
       </div>
       <div class="cron-actions">
