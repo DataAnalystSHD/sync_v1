@@ -984,6 +984,12 @@ function switchTab(name) {
   if (name === 'history') loadHistory();
 }
 
+function bindHowto() {
+  document.querySelectorAll('.howto-head').forEach(head => {
+    head.onclick = () => head.closest('.howto-item').classList.toggle('open');
+  });
+}
+
 function bindTabs() {
   document.querySelectorAll('#tabNav .tab').forEach(btn => {
     btn.onclick = () => switchTab(btn.dataset.tab);
@@ -1169,6 +1175,7 @@ function bindEvents() {
   $('btnSaveCron').onclick = saveCron;
   $('btnReloadCron').onclick = loadPairs;
   bindTabs();
+  bindHowto();
   $('btnReset').onclick    = resetForm;
   $('btnReloadHistory').onclick = loadHistory;
   $('btnClearHistory').onclick = clearAllHistory;

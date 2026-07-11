@@ -732,27 +732,35 @@ button.cron-tag.cron-mode:active { transform: translateY(1px); }
 /* small inline spot illustration inside a card */
 .howto-art{ display:block; width:100%; max-width:340px; height:auto; margin:2px auto 4px; }
 
-/* masonry-style flow so cards of different heights pack tightly */
-.howto-grid{ column-count:2; column-gap:16px; }
-@media(max-width:820px){ .howto-grid{ column-count:1; } }
-
-.howto-card{
+/* accordion: one collapsible row per topic */
+.howto-acc{ display:grid; gap:12px; }
+.howto-item{
   --c:var(--accent); --cbg:var(--accent-bg); --cbd:var(--accent-bd);
-  break-inside:avoid; margin:0 0 16px;
   background:var(--surface-solid); border:1px solid var(--border);
-  border-radius:var(--r2); padding:22px; box-shadow:var(--sh);
-  transition:transform var(--transition), box-shadow var(--transition);
+  border-radius:var(--r2); box-shadow:var(--sh); overflow:hidden;
+  transition:box-shadow var(--transition), border-color var(--transition);
 }
-.howto-card:hover{ transform:translateY(-3px); box-shadow:var(--sh2); }
-.howto-card[data-color="green"]{ --c:var(--green); --cbg:var(--green-bg); --cbd:var(--green-bd); }
-.howto-card[data-color="cyan"] { --c:var(--cyan);  --cbg:var(--cyan-bg);  --cbd:var(--cyan-bd); }
-.howto-card[data-color="amber"]{ --c:var(--amber); --cbg:var(--amber-bg); --cbd:var(--amber-bd); }
+.howto-item[data-color="green"]{ --c:var(--green); --cbg:var(--green-bg); --cbd:var(--green-bd); }
+.howto-item[data-color="cyan"] { --c:var(--cyan);  --cbg:var(--cyan-bg);  --cbd:var(--cyan-bd); }
+.howto-item[data-color="amber"]{ --c:var(--amber); --cbg:var(--amber-bg); --cbd:var(--amber-bd); }
+.howto-item.open{ box-shadow:var(--sh2); border-color:var(--cbd); }
 
-.howto-card h3{
-  display:flex; align-items:center; gap:11px;
-  font-size:15.5px; font-weight:800; letter-spacing:-.01em; margin:0 0 16px; color:var(--text);
-  padding-bottom:14px; border-bottom:1px solid var(--border);
+.howto-head{
+  width:100%; display:flex; align-items:center; gap:13px;
+  padding:15px 18px; background:none; border:0; cursor:pointer;
+  font-family:inherit; text-align:left; color:var(--text);
+  transition:background var(--transition);
 }
+.howto-head:hover{ background:var(--surface2); }
+.howto-htitle{ flex:1; font-size:14.5px; font-weight:750; letter-spacing:-.01em; }
+.howto-chev{ flex:0 0 auto; color:var(--muted); transition:transform var(--transition), color var(--transition); }
+.howto-item.open .howto-chev{ transform:rotate(180deg); color:var(--c); }
+
+.howto-panel{ display:grid; grid-template-rows:0fr; transition:grid-template-rows .32s var(--transition); }
+.howto-item.open .howto-panel{ grid-template-rows:1fr; }
+.howto-panel-inner{ overflow:hidden; }
+.howto-panel-pad{ padding:4px 18px 20px 18px; }
+.howto-panel-pad > :first-child{ margin-top:0; }
 .howto-badge{
   flex:0 0 auto; width:30px; height:30px; border-radius:10px;
   display:grid; place-items:center;
@@ -773,7 +781,7 @@ button.cron-tag.cron-mode:active { transform: translateY(1px); }
   display:grid; place-items:center; font-size:11px; font-weight:800;
   background:var(--c); color:#fff; box-shadow:0 2px 6px rgba(20,23,42,.12);
 }
-.howto-steps li b, .howto-card p b, .howto-defs b{ color:var(--text); font-weight:700; }
+.howto-steps li b, .howto-panel-pad p b, .howto-defs b{ color:var(--text); font-weight:700; }
 .howto-defs{ display:grid; gap:10px; margin:0; }
 .howto-def{
   padding:13px 15px; border-radius:var(--r);
@@ -792,5 +800,5 @@ button.cron-tag.cron-mode:active { transform: translateY(1px); }
 }
 .howto-tip + .howto-tip{ margin-top:0; }
 .howto-tip .howto-ti{ flex:0 0 auto; color:var(--amber); margin-top:1px; }
-.howto-card p{ font-size:13px; line-height:1.65; color:var(--text2); margin:0 0 10px; }
-.howto-card p:last-child{ margin-bottom:0; }
+.howto-panel-pad p{ font-size:13px; line-height:1.65; color:var(--text2); margin:0 0 10px; }
+.howto-panel-pad p:last-child{ margin-bottom:0; }

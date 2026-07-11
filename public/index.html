@@ -317,124 +317,265 @@
       </div>
     </div>
 
-    <div class="howto-grid">
+    <div class="howto-acc">
 
       <!-- SHD Sync คืออะไร -->
-      <div class="howto-card">
-        <h3><span class="howto-badge"><span data-icon="sync" data-size="13"></span></span> SHD Sync คืออะไร</h3>
-        <p>เครื่องมือคัดลอกข้อมูลจาก <b>ต้นทาง</b> ไป <b>ปลายทาง</b> ให้ตรงกันอัตโนมัติ — เชื่อมได้ทั้ง <b>Google Sheet</b>, <b>Lark Base</b> และ <b>Lark Sheet</b> ทั้งซิงค์เองครั้งเดียว หรือตั้งเวลาให้ระบบทำให้ตลอด 24 ชม.</p>
+      <div class="howto-item open">
+        <button class="howto-head" type="button">
+          <span class="howto-badge"><span data-icon="sync" data-size="14"></span></span>
+          <span class="howto-htitle">SHD Sync คืออะไร</span>
+          <span class="howto-chev" data-icon="chevronDown" data-size="18"></span>
+        </button>
+        <div class="howto-panel"><div class="howto-panel-inner"><div class="howto-panel-pad">
+          <svg class="howto-art" viewBox="0 0 300 78" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <marker id="mf_p" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="#7c6df0"/></marker>
+              <marker id="mf_g" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="#0fa47f"/></marker>
+            </defs>
+            <rect x="16" y="14" width="94" height="44" rx="10" fill="#eafaf4" stroke="#bfe9d8"/>
+            <rect x="27" y="24" width="30" height="5" rx="2.5" fill="#0fa47f"/><rect x="27" y="35" width="72" height="4" rx="2" fill="#cfe9df"/><rect x="27" y="44" width="72" height="4" rx="2" fill="#cfe9df"/>
+            <text x="63" y="72" text-anchor="middle" font-size="10" font-weight="700" fill="#0fa47f" font-family="Inter,sans-serif">Google Sheet</text>
+            <g stroke-width="2.4" stroke-linecap="round" fill="none">
+              <path d="M124 28 h52" stroke="#7c6df0" marker-end="url(#mf_p)"/>
+              <path d="M176 44 h-52" stroke="#0fa47f" marker-end="url(#mf_g)"/>
+            </g>
+            <rect x="190" y="14" width="94" height="44" rx="10" fill="#f2f0fe" stroke="#d9d2fb"/>
+            <rect x="201" y="24" width="30" height="5" rx="2.5" fill="#5b4cdb"/><rect x="201" y="35" width="72" height="4" rx="2" fill="#e0daf9"/><rect x="201" y="44" width="72" height="4" rx="2" fill="#e0daf9"/>
+            <text x="237" y="72" text-anchor="middle" font-size="10" font-weight="700" fill="#5b4cdb" font-family="Inter,sans-serif">Lark Base</text>
+          </svg>
+          <p>เครื่องมือคัดลอกข้อมูลจาก <b>ต้นทาง</b> ไป <b>ปลายทาง</b> ให้ตรงกันอัตโนมัติ — เชื่อมได้ทั้ง <b>Google Sheet</b>, <b>Lark Base</b> และ <b>Lark Sheet</b> ทั้งซิงค์เองครั้งเดียว หรือตั้งเวลาให้ระบบทำให้ตลอด 24 ชม.</p>
+        </div></div></div>
       </div>
 
       <!-- เริ่มต้น: Login -->
-      <div class="howto-card" data-color="green">
-        <h3><span class="howto-badge"><span data-icon="key" data-size="13"></span></span> เริ่มต้นใช้งาน</h3>
-        <ol class="howto-steps">
-          <li>กดปุ่ม <b>Login</b> มุมขวาบน แล้วเข้าสู่ระบบด้วยบัญชี Google ที่มีสิทธิ์เข้าถึงชีต</li>
-          <li>เมื่อขึ้นอีเมลสีเขียวมุมขวา = พร้อมใช้งาน</li>
-        </ol>
+      <div class="howto-item" data-color="green">
+        <button class="howto-head" type="button">
+          <span class="howto-badge"><span data-icon="key" data-size="14"></span></span>
+          <span class="howto-htitle">เริ่มต้นใช้งาน</span>
+          <span class="howto-chev" data-icon="chevronDown" data-size="18"></span>
+        </button>
+        <div class="howto-panel"><div class="howto-panel-inner"><div class="howto-panel-pad">
+          <ol class="howto-steps">
+            <li>กดปุ่ม <b>Login</b> มุมขวาบน แล้วเข้าสู่ระบบด้วยบัญชี Google ที่มีสิทธิ์เข้าถึงชีต</li>
+            <li>เมื่อขึ้นอีเมลสีเขียวมุมขวา = พร้อมใช้งาน</li>
+          </ol>
+        </div></div></div>
       </div>
 
       <!-- ซิงค์ครั้งเดียว -->
-      <div class="howto-card">
-        <h3><span class="howto-badge"><span data-icon="zap" data-size="13"></span></span> ซิงค์ข้อมูล (Sync Now)</h3>
-        <ol class="howto-steps">
-          <li>วาง <b>ลิงก์ต้นทาง</b> (Google Sheet URL) และ <b>ลิงก์ปลายทาง</b> (Lark / Feishu Base URL)</li>
-          <li>เลือก <b>Sync Direction</b> — ทิศทางว่าจะเอาข้อมูลจากไหนไปไหน (ดูรายละเอียดด้านล่าง)</li>
-          <li><b>Columns</b> (ไม่บังคับ) — กด “สแกน &amp; เลือกคอลัมน์” เพื่อเลือกเฉพาะคอลัมน์ที่อยากซิงค์</li>
-          <li><b>Filter</b> (ไม่บังคับ · เฉพาะต้นทางเป็น Lark Base) — กรองเอาเฉพาะบางแถวตามค่า dropdown</li>
-          <li>เลือก <b>Sync Mode</b> — Replace หรือ Append</li>
-          <li>กด <b>Sync Now</b> รอจนขึ้นผลลัพธ์ว่าสำเร็จ</li>
-        </ol>
+      <div class="howto-item">
+        <button class="howto-head" type="button">
+          <span class="howto-badge"><span data-icon="zap" data-size="14"></span></span>
+          <span class="howto-htitle">ซิงค์ข้อมูล (Sync Now)</span>
+          <span class="howto-chev" data-icon="chevronDown" data-size="18"></span>
+        </button>
+        <div class="howto-panel"><div class="howto-panel-inner"><div class="howto-panel-pad">
+          <svg class="howto-art" viewBox="0 0 300 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="34" y="10" width="232" height="15" rx="7.5" fill="#f6f7fb" stroke="#e6e9f2"/>
+            <rect x="42" y="15" width="120" height="5" rx="2.5" fill="#c9cede"/>
+            <rect x="34" y="33" width="232" height="15" rx="7.5" fill="#f6f7fb" stroke="#e6e9f2"/>
+            <rect x="42" y="38" width="150" height="5" rx="2.5" fill="#c9cede"/>
+            <rect x="34" y="56" width="110" height="15" rx="7.5" fill="#f6f7fb" stroke="#e6e9f2"/>
+            <path d="M129 61 l4 4 4 -4" stroke="#8a92ab" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <rect x="152" y="56" width="114" height="15" rx="7.5" fill="#f6f7fb" stroke="#e6e9f2"/>
+            <path d="M247 61 l4 4 4 -4" stroke="#8a92ab" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <rect x="34" y="79" width="92" height="16" rx="8" fill="#5b4cdb"/>
+            <path d="M50 87 l-3 5 4 0 -3 5 8 -7 -4 0 3 -3 z" fill="#fff"/>
+            <rect x="66" y="84" width="46" height="6" rx="3" fill="#fff" opacity=".9"/>
+          </svg>
+          <ol class="howto-steps">
+            <li>วาง <b>ลิงก์ต้นทาง</b> (Google Sheet URL) และ <b>ลิงก์ปลายทาง</b> (Lark / Feishu Base URL)</li>
+            <li>เลือก <b>Sync Direction</b> — ทิศทางว่าจะเอาข้อมูลจากไหนไปไหน</li>
+            <li><b>Columns</b> (ไม่บังคับ) — กด “สแกน &amp; เลือกคอลัมน์” เพื่อเลือกเฉพาะคอลัมน์ที่อยากซิงค์</li>
+            <li><b>Filter</b> (ไม่บังคับ · เฉพาะต้นทางเป็น Lark Base) — กรองเอาเฉพาะบางแถวตามค่า dropdown</li>
+            <li>เลือก <b>Sync Mode</b> — Replace หรือ Append</li>
+            <li>กด <b>Sync Now</b> รอจนขึ้นผลลัพธ์ว่าสำเร็จ</li>
+          </ol>
+        </div></div></div>
       </div>
 
       <!-- ทิศทาง -->
-      <div class="howto-card" data-color="cyan">
-        <h3><span class="howto-badge"><span data-icon="arrowLeftRight" data-size="13"></span></span> ทิศทางการซิงค์ (Direction)</h3>
-        <div class="howto-defs">
-          <div class="howto-def"><span class="t">Google Sheet → Lark Base</span> เอาข้อมูลจากชีต ไปลงตาราง Lark Base (ลิงก์ที่ฝังในข้อความจะกลายเป็นลิงก์คลิกได้)</div>
-          <div class="howto-def"><span class="t">Lark Base → Google Sheet</span> เอาข้อมูลจากตาราง Lark Base มาลงชีต</div>
-          <div class="howto-def"><span class="t">Lark Sheet ↔ Lark Base</span> ย้ายข้อมูลระหว่าง Lark Sheet กับ Lark Base</div>
-          <div class="howto-def"><span class="t">Google Sheet ↔ Lark Sheet</span> ย้ายข้อมูลระหว่าง Google Sheet กับ Lark Sheet (คงลิงก์ในเซลล์)</div>
-        </div>
+      <div class="howto-item" data-color="cyan">
+        <button class="howto-head" type="button">
+          <span class="howto-badge"><span data-icon="arrowLeftRight" data-size="14"></span></span>
+          <span class="howto-htitle">ทิศทางการซิงค์ (Direction)</span>
+          <span class="howto-chev" data-icon="chevronDown" data-size="18"></span>
+        </button>
+        <div class="howto-panel"><div class="howto-panel-inner"><div class="howto-panel-pad">
+          <svg class="howto-art" viewBox="0 0 300 116" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="max-width:300px">
+            <defs>
+              <marker id="md_a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="#9aa2ba"/></marker>
+            </defs>
+            <g stroke="#9aa2ba" stroke-width="2" stroke-linecap="round" marker-start="url(#md_a)" marker-end="url(#md_a)">
+              <path d="M122 34 L82 74"/>
+              <path d="M178 34 L218 74"/>
+              <path d="M108 92 L192 92"/>
+            </g>
+            <g font-family="Inter,sans-serif" font-size="10.5" font-weight="700" text-anchor="middle">
+              <rect x="106" y="8" width="88" height="24" rx="12" fill="#eafaf4" stroke="#bfe9d8"/><text x="150" y="24" fill="#0fa47f">Google Sheet</text>
+              <rect x="14" y="80" width="86" height="24" rx="12" fill="#f2f0fe" stroke="#d9d2fb"/><text x="57" y="96" fill="#5b4cdb">Lark Base</text>
+              <rect x="200" y="80" width="86" height="24" rx="12" fill="#e6f6fa" stroke="#bfe6ee"/><text x="243" y="96" fill="#0891a8">Lark Sheet</text>
+            </g>
+          </svg>
+          <div class="howto-defs">
+            <div class="howto-def"><span class="t">Google Sheet ⇄ Lark Base</span> ซิงค์สองทาง — ลิงก์ที่ฝังในข้อความจะกลายเป็นลิงก์คลิกได้ใน Lark Base</div>
+            <div class="howto-def"><span class="t">Lark Sheet ⇄ Lark Base</span> ย้ายข้อมูลระหว่าง Lark Sheet กับ Lark Base</div>
+            <div class="howto-def"><span class="t">Google Sheet ⇄ Lark Sheet</span> ย้ายข้อมูลระหว่าง Google Sheet กับ Lark Sheet (คงลิงก์ในเซลล์)</div>
+          </div>
+        </div></div></div>
       </div>
 
       <!-- โหมด -->
-      <div class="howto-card" data-color="amber">
-        <h3><span class="howto-badge"><span data-icon="shuffle" data-size="13"></span></span> โหมดซิงค์ (Sync Mode)</h3>
-        <svg class="howto-art" viewBox="0 0 340 96" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <!-- Replace: wipe then rewrite -->
-          <text x="72" y="12" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="800" fill="#c58c07">REPLACE</text>
-          <g>
-            <rect x="20" y="22" width="46" height="58" rx="7" fill="#fff" stroke="#e6e9f2"/>
-            <rect x="27" y="30" width="32" height="6" rx="3" fill="#f0d9d9"/><rect x="27" y="42" width="32" height="6" rx="3" fill="#f0d9d9"/>
-            <rect x="27" y="54" width="32" height="6" rx="3" fill="#f0d9d9"/><rect x="27" y="66" width="32" height="6" rx="3" fill="#f0d9d9"/>
-            <path d="M30 26 L56 76 M56 26 L30 76" stroke="#e0405e" stroke-width="2" stroke-linecap="round" opacity=".55"/>
-          </g>
-          <path d="M74 51 h20" stroke="#c58c07" stroke-width="2.4" stroke-linecap="round" marker-end="url(#arwA)"/>
-          <defs>
-            <marker id="arwA" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="#c58c07"/></marker>
-          </defs>
-          <g>
-            <rect x="104" y="22" width="46" height="58" rx="7" fill="#fff" stroke="#e6e9f2"/>
-            <rect x="111" y="30" width="32" height="6" rx="3" fill="#cfe9df"/><rect x="111" y="42" width="32" height="6" rx="3" fill="#cfe9df"/>
-            <rect x="111" y="54" width="32" height="6" rx="3" fill="#cfe9df"/><rect x="111" y="66" width="32" height="6" rx="3" fill="#cfe9df"/>
-          </g>
-
-          <line x1="180" y1="20" x2="180" y2="82" stroke="#e6e9f2" stroke-width="1.5"/>
-
-          <!-- Append: keep old, add new below -->
-          <text x="268" y="12" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="800" fill="#0fa47f">APPEND</text>
-          <g>
-            <rect x="230" y="22" width="76" height="58" rx="7" fill="#fff" stroke="#e6e9f2"/>
-            <rect x="240" y="30" width="56" height="6" rx="3" fill="#eef1f7"/>
-            <rect x="240" y="42" width="56" height="6" rx="3" fill="#eef1f7"/>
-            <rect x="240" y="55" width="56" height="7" rx="3.5" fill="#bfe9d8"/>
-            <rect x="240" y="66" width="56" height="7" rx="3.5" fill="#bfe9d8"/>
-            <circle cx="311" cy="62" r="9" fill="#0fa47f"/>
-            <path d="M311 58 v8 M307 62 h8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
-          </g>
-        </svg>
-        <div class="howto-defs">
-          <div class="howto-def"><span class="t"><span class="howto-chip">Replace</span> ลบข้อมูลปลายทางทิ้งทั้งหมด แล้วซิงค์ใหม่</span> ใช้เมื่ออยากให้ปลายทาง<b>เหมือนต้นทางเป๊ะ</b> ทุกครั้ง · จำเป็นถ้าต้องการให้คอลัมน์ที่มีลิงก์กลายเป็นลิงก์คลิกได้</div>
-          <div class="howto-def"><span class="t"><span class="howto-chip">Append</span> เพิ่มต่อท้ายข้อมูลเดิม (ไม่ลบ)</span> ใช้เมื่ออยาก<b>สะสมข้อมูลใหม่</b>ต่อจากของเดิม โดยไม่แตะแถวที่มีอยู่แล้ว</div>
-        </div>
+      <div class="howto-item" data-color="amber">
+        <button class="howto-head" type="button">
+          <span class="howto-badge"><span data-icon="shuffle" data-size="14"></span></span>
+          <span class="howto-htitle">โหมดซิงค์ (Sync Mode)</span>
+          <span class="howto-chev" data-icon="chevronDown" data-size="18"></span>
+        </button>
+        <div class="howto-panel"><div class="howto-panel-inner"><div class="howto-panel-pad">
+          <svg class="howto-art" viewBox="0 0 340 96" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <marker id="arwA" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="#c58c07"/></marker>
+            </defs>
+            <text x="72" y="12" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="800" fill="#c58c07">REPLACE</text>
+            <g>
+              <rect x="20" y="22" width="46" height="58" rx="7" fill="#fff" stroke="#e6e9f2"/>
+              <rect x="27" y="30" width="32" height="6" rx="3" fill="#f0d9d9"/><rect x="27" y="42" width="32" height="6" rx="3" fill="#f0d9d9"/>
+              <rect x="27" y="54" width="32" height="6" rx="3" fill="#f0d9d9"/><rect x="27" y="66" width="32" height="6" rx="3" fill="#f0d9d9"/>
+              <path d="M30 26 L56 76 M56 26 L30 76" stroke="#e0405e" stroke-width="2" stroke-linecap="round" opacity=".55"/>
+            </g>
+            <path d="M74 51 h20" stroke="#c58c07" stroke-width="2.4" stroke-linecap="round" marker-end="url(#arwA)"/>
+            <g>
+              <rect x="104" y="22" width="46" height="58" rx="7" fill="#fff" stroke="#e6e9f2"/>
+              <rect x="111" y="30" width="32" height="6" rx="3" fill="#cfe9df"/><rect x="111" y="42" width="32" height="6" rx="3" fill="#cfe9df"/>
+              <rect x="111" y="54" width="32" height="6" rx="3" fill="#cfe9df"/><rect x="111" y="66" width="32" height="6" rx="3" fill="#cfe9df"/>
+            </g>
+            <line x1="180" y1="20" x2="180" y2="82" stroke="#e6e9f2" stroke-width="1.5"/>
+            <text x="268" y="12" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="800" fill="#0fa47f">APPEND</text>
+            <g>
+              <rect x="230" y="22" width="76" height="58" rx="7" fill="#fff" stroke="#e6e9f2"/>
+              <rect x="240" y="30" width="56" height="6" rx="3" fill="#eef1f7"/>
+              <rect x="240" y="42" width="56" height="6" rx="3" fill="#eef1f7"/>
+              <rect x="240" y="55" width="56" height="7" rx="3.5" fill="#bfe9d8"/>
+              <rect x="240" y="66" width="56" height="7" rx="3.5" fill="#bfe9d8"/>
+              <circle cx="311" cy="62" r="9" fill="#0fa47f"/>
+              <path d="M311 58 v8 M307 62 h8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+            </g>
+          </svg>
+          <div class="howto-defs">
+            <div class="howto-def"><span class="t"><span class="howto-chip">Replace</span> ลบข้อมูลปลายทางทิ้งทั้งหมด แล้วซิงค์ใหม่</span> ใช้เมื่ออยากให้ปลายทาง<b>เหมือนต้นทางเป๊ะ</b> ทุกครั้ง · จำเป็นถ้าต้องการให้คอลัมน์ที่มีลิงก์กลายเป็นลิงก์คลิกได้</div>
+            <div class="howto-def"><span class="t"><span class="howto-chip">Append</span> เพิ่มต่อท้ายข้อมูลเดิม (ไม่ลบ)</span> ใช้เมื่ออยาก<b>สะสมข้อมูลใหม่</b>ต่อจากของเดิม โดยไม่แตะแถวที่มีอยู่แล้ว</div>
+          </div>
+        </div></div></div>
       </div>
 
       <!-- ฟีเจอร์เสริม -->
-      <div class="howto-card" data-color="green">
-        <h3><span class="howto-badge"><span data-icon="wrench" data-size="13"></span></span> ตัวเลือกเสริม</h3>
-        <div class="howto-defs">
-          <div class="howto-def"><span class="t">เลือกคอลัมน์</span> สแกนต้นทางแล้วติ๊กเฉพาะคอลัมน์ที่ต้องการ — ไม่เลือก = ซิงค์ทุกคอลัมน์</div>
-          <div class="howto-def"><span class="t">ตัวกรอง (Filter)</span> เลือกเอาเฉพาะแถวที่ค่าตรงกับ dropdown ที่กำหนด (เฉพาะต้นทาง Lark Base)</div>
-          <div class="howto-def"><span class="t">แถวแรกไม่มีหัวคอลัมน์</span> ติ๊กเมื่อแถวแรกของชีตไม่ใช่หัวตาราง — ระบบจะตั้งชื่อ Column 1, 2, 3… ให้เอง (ใช้เมื่อปลายทางเป็น Sheet)</div>
-        </div>
+      <div class="howto-item" data-color="green">
+        <button class="howto-head" type="button">
+          <span class="howto-badge"><span data-icon="wrench" data-size="14"></span></span>
+          <span class="howto-htitle">ตัวเลือกเสริม</span>
+          <span class="howto-chev" data-icon="chevronDown" data-size="18"></span>
+        </button>
+        <div class="howto-panel"><div class="howto-panel-inner"><div class="howto-panel-pad">
+          <svg class="howto-art" viewBox="0 0 260 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="max-width:260px">
+            <g>
+              <rect x="40" y="12" width="15" height="15" rx="4" fill="#0fa47f"/><path d="M43 19.5 l2.5 2.5 4.5 -5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <rect x="64" y="16" width="150" height="7" rx="3.5" fill="#e9edf5"/>
+            </g>
+            <g>
+              <rect x="40" y="35" width="15" height="15" rx="4" fill="#0fa47f"/><path d="M43 42.5 l2.5 2.5 4.5 -5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <rect x="64" y="39" width="120" height="7" rx="3.5" fill="#e9edf5"/>
+            </g>
+            <g>
+              <rect x="40" y="58" width="15" height="15" rx="4" fill="#fff" stroke="#c9cede"/>
+              <rect x="64" y="62" width="140" height="7" rx="3.5" fill="#eef1f7"/>
+            </g>
+            <g>
+              <rect x="40" y="81" width="15" height="15" rx="4" fill="#0fa47f"/><path d="M43 88.5 l2.5 2.5 4.5 -5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <rect x="64" y="85" width="96" height="7" rx="3.5" fill="#e9edf5"/>
+            </g>
+          </svg>
+          <div class="howto-defs">
+            <div class="howto-def"><span class="t">เลือกคอลัมน์</span> สแกนต้นทางแล้วติ๊กเฉพาะคอลัมน์ที่ต้องการ — ไม่เลือก = ซิงค์ทุกคอลัมน์</div>
+            <div class="howto-def"><span class="t">ตัวกรอง (Filter)</span> เลือกเอาเฉพาะแถวที่ค่าตรงกับ dropdown ที่กำหนด (เฉพาะต้นทาง Lark Base)</div>
+            <div class="howto-def"><span class="t">แถวแรกไม่มีหัวคอลัมน์</span> ติ๊กเมื่อแถวแรกของชีตไม่ใช่หัวตาราง — ระบบจะตั้งชื่อ Column 1, 2, 3… ให้เอง (ใช้เมื่อปลายทางเป็น Sheet)</div>
+          </div>
+        </div></div></div>
       </div>
 
       <!-- Auto-sync -->
-      <div class="howto-card" data-color="cyan">
-        <h3><span class="howto-badge"><span data-icon="clock" data-size="13"></span></span> ตั้งซิงค์อัตโนมัติ (Auto-sync)</h3>
-        <ol class="howto-steps">
-          <li>กรอกลิงก์ + ตั้งค่าเหมือนการซิงค์ปกติ</li>
-          <li>เลือกช่วงเวลาในช่อง <b>Auto-sync ทุก ๆ</b> (เช่น ทุก 3 นาที / ทุก 1 ชม. / ทุก 1 วัน หรือพิมพ์เองก็ได้)</li>
-          <li>กด <b>Save Auto-sync</b> — ระบบจะซิงค์ให้เองตามรอบ ตลอด 24 ชม. โดยไม่ต้องเปิดเว็บค้าง</li>
-          <li>ดู/แก้/ลบงานที่ตั้งไว้ได้ที่แท็บ <b>Auto-sync</b></li>
-        </ol>
+      <div class="howto-item" data-color="cyan">
+        <button class="howto-head" type="button">
+          <span class="howto-badge"><span data-icon="clock" data-size="14"></span></span>
+          <span class="howto-htitle">ตั้งซิงค์อัตโนมัติ (Auto-sync)</span>
+          <span class="howto-chev" data-icon="chevronDown" data-size="18"></span>
+        </button>
+        <div class="howto-panel"><div class="howto-panel-inner"><div class="howto-panel-pad">
+          <svg class="howto-art" viewBox="0 0 300 92" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="max-width:280px">
+            <defs>
+              <marker id="mc_a" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="#0891a8"/></marker>
+            </defs>
+            <path d="M120 20 A 30 30 0 1 1 112 18" stroke="#0891a8" stroke-width="3" stroke-linecap="round" fill="none" marker-end="url(#mc_a)"/>
+            <circle cx="150" cy="46" r="24" fill="#e6f6fa" stroke="#bfe6ee" stroke-width="2"/>
+            <path d="M150 46 V32 M150 46 L160 52" stroke="#0891a8" stroke-width="2.6" stroke-linecap="round"/>
+            <g font-family="Inter,sans-serif" font-size="10" font-weight="800" text-anchor="middle">
+              <rect x="196" y="20" width="42" height="18" rx="9" fill="#fff" stroke="#bfe6ee"/><text x="217" y="32" fill="#0891a8">3 นาที</text>
+              <rect x="196" y="44" width="42" height="18" rx="9" fill="#fff" stroke="#bfe6ee"/><text x="217" y="56" fill="#0891a8">1 ชม.</text>
+              <rect x="62" y="32" width="42" height="18" rx="9" fill="#fff" stroke="#bfe6ee"/><text x="83" y="44" fill="#0891a8">1 วัน</text>
+            </g>
+          </svg>
+          <ol class="howto-steps">
+            <li>กรอกลิงก์ + ตั้งค่าเหมือนการซิงค์ปกติ</li>
+            <li>เลือกช่วงเวลาในช่อง <b>Auto-sync ทุก ๆ</b> (เช่น ทุก 3 นาที / ทุก 1 ชม. / ทุก 1 วัน หรือพิมพ์เองก็ได้)</li>
+            <li>กด <b>Save Auto-sync</b> — ระบบจะซิงค์ให้เองตามรอบ ตลอด 24 ชม. โดยไม่ต้องเปิดเว็บค้าง</li>
+            <li>ดู/แก้/ลบงานที่ตั้งไว้ได้ที่แท็บ <b>Auto-sync</b></li>
+          </ol>
+        </div></div></div>
       </div>
 
       <!-- History -->
-      <div class="howto-card" data-color="amber">
-        <h3><span class="howto-badge"><span data-icon="activity" data-size="13"></span></span> ประวัติการซิงค์ (History)</h3>
-        <p>แท็บ <b>History</b> แสดงว่าซิงค์อะไร เมื่อไหร่ กี่แถว สำเร็จหรือไม่ — คลิกแต่ละรายการเพื่อดูรายละเอียด และลบประวัติได้</p>
+      <div class="howto-item" data-color="amber">
+        <button class="howto-head" type="button">
+          <span class="howto-badge"><span data-icon="activity" data-size="14"></span></span>
+          <span class="howto-htitle">ประวัติการซิงค์ (History)</span>
+          <span class="howto-chev" data-icon="chevronDown" data-size="18"></span>
+        </button>
+        <div class="howto-panel"><div class="howto-panel-inner"><div class="howto-panel-pad">
+          <svg class="howto-art" viewBox="0 0 280 92" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="max-width:280px">
+            <g>
+              <rect x="20" y="10" width="240" height="20" rx="7" fill="#f6f7fb" stroke="#e6e9f2"/>
+              <circle cx="34" cy="20" r="5" fill="#0fa47f"/><path d="M31.5 20 l2 2 4 -4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <rect x="48" y="17" width="120" height="6" rx="3" fill="#dfe3ee"/><rect x="212" y="17" width="34" height="6" rx="3" fill="#e9edf5"/>
+            </g>
+            <g>
+              <rect x="20" y="36" width="240" height="20" rx="7" fill="#f6f7fb" stroke="#e6e9f2"/>
+              <circle cx="34" cy="46" r="5" fill="#0fa47f"/><path d="M31.5 46 l2 2 4 -4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <rect x="48" y="43" width="150" height="6" rx="3" fill="#dfe3ee"/><rect x="212" y="43" width="34" height="6" rx="3" fill="#e9edf5"/>
+            </g>
+            <g>
+              <rect x="20" y="62" width="240" height="20" rx="7" fill="#f6f7fb" stroke="#e6e9f2"/>
+              <circle cx="34" cy="72" r="5" fill="#e0405e"/><path d="M32 70 l4 4 M36 70 l-4 4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+              <rect x="48" y="69" width="96" height="6" rx="3" fill="#dfe3ee"/><rect x="212" y="69" width="34" height="6" rx="3" fill="#e9edf5"/>
+            </g>
+          </svg>
+          <p>แท็บ <b>History</b> แสดงว่าซิงค์อะไร เมื่อไหร่ กี่แถว สำเร็จหรือไม่ — คลิกแต่ละรายการเพื่อดูรายละเอียด และลบประวัติได้</p>
+        </div></div></div>
       </div>
 
       <!-- ข้อควรรู้ -->
-      <div class="howto-card">
-        <h3><span class="howto-badge"><span data-icon="alertTriangle" data-size="13"></span></span> ข้อควรรู้</h3>
-        <div class="howto-defs">
-          <div class="howto-tip"><span class="howto-ti" data-icon="alertTriangle" data-size="14"></span><span>อยากให้ <b>ลิงก์ที่ฝังในข้อความ</b> (เช่นชื่อ KOL) กลายเป็นลิงก์คลิกได้ใน Lark Base → ต้องใช้โหมด <b>Replace</b> · ระบบจะแปลงคอลัมน์ที่เซลล์ส่วนใหญ่มีลิงก์เป็น URL field ให้เอง</span></div>
-          <div class="howto-tip"><span class="howto-ti" data-icon="alertTriangle" data-size="14"></span><span>Lark URL field เก็บ “ข้อความล้วน” ไม่ได้ — คอลัมน์ที่มีลิงก์ปน ๆ กันจะคงเป็นข้อความ เพื่อไม่ให้ชื่ออื่นกลายเป็นลิงก์ปลอม</span></div>
-          <div class="howto-tip"><span class="howto-ti" data-icon="alertTriangle" data-size="14"></span><span>ต้อง <b>แชร์ไฟล์ Google Sheet</b> ให้บัญชีที่ login มีสิทธิ์อ่าน และไฟล์ต้องเป็น Google Sheet จริง (ไม่ใช่ .xlsx ที่อัปโหลด)</span></div>
-        </div>
+      <div class="howto-item">
+        <button class="howto-head" type="button">
+          <span class="howto-badge"><span data-icon="alertTriangle" data-size="14"></span></span>
+          <span class="howto-htitle">ข้อควรรู้</span>
+          <span class="howto-chev" data-icon="chevronDown" data-size="18"></span>
+        </button>
+        <div class="howto-panel"><div class="howto-panel-inner"><div class="howto-panel-pad">
+          <div class="howto-defs">
+            <div class="howto-tip"><span class="howto-ti" data-icon="alertTriangle" data-size="14"></span><span>อยากให้ <b>ลิงก์ที่ฝังในข้อความ</b> (เช่นชื่อ KOL) กลายเป็นลิงก์คลิกได้ใน Lark Base → ต้องใช้โหมด <b>Replace</b> · ระบบจะแปลงคอลัมน์ที่เซลล์ส่วนใหญ่มีลิงก์เป็น URL field ให้เอง</span></div>
+            <div class="howto-tip"><span class="howto-ti" data-icon="alertTriangle" data-size="14"></span><span>Lark URL field เก็บ “ข้อความล้วน” ไม่ได้ — คอลัมน์ที่มีลิงก์ปน ๆ กันจะคงเป็นข้อความ เพื่อไม่ให้ชื่ออื่นกลายเป็นลิงก์ปลอม</span></div>
+            <div class="howto-tip"><span class="howto-ti" data-icon="alertTriangle" data-size="14"></span><span>ต้อง <b>แชร์ไฟล์ Google Sheet</b> ให้บัญชีที่ login มีสิทธิ์อ่าน และไฟล์ต้องเป็น Google Sheet จริง (ไม่ใช่ .xlsx ที่อัปโหลด)</span></div>
+          </div>
+        </div></div></div>
       </div>
 
     </div>
