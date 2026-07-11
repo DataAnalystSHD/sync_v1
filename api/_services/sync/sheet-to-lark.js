@@ -134,27 +134,32 @@ export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, 
 
   // ── Replace (and range one-shot): paginated full refresh ──
   const hasRange = rowFrom != null || rowTo != null;
+  const isFresh = shouldStartFresh(pair) || hasRange;
   let cursorRow = Number(pair?.cursorRow || 2);
-  let typeMap, nameMap;
-  if(shouldStartFresh(pair) || hasRange){
-    ({ typeMap, nameMap } = await beginNewRun({ accessToken, cfg, sheetId, tab, baseId, tableId, headers: fullHeaders, endCol, rowId, syncMode, selectedSet }));
-    cursorRow = 2;
-  } else {
-    ({ typeMap, nameMap } = await readTypeMap({ baseId, tableId }));
-  }
 
+  // Read the page FIRST — before any destructive delete — so an empty or failed
+  // source read can never wipe the destination on a Replace.
   // Data rows are 1-indexed for the user; sheet rows are 2..N (after header).
-  const startSheetRow = hasRange ? ((rowFrom || 1) + 1) : cursorRow;
+  const startSheetRow = hasRange ? ((rowFrom || 1) + 1) : (isFresh ? 2 : cursorRow);
   const endSheetRow   = hasRange
     ? (rowTo ? (rowTo + 1) : startSheetRow + pageSize - 1)
-    : (cursorRow + pageSize - 1);
+    : (startSheetRow + pageSize - 1);
   const range = `${tab}A${startSheetRow}:${endCol}${endSheetRow}`;
 
   const values = await sheetsGetValues({ accessToken, spreadsheetId: sheetId, range });
 
   if(!values || values.length === 0){
-    await finishRun({ accessToken, cfg, rowId });
+    // No source rows → do NOT delete anything; leave the destination intact.
+    if(rowId) await finishRun({ accessToken, cfg, rowId });
     return { rowCount: 0, truncated: false, done: true };
+  }
+
+  let typeMap, nameMap;
+  if(isFresh){
+    ({ typeMap, nameMap } = await beginNewRun({ accessToken, cfg, sheetId, tab, baseId, tableId, headers: fullHeaders, endCol, rowId, syncMode, selectedSet }));
+    cursorRow = 2;
+  } else {
+    ({ typeMap, nameMap } = await readTypeMap({ baseId, tableId }));
   }
 
   const records = rowsToRecords(pick(values), headers, typeMap, nameMap);

@@ -143,9 +143,29 @@ export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, bas
 
   // ── Replace (and range one-shot): paginated full refresh ──
   const hasRange = rowFrom != null || rowTo != null;
+  const isFresh = shouldStartFresh(pair) || hasRange;
   let cursorRow = Number(pair?.cursorRow || 2);
+
+  // Read the page FIRST — before any destructive delete — so an empty or failed
+  // source read can never wipe the destination on a Replace.
+  // 1-based data rows → sheet rows = +1 (skip header at row 1).
+  const startSheetRow = hasRange ? ((rowFrom || 1) + 1) : (isFresh ? 2 : cursorRow);
+  const endSheetRow   = hasRange
+    ? (rowTo ? (rowTo + 1) : startSheetRow + pageSize - 1)
+    : (startSheetRow + pageSize - 1);
+  const range = `A${startSheetRow}:${endCol}${endSheetRow}`;
+
+  const rawValues = await getSheetValues({ ssToken, sheetId, range });
+  const nonEmpty  = (rawValues || []).filter(r => !isEmptyRow(r));
+
+  if(nonEmpty.length === 0){
+    // No source rows → do NOT delete anything; leave the destination intact.
+    if(rowId) await finishRun({ accessToken, cfg, rowId });
+    return { rowCount: 0, truncated: false, done: true };
+  }
+
   let typeMap, nameMap;
-  if(shouldStartFresh(pair) || hasRange){
+  if(isFresh){
     ({ typeMap, nameMap } = await beginNewRun({
       accessToken, cfg,
       ssToken, srcSheetId: sheetId,
@@ -154,21 +174,6 @@ export async function syncLarkSheetToLarkBase({ accessToken, cfg, sourceUrl, bas
     cursorRow = 2;
   } else {
     ({ typeMap, nameMap } = await readTypeMap({ baseId, tableId }));
-  }
-
-  // 1-based data rows → sheet rows = +1 (skip header at row 1).
-  const startSheetRow = hasRange ? ((rowFrom || 1) + 1) : cursorRow;
-  const endSheetRow   = hasRange
-    ? (rowTo ? (rowTo + 1) : startSheetRow + pageSize - 1)
-    : (cursorRow + pageSize - 1);
-  const range = `A${startSheetRow}:${endCol}${endSheetRow}`;
-
-  const rawValues = await getSheetValues({ ssToken, sheetId, range });
-  const nonEmpty  = (rawValues || []).filter(r => !isEmptyRow(r));
-
-  if(nonEmpty.length === 0){
-    await finishRun({ accessToken, cfg, rowId });
-    return { rowCount: 0, truncated: false, done: true };
   }
 
   const records = rowsToRecords(pick(nonEmpty), headers, typeMap, nameMap);
