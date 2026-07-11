@@ -244,7 +244,70 @@
   <!-- ═══ TAB: HOW TO USE ═══ -->
   <div class="tab-panel" data-panel="howto">
     <div class="howto-hero">
-      <div class="howto-hero-icon"><span data-icon="sync" data-size="24"></span></div>
+      <svg class="howto-hero-art" viewBox="0 0 480 210" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="hGreen" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#34d0a6"/><stop offset="1" stop-color="#0fa47f"/>
+          </linearGradient>
+          <linearGradient id="hPurple" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#8b7cf4"/><stop offset="1" stop-color="#5b4cdb"/>
+          </linearGradient>
+          <filter id="hShadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="7" stdDeviation="9" flood-color="#4a418f" flood-opacity="0.16"/>
+          </filter>
+          <marker id="arwG" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0 1 L9 5 L0 9 z" fill="#0fa47f"/>
+          </marker>
+          <marker id="arwP" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0 1 L9 5 L0 9 z" fill="#5b4cdb"/>
+          </marker>
+        </defs>
+
+        <!-- decorative dots + sparkle -->
+        <circle cx="30" cy="28" r="4" fill="#7c6df0" opacity=".35"/>
+        <circle cx="452" cy="176" r="5" fill="#0fa47f" opacity=".35"/>
+        <circle cx="248" cy="14" r="3" fill="#7c6df0" opacity=".45"/>
+        <path d="M40 168 l2.5 6 6 2.5 -6 2.5 -2.5 6 -2.5 -6 -6 -2.5 6 -2.5 z" fill="#f5b301" opacity=".7"/>
+
+        <!-- connector arrows arcing around the badge -->
+        <path d="M186 82 C 214 56, 266 56, 294 82" stroke="#0fa47f" stroke-width="3" stroke-linecap="round" marker-end="url(#arwG)"/>
+        <path d="M294 138 C 266 164, 214 164, 186 138" stroke="#5b4cdb" stroke-width="3" stroke-linecap="round" marker-end="url(#arwP)"/>
+
+        <!-- LEFT card: Google Sheet -->
+        <g filter="url(#hShadow)">
+          <rect x="32" y="42" width="150" height="126" rx="16" fill="#ffffff" stroke="#e6e9f2"/>
+          <path d="M32 58 a16 16 0 0 1 16 -16 h118 a16 16 0 0 1 16 16 v12 h-150 z" fill="url(#hGreen)"/>
+          <circle cx="49" cy="53" r="3" fill="#fff" opacity=".9"/><circle cx="60" cy="53" r="3" fill="#fff" opacity=".6"/><circle cx="71" cy="53" r="3" fill="#fff" opacity=".4"/>
+        </g>
+        <g>
+          <rect x="46" y="84"  width="38" height="8" rx="4" fill="#bfe9d8"/><rect x="92" y="84"  width="72" height="8" rx="4" fill="#eef1f7"/>
+          <rect x="46" y="104" width="38" height="8" rx="4" fill="#bfe9d8"/><rect x="92" y="104" width="72" height="8" rx="4" fill="#eef1f7"/>
+          <rect x="46" y="124" width="38" height="8" rx="4" fill="#bfe9d8"/><rect x="92" y="124" width="58" height="8" rx="4" fill="#eef1f7"/>
+          <rect x="46" y="144" width="38" height="8" rx="4" fill="#bfe9d8"/><rect x="92" y="144" width="72" height="8" rx="4" fill="#eef1f7"/>
+        </g>
+
+        <!-- RIGHT card: Lark Base -->
+        <g filter="url(#hShadow)">
+          <rect x="298" y="42" width="150" height="126" rx="16" fill="#ffffff" stroke="#e6e9f2"/>
+          <path d="M298 58 a16 16 0 0 1 16 -16 h118 a16 16 0 0 1 16 16 v12 h-150 z" fill="url(#hPurple)"/>
+          <circle cx="315" cy="53" r="3" fill="#fff" opacity=".9"/><circle cx="326" cy="53" r="3" fill="#fff" opacity=".6"/><circle cx="337" cy="53" r="3" fill="#fff" opacity=".4"/>
+        </g>
+        <g>
+          <rect x="312" y="84"  width="38" height="8" rx="4" fill="#d9d2fb"/><rect x="358" y="84"  width="72" height="8" rx="4" fill="#eef1f7"/>
+          <rect x="312" y="104" width="38" height="8" rx="4" fill="#d9d2fb"/><rect x="358" y="104" width="72" height="8" rx="4" fill="#eef1f7"/>
+          <rect x="312" y="124" width="38" height="8" rx="4" fill="#d9d2fb"/><rect x="358" y="124" width="58" height="8" rx="4" fill="#eef1f7"/>
+          <rect x="312" y="144" width="38" height="8" rx="4" fill="#d9d2fb"/><rect x="358" y="144" width="72" height="8" rx="4" fill="#eef1f7"/>
+        </g>
+
+        <!-- center sync badge -->
+        <g filter="url(#hShadow)">
+          <circle cx="240" cy="110" r="34" fill="url(#hPurple)"/>
+        </g>
+        <g stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none">
+          <path d="M228 104 h20 m-5 -5 l5 5 -5 5"/>
+          <path d="M252 118 h-20 m5 -5 l-5 5 5 5"/>
+        </g>
+      </svg>
       <h1>วิธีใช้งาน SHD Sync</h1>
       <p>ซิงค์ข้อมูลระหว่าง Google Sheet กับ Lark / Feishu (Base &amp; Sheet) แบบอัตโนมัติ</p>
       <div class="howto-flow">
@@ -298,6 +361,39 @@
       <!-- โหมด -->
       <div class="howto-card" data-color="amber">
         <h3><span class="howto-badge"><span data-icon="shuffle" data-size="13"></span></span> โหมดซิงค์ (Sync Mode)</h3>
+        <svg class="howto-art" viewBox="0 0 340 96" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <!-- Replace: wipe then rewrite -->
+          <text x="72" y="12" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="800" fill="#c58c07">REPLACE</text>
+          <g>
+            <rect x="20" y="22" width="46" height="58" rx="7" fill="#fff" stroke="#e6e9f2"/>
+            <rect x="27" y="30" width="32" height="6" rx="3" fill="#f0d9d9"/><rect x="27" y="42" width="32" height="6" rx="3" fill="#f0d9d9"/>
+            <rect x="27" y="54" width="32" height="6" rx="3" fill="#f0d9d9"/><rect x="27" y="66" width="32" height="6" rx="3" fill="#f0d9d9"/>
+            <path d="M30 26 L56 76 M56 26 L30 76" stroke="#e0405e" stroke-width="2" stroke-linecap="round" opacity=".55"/>
+          </g>
+          <path d="M74 51 h20" stroke="#c58c07" stroke-width="2.4" stroke-linecap="round" marker-end="url(#arwA)"/>
+          <defs>
+            <marker id="arwA" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="#c58c07"/></marker>
+          </defs>
+          <g>
+            <rect x="104" y="22" width="46" height="58" rx="7" fill="#fff" stroke="#e6e9f2"/>
+            <rect x="111" y="30" width="32" height="6" rx="3" fill="#cfe9df"/><rect x="111" y="42" width="32" height="6" rx="3" fill="#cfe9df"/>
+            <rect x="111" y="54" width="32" height="6" rx="3" fill="#cfe9df"/><rect x="111" y="66" width="32" height="6" rx="3" fill="#cfe9df"/>
+          </g>
+
+          <line x1="180" y1="20" x2="180" y2="82" stroke="#e6e9f2" stroke-width="1.5"/>
+
+          <!-- Append: keep old, add new below -->
+          <text x="268" y="12" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="800" fill="#0fa47f">APPEND</text>
+          <g>
+            <rect x="230" y="22" width="76" height="58" rx="7" fill="#fff" stroke="#e6e9f2"/>
+            <rect x="240" y="30" width="56" height="6" rx="3" fill="#eef1f7"/>
+            <rect x="240" y="42" width="56" height="6" rx="3" fill="#eef1f7"/>
+            <rect x="240" y="55" width="56" height="7" rx="3.5" fill="#bfe9d8"/>
+            <rect x="240" y="66" width="56" height="7" rx="3.5" fill="#bfe9d8"/>
+            <circle cx="311" cy="62" r="9" fill="#0fa47f"/>
+            <path d="M311 58 v8 M307 62 h8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          </g>
+        </svg>
         <div class="howto-defs">
           <div class="howto-def"><span class="t"><span class="howto-chip">Replace</span> ลบข้อมูลปลายทางทิ้งทั้งหมด แล้วซิงค์ใหม่</span> ใช้เมื่ออยากให้ปลายทาง<b>เหมือนต้นทางเป๊ะ</b> ทุกครั้ง · จำเป็นถ้าต้องการให้คอลัมน์ที่มีลิงก์กลายเป็นลิงก์คลิกได้</div>
           <div class="howto-def"><span class="t"><span class="howto-chip">Append</span> เพิ่มต่อท้ายข้อมูลเดิม (ไม่ลบ)</span> ใช้เมื่ออยาก<b>สะสมข้อมูลใหม่</b>ต่อจากของเดิม โดยไม่แตะแถวที่มีอยู่แล้ว</div>

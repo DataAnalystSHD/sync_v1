@@ -703,24 +703,21 @@ button.cron-tag.cron-mode:active { transform: translateY(1px); }
 /* ═══ How-to page ═══ */
 .howto-hero{
   position:relative; overflow:hidden; text-align:center;
-  padding:40px 24px 34px; margin-bottom:22px;
+  padding:34px 24px 34px; margin-bottom:22px;
   border-radius:var(--r3);
   background:
-    radial-gradient(120% 140% at 50% -20%, rgba(124,109,240,.16), transparent 60%),
+    radial-gradient(120% 150% at 50% -30%, rgba(124,109,240,.18), transparent 62%),
+    radial-gradient(90% 120% at 100% 120%, rgba(15,164,127,.10), transparent 60%),
     var(--surface-solid);
   border:1px solid var(--border);
   box-shadow:var(--sh);
 }
-.howto-hero-icon{
-  width:52px; height:52px; margin:0 auto 14px; border-radius:16px;
-  display:grid; place-items:center; color:#fff;
-  background:linear-gradient(135deg,#7c6df0,#5b4cdb);
-  box-shadow:var(--sh-accent);
-}
+.howto-hero-art{ display:block; width:100%; max-width:440px; height:auto; margin:0 auto 18px; }
 .howto-hero h1{
   font-size:26px; font-weight:800; letter-spacing:-.025em; margin:0 0 8px; color:var(--text);
 }
 .howto-hero p{ color:var(--muted); font-size:13.5px; margin:0 0 18px; }
+.howto-hero p:last-child{ margin-bottom:0; }
 .howto-flow{
   display:inline-flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center;
 }
@@ -731,6 +728,9 @@ button.cron-tag.cron-mode:active { transform: translateY(1px); }
 }
 .howto-flow .fp [data-icon]{ color:var(--accent); }
 .howto-flow .fa{ color:var(--accent2); }
+
+/* small inline spot illustration inside a card */
+.howto-art{ display:block; width:100%; max-width:340px; height:auto; margin:2px auto 4px; }
 
 /* masonry-style flow so cards of different heights pack tightly */
 .howto-grid{ column-count:2; column-gap:16px; }
