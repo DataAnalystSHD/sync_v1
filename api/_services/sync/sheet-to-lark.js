@@ -1,6 +1,6 @@
 import { sheetsGetValues, sheetsGetGrid, cellLink, getSheetNameByGid, quoteSheetName } from "../../_lib/google/sheets.js";
 import { larkBatchDeleteAll, larkCreateRecordsBatched, larkCountRecords } from "../../_lib/lark/records.js";
-import { larkEnsureFields, larkListFields, larkDeleteField } from "../../_lib/lark/fields.js";
+import { larkEnsureFields, larkListFields, larkUpdateField } from "../../_lib/lark/fields.js";
 import { inferType, inferProperty, convertForLark } from "../../_lib/lark/infer-types.js";
 import { endColumnFor } from "../../_lib/urls.js";
 import { selectColumns } from "../../_lib/columns.js";
@@ -92,8 +92,8 @@ async function beginNewRun({ accessToken, cfg, sheetId, tab, baseId, tableId, he
   let fields = await inferFieldsFromSheet({ accessToken, sheetId, tab, headers, endCol });
   if(selectedSet) fields = fields.filter(f => selectedSet.has(f.name));
   // A link-bearing column must be a URL field (type 15). If one already exists as
-  // another type it can't hold links — on Replace (rows get wiped anyway) drop it
-  // so larkEnsureFields recreates it as URL. Never touch fields on Append.
+  // another type, convert it IN PLACE (keeps its column position — deleting and
+  // recreating would push it to the end of the table). Replace only.
   if(syncMode !== "append"){
     const existing = await larkListFields({ baseId, tableId });
     const byNorm = new Map(existing.map(f => [String(f.field_name || "").trim().toLowerCase(), f]));
@@ -101,7 +101,7 @@ async function beginNewRun({ accessToken, cfg, sheetId, tab, baseId, tableId, he
       if(f.type !== URL_TYPE) continue;
       const hit = byNorm.get(String(f.name).trim().toLowerCase());
       if(hit && hit.type !== URL_TYPE && hit.field_id){
-        await larkDeleteField({ baseId, tableId, fieldId: hit.field_id });
+        await larkUpdateField({ baseId, tableId, fieldId: hit.field_id, fieldName: hit.field_name, fieldType: URL_TYPE });
       }
     }
   }

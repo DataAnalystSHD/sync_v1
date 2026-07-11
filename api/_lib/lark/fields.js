@@ -24,6 +24,20 @@ export async function larkCreateField({ baseId, tableId, fieldName, fieldType = 
   return r.data?.data?.field;
 }
 
+// Change an existing field's type/name in place (keeps its column position and
+// data). Lark permits Text(1) → URL(15) conversion (verified live).
+export async function larkUpdateField({ baseId, tableId, fieldId, fieldName, fieldType, property }){
+  const token = await getTenantAccessToken();
+  const body = { field_name: fieldName, type: fieldType };
+  if(property) body.property = property;
+  const r = await withBackoff(() => axios.put(tableUrl(baseId, tableId, `/fields/${fieldId}`),
+    body,
+    { headers: authHeader(token), timeout: 30000 }
+  ), "larkUpdateField");
+  assertOk(r.data, "Lark update field");
+  return r.data?.data?.field;
+}
+
 export async function larkDeleteField({ baseId, tableId, fieldId }){
   const token = await getTenantAccessToken();
   const r = await withBackoff(() => axios.delete(tableUrl(baseId, tableId, `/fields/${fieldId}`), {
