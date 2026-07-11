@@ -76,6 +76,7 @@
       <button class="tab active" data-tab="sync"><span data-icon="sync" data-size="15"></span> Sync</button>
       <button class="tab" data-tab="cron" style="display:none"><span data-icon="clock" data-size="15"></span> Auto-sync</button>
       <button class="tab" data-tab="history" style="display:none"><span data-icon="activity" data-size="15"></span> History</button>
+      <button class="tab" data-tab="howto"><span data-icon="bookOpen" data-size="15"></span> How to Use</button>
     </nav>
 
     <div class="topbar-right">
@@ -239,6 +240,103 @@
     </div>
   </div>
   </div><!-- /tab: history -->
+
+  <!-- ═══ TAB: HOW TO USE ═══ -->
+  <div class="tab-panel" data-panel="howto">
+    <div class="howto-hero">
+      <h1>วิธีใช้งาน SHD Sync</h1>
+      <p>ซิงค์ข้อมูลระหว่าง Google Sheet กับ Lark / Feishu (Base &amp; Sheet) แบบอัตโนมัติ</p>
+    </div>
+
+    <div class="howto-grid">
+
+      <!-- SHD Sync คืออะไร -->
+      <div class="howto-card">
+        <h3><span class="howto-badge"><span data-icon="sync" data-size="13"></span></span> SHD Sync คืออะไร</h3>
+        <p>เครื่องมือคัดลอกข้อมูลจาก <b>ต้นทาง</b> ไป <b>ปลายทาง</b> ให้ตรงกันอัตโนมัติ — เชื่อมได้ทั้ง <b>Google Sheet</b>, <b>Lark Base</b> และ <b>Lark Sheet</b> ทั้งซิงค์เองครั้งเดียว หรือตั้งเวลาให้ระบบทำให้ตลอด 24 ชม.</p>
+      </div>
+
+      <!-- เริ่มต้น: Login -->
+      <div class="howto-card">
+        <h3><span class="howto-badge"><span data-icon="key" data-size="13"></span></span> เริ่มต้นใช้งาน</h3>
+        <ol class="howto-steps">
+          <li>กดปุ่ม <b>Login</b> มุมขวาบน แล้วเข้าสู่ระบบด้วยบัญชี Google ที่มีสิทธิ์เข้าถึงชีต</li>
+          <li>เมื่อขึ้นอีเมลสีเขียวมุมขวา = พร้อมใช้งาน</li>
+        </ol>
+      </div>
+
+      <!-- ซิงค์ครั้งเดียว -->
+      <div class="howto-card">
+        <h3><span class="howto-badge"><span data-icon="zap" data-size="13"></span></span> ซิงค์ข้อมูล (Sync Now)</h3>
+        <ol class="howto-steps">
+          <li>วาง <b>ลิงก์ต้นทาง</b> (Google Sheet URL) และ <b>ลิงก์ปลายทาง</b> (Lark / Feishu Base URL)</li>
+          <li>เลือก <b>Sync Direction</b> — ทิศทางว่าจะเอาข้อมูลจากไหนไปไหน (ดูรายละเอียดด้านล่าง)</li>
+          <li><b>Columns</b> (ไม่บังคับ) — กด “สแกน &amp; เลือกคอลัมน์” เพื่อเลือกเฉพาะคอลัมน์ที่อยากซิงค์</li>
+          <li><b>Filter</b> (ไม่บังคับ · เฉพาะต้นทางเป็น Lark Base) — กรองเอาเฉพาะบางแถวตามค่า dropdown</li>
+          <li>เลือก <b>Sync Mode</b> — Replace หรือ Append</li>
+          <li>กด <b>Sync Now</b> รอจนขึ้นผลลัพธ์ว่าสำเร็จ</li>
+        </ol>
+      </div>
+
+      <!-- ทิศทาง -->
+      <div class="howto-card">
+        <h3><span class="howto-badge"><span data-icon="arrowLeftRight" data-size="13"></span></span> ทิศทางการซิงค์ (Direction)</h3>
+        <div class="howto-defs">
+          <div class="howto-def"><span class="t">Google Sheet → Lark Base</span> เอาข้อมูลจากชีต ไปลงตาราง Lark Base (ลิงก์ที่ฝังในข้อความจะกลายเป็นลิงก์คลิกได้)</div>
+          <div class="howto-def"><span class="t">Lark Base → Google Sheet</span> เอาข้อมูลจากตาราง Lark Base มาลงชีต</div>
+          <div class="howto-def"><span class="t">Lark Sheet ↔ Lark Base</span> ย้ายข้อมูลระหว่าง Lark Sheet กับ Lark Base</div>
+          <div class="howto-def"><span class="t">Google Sheet ↔ Lark Sheet</span> ย้ายข้อมูลระหว่าง Google Sheet กับ Lark Sheet (คงลิงก์ในเซลล์)</div>
+        </div>
+      </div>
+
+      <!-- โหมด -->
+      <div class="howto-card">
+        <h3><span class="howto-badge"><span data-icon="shuffle" data-size="13"></span></span> โหมดซิงค์ (Sync Mode)</h3>
+        <div class="howto-defs">
+          <div class="howto-def"><span class="t"><span class="howto-chip">Replace</span> ลบข้อมูลปลายทางทิ้งทั้งหมด แล้วซิงค์ใหม่</span> ใช้เมื่ออยากให้ปลายทาง<b>เหมือนต้นทางเป๊ะ</b> ทุกครั้ง · จำเป็นถ้าต้องการให้คอลัมน์ที่มีลิงก์กลายเป็นลิงก์คลิกได้</div>
+          <div class="howto-def"><span class="t"><span class="howto-chip">Append</span> เพิ่มต่อท้ายข้อมูลเดิม (ไม่ลบ)</span> ใช้เมื่ออยาก<b>สะสมข้อมูลใหม่</b>ต่อจากของเดิม โดยไม่แตะแถวที่มีอยู่แล้ว</div>
+        </div>
+      </div>
+
+      <!-- ฟีเจอร์เสริม -->
+      <div class="howto-card">
+        <h3><span class="howto-badge"><span data-icon="wrench" data-size="13"></span></span> ตัวเลือกเสริม</h3>
+        <div class="howto-defs">
+          <div class="howto-def"><span class="t">เลือกคอลัมน์</span> สแกนต้นทางแล้วติ๊กเฉพาะคอลัมน์ที่ต้องการ — ไม่เลือก = ซิงค์ทุกคอลัมน์</div>
+          <div class="howto-def"><span class="t">ตัวกรอง (Filter)</span> เลือกเอาเฉพาะแถวที่ค่าตรงกับ dropdown ที่กำหนด (เฉพาะต้นทาง Lark Base)</div>
+          <div class="howto-def"><span class="t">แถวแรกไม่มีหัวคอลัมน์</span> ติ๊กเมื่อแถวแรกของชีตไม่ใช่หัวตาราง — ระบบจะตั้งชื่อ Column 1, 2, 3… ให้เอง (ใช้เมื่อปลายทางเป็น Sheet)</div>
+        </div>
+      </div>
+
+      <!-- Auto-sync -->
+      <div class="howto-card">
+        <h3><span class="howto-badge"><span data-icon="clock" data-size="13"></span></span> ตั้งซิงค์อัตโนมัติ (Auto-sync)</h3>
+        <ol class="howto-steps">
+          <li>กรอกลิงก์ + ตั้งค่าเหมือนการซิงค์ปกติ</li>
+          <li>เลือกช่วงเวลาในช่อง <b>Auto-sync ทุก ๆ</b> (เช่น ทุก 3 นาที / ทุก 1 ชม. / ทุก 1 วัน หรือพิมพ์เองก็ได้)</li>
+          <li>กด <b>Save Auto-sync</b> — ระบบจะซิงค์ให้เองตามรอบ ตลอด 24 ชม. โดยไม่ต้องเปิดเว็บค้าง</li>
+          <li>ดู/แก้/ลบงานที่ตั้งไว้ได้ที่แท็บ <b>Auto-sync</b></li>
+        </ol>
+      </div>
+
+      <!-- History -->
+      <div class="howto-card">
+        <h3><span class="howto-badge"><span data-icon="activity" data-size="13"></span></span> ประวัติการซิงค์ (History)</h3>
+        <p>แท็บ <b>History</b> แสดงว่าซิงค์อะไร เมื่อไหร่ กี่แถว สำเร็จหรือไม่ — คลิกแต่ละรายการเพื่อดูรายละเอียด และลบประวัติได้</p>
+      </div>
+
+      <!-- ข้อควรรู้ -->
+      <div class="howto-card">
+        <h3><span class="howto-badge"><span data-icon="alertTriangle" data-size="13"></span></span> ข้อควรรู้</h3>
+        <div class="howto-defs">
+          <div class="howto-tip"><span class="howto-ti" data-icon="alertTriangle" data-size="14"></span><span>อยากให้ <b>ลิงก์ที่ฝังในข้อความ</b> (เช่นชื่อ KOL) กลายเป็นลิงก์คลิกได้ใน Lark Base → ต้องใช้โหมด <b>Replace</b> · ระบบจะแปลงคอลัมน์ที่เซลล์ส่วนใหญ่มีลิงก์เป็น URL field ให้เอง</span></div>
+          <div class="howto-tip"><span class="howto-ti" data-icon="alertTriangle" data-size="14"></span><span>Lark URL field เก็บ “ข้อความล้วน” ไม่ได้ — คอลัมน์ที่มีลิงก์ปน ๆ กันจะคงเป็นข้อความ เพื่อไม่ให้ชื่ออื่นกลายเป็นลิงก์ปลอม</span></div>
+          <div class="howto-tip"><span class="howto-ti" data-icon="alertTriangle" data-size="14"></span><span>ต้อง <b>แชร์ไฟล์ Google Sheet</b> ให้บัญชีที่ login มีสิทธิ์อ่าน และไฟล์ต้องเป็น Google Sheet จริง (ไม่ใช่ .xlsx ที่อัปโหลด)</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /tab: howto -->
 
   <!-- Hidden log sink (log() writes here; kept off-screen after removing Logs tab) -->
   <div id="log" style="display:none">— ready —</div>

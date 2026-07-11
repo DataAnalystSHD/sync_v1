@@ -959,19 +959,21 @@ function positionTabIndicator() {
 function updateTabVisibility() {
   const admin = isAdmin();
   document.querySelectorAll('#tabNav .tab').forEach(btn => {
-    if (btn.dataset.tab === 'sync') return;            // everyone sees Sync
+    // Sync and How to Use are for everyone; the rest are admin-only.
+    if (btn.dataset.tab === 'sync' || btn.dataset.tab === 'howto') return;
     btn.style.display = admin ? '' : 'none';
   });
   // If a non-admin is somehow on a hidden tab, send them back to Sync.
   const activePanel = document.querySelector('.tab-panel.active');
-  if (!admin && activePanel && activePanel.dataset.panel !== 'sync') {
+  const publicPanels = ['sync', 'howto'];
+  if (!admin && activePanel && !publicPanels.includes(activePanel.dataset.panel)) {
     switchTab('sync');
   }
   requestAnimationFrame(positionTabIndicator);
 }
 
 function switchTab(name) {
-  if (name !== 'sync' && !isAdmin()) name = 'sync';
+  if (name !== 'sync' && name !== 'howto' && !isAdmin()) name = 'sync';
   document.querySelectorAll('.tab').forEach(b =>
     b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.tab-panel').forEach(p =>
