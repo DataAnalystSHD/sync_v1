@@ -1,11 +1,28 @@
 import { json, methodNotAllowed, errorResponse } from "./_lib/http.js";
 import { getConfig, mustEnv } from "./_lib/config.js";
 import { encryptText } from "./_lib/crypto.js";
-import { refreshAccessToken } from "./_lib/google/oauth.js";
+import { refreshAccessToken, emailFromAccessToken } from "./_lib/google/oauth.js";
 import { parseGoogleSheetId, parseLarkBase, parseLarkSheetUrl } from "./_lib/urls.js";
 import {
-  readAllPairs, appendPair, setActive, setPairInterval, setSyncMode, deletePairRow, updatePairFields,
+  readAllPairs, appendPair, setActive, setPairInterval, setSyncMode, deletePairRow, updatePairFields, findPairByRowId,
 } from "./_services/pairs-store.js";
+
+// Identify the caller from their own refresh token, and get a storage token.
+// Storage (the pairs sheet) is read/written with the OWNER token so any signed-in
+// user works regardless of their own access to that sheet; the caller's verified
+// email is what scopes them to their own rows. Admins see/act on everyone's.
+async function identify({ body, cfg }){
+  const callerRefresh = body.refreshToken || body.refresh_token || "";
+  if(!callerRefresh) throw new Error("Missing refreshToken");
+  const callerAccess = await refreshAccessToken(callerRefresh);
+  const callerEmail  = await emailFromAccessToken(callerAccess);
+  const isAdmin = cfg.adminEmails.includes(callerEmail);
+  const ownerRefresh = process.env.SYNC_OWNER_REFRESH_TOKEN;
+  const storeAccess = ownerRefresh ? await refreshAccessToken(ownerRefresh) : callerAccess;
+  return { callerRefresh, callerEmail, isAdmin, storeAccess };
+}
+
+const ownsPair = (pair, email) => String(pair?.user || "").trim().toLowerCase() === email;
 
 // What each side of the form holds, per direction.
 //   top    = sheetUrl input
@@ -81,21 +98,19 @@ function publicPair(p){
 
 async function handlePost({ req, res, cfg, secret }){
   const body = req.body || {};
-  const refreshToken = body.refreshToken || body.refresh_token || "";
-  if(!refreshToken) throw new Error("Missing refreshToken");
-  const accessToken = await refreshAccessToken(refreshToken);
+  const { callerRefresh, callerEmail, isAdmin, storeAccess } = await identify({ body, cfg });
 
-  // No URLs → list every saved pair (for the Cron Manager).
+  // No URLs → list saved pairs. A normal user sees only their own; admin sees all.
   if(!body.sheetUrl || !body.larkUrl){
-    const pairs = (await readAllPairs({ accessToken, cfg })).map(publicPair);
-    json(res, 200, { ok: true, pairs });
+    let pairs = await readAllPairs({ accessToken: storeAccess, cfg });
+    if(!isAdmin) pairs = pairs.filter(p => ownsPair(p, callerEmail));
+    json(res, 200, { ok: true, pairs: pairs.map(publicPair) });
     return;
   }
 
   const sheetUrl  = String(body.sheetUrl);
   const larkUrl   = String(body.larkUrl);
   const direction = FIELD_KINDS[body.direction] ? body.direction : "lark-to-sheet";
-  const userEmail = body.userEmail || body.user || "";
 
   const kinds = FIELD_KINDS[direction];
   validateSide(kinds.top,    sheetUrl, "source");
@@ -111,13 +126,14 @@ async function handlePost({ req, res, cfg, secret }){
   const filters = Array.isArray(body.filters) ? body.filters : [];
 
   await appendPair({
-    accessToken,
+    accessToken: storeAccess,
     cfg,
     pair: {
       sheetUrl, sheetId,
       larkUrl, baseId, tableId,
-      direction, userEmail,
-      refreshEnc: encryptText(refreshToken, secret),
+      direction,
+      userEmail: callerEmail,   // verified owner — used for per-user scoping
+      refreshEnc: encryptText(callerRefresh, secret),
       intervalMin,
       rowFrom:  toPos(body.rowFrom),
       rowTo:    toPos(body.rowTo),
@@ -133,12 +149,16 @@ async function handlePost({ req, res, cfg, secret }){
 
 async function handlePut({ req, res, cfg }){
   const body = req.body || {};
-  const refreshToken = body.refreshToken || "";
   const rowId = parseInt(body.rowId, 10);
-  if(!refreshToken) throw new Error("Missing refreshToken");
   if(!rowId) throw new Error("Missing rowId");
 
-  const accessToken = await refreshAccessToken(refreshToken);
+  const { callerEmail, isAdmin, storeAccess } = await identify({ body, cfg });
+  const accessToken = storeAccess;
+
+  // A user may only edit their own pair (admin may edit anyone's).
+  const target = await findPairByRowId({ accessToken, cfg, rowId });
+  if(!target) return json(res, 404, { ok: false, error: "ไม่พบรายการนี้" });
+  if(!isAdmin && !ownsPair(target, callerEmail)) return json(res, 403, { ok: false, error: "ไม่มีสิทธิ์แก้ไขรายการนี้" });
 
   // Full edit from the Sync form (both URLs present) → rewrite the whole config.
   if(body.sheetUrl && body.larkUrl){
@@ -177,13 +197,16 @@ async function handlePut({ req, res, cfg }){
 
 async function handleDelete({ req, res, cfg }){
   const body = req.body || {};
-  const refreshToken = body.refreshToken || "";
   const rowId = parseInt(body.rowId, 10);
-  if(!refreshToken) throw new Error("Missing refreshToken");
   if(!rowId) throw new Error("Missing rowId");
 
-  const accessToken = await refreshAccessToken(refreshToken);
-  await deletePairRow({ accessToken, cfg, rowId });
+  const { callerEmail, isAdmin, storeAccess } = await identify({ body, cfg });
+
+  const target = await findPairByRowId({ accessToken: storeAccess, cfg, rowId });
+  if(!target) return json(res, 404, { ok: false, error: "ไม่พบรายการนี้" });
+  if(!isAdmin && !ownsPair(target, callerEmail)) return json(res, 403, { ok: false, error: "ไม่มีสิทธิ์ลบรายการนี้" });
+
+  await deletePairRow({ accessToken: storeAccess, cfg, rowId });
   json(res, 200, { ok: true, deleted: true });
 }
 

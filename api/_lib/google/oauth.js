@@ -41,3 +41,15 @@ export async function verifyIdToken(idToken){
   });
   return r.data;
 }
+
+const USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo";
+
+// The verified email of whoever owns this access token (lowercased). Used to
+// scope each user to their own data. Empty string if unavailable.
+export async function emailFromAccessToken(accessToken){
+  const r = await axios.get(USERINFO_URL, {
+    headers: { authorization: `Bearer ${accessToken}` },
+    timeout: 15000,
+  });
+  return String(r.data?.email || "").trim().toLowerCase();
+}

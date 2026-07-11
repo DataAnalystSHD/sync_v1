@@ -957,23 +957,23 @@ function positionTabIndicator() {
 }
 
 function updateTabVisibility() {
-  const admin = isAdmin();
+  // Sync and How to Use are public; Auto-sync and History need login (they're
+  // scoped to the signed-in user — everyone sees their own, admin sees all).
+  const loggedIn = !!state.refreshToken;
   document.querySelectorAll('#tabNav .tab').forEach(btn => {
-    // Sync and How to Use are for everyone; the rest are admin-only.
     if (btn.dataset.tab === 'sync' || btn.dataset.tab === 'howto') return;
-    btn.style.display = admin ? '' : 'none';
+    btn.style.display = loggedIn ? '' : 'none';
   });
-  // If a non-admin is somehow on a hidden tab, send them back to Sync.
   const activePanel = document.querySelector('.tab-panel.active');
   const publicPanels = ['sync', 'howto'];
-  if (!admin && activePanel && !publicPanels.includes(activePanel.dataset.panel)) {
+  if (!loggedIn && activePanel && !publicPanels.includes(activePanel.dataset.panel)) {
     switchTab('sync');
   }
   requestAnimationFrame(positionTabIndicator);
 }
 
 function switchTab(name) {
-  if (name !== 'sync' && name !== 'howto' && !isAdmin()) name = 'sync';
+  if (name !== 'sync' && name !== 'howto' && !state.refreshToken) name = 'sync';
   document.querySelectorAll('.tab').forEach(b =>
     b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.tab-panel').forEach(p =>
@@ -1020,9 +1020,16 @@ async function loadHistory() {
   const list = $('historyList');
   list.innerHTML = '';
   empty.style.display = '';
+  if (!state.refreshToken) {
+    empty.textContent = 'ยังไม่ได้เข้าสู่ระบบ — กดปุ่ม Login มุมขวาบนก่อน';
+    return;
+  }
   empty.textContent = 'กำลังโหลดประวัติ…';
   try {
-    const out = await fetchJson('/api/history');
+    const out = await fetchJson('/api/history', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken: state.refreshToken }),
+    });
     renderHistory(out.items || []);
   } catch (e) {
     list.innerHTML = '';
@@ -1115,7 +1122,7 @@ async function deleteHistoryRow(row) {
   });
   if (!ok) return;
   try {
-    await fetchJson('/api/history?row=' + row, { method: 'DELETE' });
+    await fetchJson('/api/history', { method: 'DELETE', body: JSON.stringify({ refreshToken: state.refreshToken, row }) });
     log('ลบประวัติแล้ว');
     await loadHistory();
   } catch (e) {
@@ -1124,14 +1131,15 @@ async function deleteHistoryRow(row) {
 }
 
 async function clearAllHistory() {
+  const scope = isAdmin() ? 'ของ<b>ทุกคน</b>' : '<b>ของคุณ</b>';
   const ok = await showConfirm({
     iconName: 'trash', title: 'ล้างประวัติทั้งหมด?',
-    desc: 'จะลบประวัติการซิงค์<b>ทั้งหมด</b>ออกถาวร (ไม่กระทบข้อมูลที่ซิงค์ไปแล้ว)<br>ต้องการดำเนินการ?',
+    desc: `จะลบประวัติการซิงค์${scope}ออกถาวร (ไม่กระทบข้อมูลที่ซิงค์ไปแล้ว)<br>ต้องการดำเนินการ?`,
     confirmText: 'ล้างทั้งหมด', confirmClass: 'danger',
   });
   if (!ok) return;
   try {
-    await fetchJson('/api/history?all=1', { method: 'DELETE' });
+    await fetchJson('/api/history', { method: 'DELETE', body: JSON.stringify({ refreshToken: state.refreshToken, all: 1 }) });
     log('ล้างประวัติทั้งหมดแล้ว');
     await loadHistory();
   } catch (e) {
