@@ -783,6 +783,10 @@ button.cron-tag.cron-mode:active { transform: translateY(1px); }
 }
 .howto-steps li b, .howto-panel-pad p b, .howto-defs b{ color:var(--text); font-weight:700; }
 .howto-defs{ display:grid; gap:10px; margin:0; }
+/* directions: 6 items, 3 per side */
+.howto-dir-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:0; }
+@media(max-width:640px){ .howto-dir-grid{ grid-template-columns:1fr; } }
+.howto-dir-grid .da{ color:var(--c); font-weight:800; padding:0 3px; }
 .howto-def{
   padding:13px 15px; border-radius:var(--r);
   border:1px solid var(--border); border-left:3px solid var(--c);
