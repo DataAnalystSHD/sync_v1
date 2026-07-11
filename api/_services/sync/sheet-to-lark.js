@@ -9,36 +9,29 @@ import { updateCursor, updatePhase } from "../pairs-store.js";
 const PHASE_RUNNING = "sheet2lark_running";
 const PHASE_IDLE    = "idle";
 const INFER_SAMPLE_ROWS = 100;
-const URL_TYPE  = 15;    // Lark Bitable URL field — the only field that stores a hyperlink
-const GRID_CHUNK = 2000; // read grid metadata in small chunks (a huge single grid read times out)
+const URL_TYPE = 15;    // Lark Bitable URL field — the only field that stores a hyperlink
 
 // Grid cells are objects ({formattedValue, hyperlink, ...}); tolerate plain strings too.
 const cellText = (c) => (c && typeof c === "object") ? (c.formattedValue ?? "") : String(c ?? "");
 const linkOf   = (c) => (c && typeof c === "object") ? (cellLink(c) || "") : "";
 
-// Read a row range as GRID (cell objects, so hyperlinks are visible), chunked to
-// avoid oversized responses. If a grid chunk fails, fall back to plain values for
-// that chunk (data is preserved; only its links are lost).
-async function readGridRows({ accessToken, sheetId, tab, startRow, endRow, endCol }){
-  const out = [];
-  for(let s = startRow; s <= endRow; s += GRID_CHUNK){
-    const e = Math.min(s + GRID_CHUNK - 1, endRow);
-    const range = `${tab}A${s}:${endCol}${e}`;
-    let chunk;
-    try { chunk = await sheetsGetGrid({ accessToken, spreadsheetId: sheetId, range }); }
-    catch { chunk = null; }
-    if(chunk == null){
-      const plain = await sheetsGetValues({ accessToken, spreadsheetId: sheetId, range });
-      if(!plain || plain.length === 0) break;
-      out.push(...plain);
-      if(plain.length < (e - s + 1)) break;
-      continue;
-    }
-    if(chunk.length === 0) break;
-    out.push(...chunk);
-    if(chunk.length < (e - s + 1)) break;
-  }
-  return out;
+// Read a row range as GRID (cell objects, so embedded hyperlinks survive). This
+// mirrors the proven Google Sheet → Lark *Sheet* path: a single OPEN-ENDED read
+// (`A2:endCol`, no explicit last row) lets Google return only the real data rows.
+// A bounded read out to a far row (e.g. row 20001) is what previously returned
+// empty and wiped the destination — so only bound the range for an explicit Row
+// Range request. If the grid read is empty/fails, fall back to a plain values
+// read so data always syncs (its links are the only thing lost, never the data).
+async function readGridRows({ accessToken, sheetId, tab, startRow, endCol, endRow }){
+  const range = endRow != null
+    ? `${tab}A${startRow}:${endCol}${endRow}`   // explicit Row Range only
+    : `${tab}A${startRow}:${endCol}`;           // open-ended: all remaining rows
+  let grid = null;
+  try { grid = await sheetsGetGrid({ accessToken, spreadsheetId: sheetId, range }); }
+  catch { grid = null; }
+  if(grid && grid.length) return grid;
+  const plain = await sheetsGetValues({ accessToken, spreadsheetId: sheetId, range });
+  return plain || [];
 }
 
 async function readHeaders({ accessToken, sheetId, tab }){
@@ -184,10 +177,10 @@ export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, 
       ({ typeMap, nameMap } = await readTypeMap({ baseId, tableId }));
     }
     const startSheetRow = 2 + existing;   // header is row 1; skip rows already appended
-    const endSheetRow   = startSheetRow + pageSize - 1;
+    // Open-ended read (all remaining rows) — see readGridRows.
     const values = await readGridRows({
       accessToken, sheetId, tab,
-      startRow: startSheetRow, endRow: endSheetRow, endCol,
+      startRow: startSheetRow, endCol,
     });
     if(!values || values.length === 0){
       return { rowCount: 0, truncated: false, done: true };
@@ -211,12 +204,12 @@ export async function syncSheetToLark({ accessToken, cfg, sheetId, gid, baseId, 
   // source read can never wipe the destination on a Replace.
   // Data rows are 1-indexed for the user; sheet rows are 2..N (after header).
   const startSheetRow = hasRange ? ((rowFrom || 1) + 1) : (isFresh ? 2 : cursorRow);
-  const endSheetRow   = hasRange
-    ? (rowTo ? (rowTo + 1) : startSheetRow + pageSize - 1)
-    : (startSheetRow + pageSize - 1);
+  // Bound the read ONLY for an explicit Row Range end; otherwise open-ended so
+  // Google returns just the real rows (a far bounded end previously read empty).
   const values = await readGridRows({
     accessToken, sheetId, tab,
-    startRow: startSheetRow, endRow: endSheetRow, endCol,
+    startRow: startSheetRow, endCol,
+    endRow: rowTo != null ? (rowTo + 1) : undefined,
   });
 
   if(!values || values.length === 0){
